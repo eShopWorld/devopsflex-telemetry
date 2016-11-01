@@ -14,6 +14,12 @@
         /// </summary>
         IBigBrother DeveloperMode();
 
+        /// <summary>
+        /// Flush out all telemetry clients, both the external and the internal one.
+        /// </summary>
+        /// <remarks>
+        /// There is internal telemetry associated with calling this method to prevent bad usage.
+        /// </remarks>
         void Flush();
     }
 }

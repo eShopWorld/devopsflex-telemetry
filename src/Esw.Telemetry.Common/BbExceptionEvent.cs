@@ -1,14 +1,13 @@
 ﻿namespace Esw.Telemetry.Common
 {
     using System;
-    using JetBrains.Annotations;
     using Microsoft.ApplicationInsights.DataContracts;
 
     public class BbExceptionEvent : BbEvent
     {
         public Exception Exception { get; set; }
 
-        [CanBeNull] public virtual ExceptionTelemetry ToTelemetry()
+        public virtual ExceptionTelemetry ToTelemetry()
         {
             return new ExceptionTelemetry
             {

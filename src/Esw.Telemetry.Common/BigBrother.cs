@@ -4,7 +4,9 @@
     using System.Collections.Generic;
     using System.Reactive.Subjects;
     using System.Reactive.Linq;
+    using InternalEvents;
     using Microsoft.ApplicationInsights;
+    using Microsoft.ApplicationInsights.DataContracts;
     using Microsoft.ApplicationInsights.Extensibility;
 
     /// <summary>
@@ -35,7 +37,7 @@
         /// <summary>
         /// The internal telemetry stream, used by this package to report errors and usage to an internal AI account.
         /// </summary>
-        private static readonly Subject<BbExceptionEvent> InternalStream = new Subject<BbExceptionEvent>();
+        private static readonly Subject<BbEvent> InternalStream = new Subject<BbEvent>();
 
         /// <summary>
         /// Initializes a new instance of <see cref="BigBrother"/>.
@@ -60,9 +62,31 @@
             _telemetrySubscriptions.Add(
                 typeof(BbExceptionEvent),
                 _telemetryStream.OfType<BbExceptionEvent>()
-                                .Subscribe(e => _telemetryClient.TrackException(e.ToTelemetry())));
+                                .Subscribe(
+                                    e =>
+                                    {
+                                        var tEvent = e.ToTelemetry();
 
-            _internalSubscription = InternalStream.Subscribe(e => _telemetryClient.TrackException(e.ToTelemetry()));
+                                        tEvent.SeverityLevel = SeverityLevel.Error;
+                                        tEvent.HandledAt = ExceptionHandledAt.UserCode;
+
+                                        _telemetryClient.TrackException(tEvent);
+                                    }));
+
+            _internalSubscription = InternalStream.OfType<BbTelemetryEvent>()
+                                                  .Subscribe(e => _telemetryClient.TrackEvent(e.ToTelemetry()));
+
+            _internalSubscription = InternalStream.OfType<BbExceptionEvent>()
+                                                  .Subscribe(
+                                                      e =>
+                                                      {
+                                                          var tEvent = e.ToTelemetry();
+
+                                                          tEvent.SeverityLevel = SeverityLevel.Warning;
+                                                          tEvent.HandledAt = ExceptionHandledAt.Platform;
+
+                                                          _telemetryClient.TrackException(tEvent);
+                                                      });
         }
 
         /// <summary>
@@ -87,8 +111,15 @@
             return this;
         }
 
+        /// <summary>
+        /// Flush out all telemetry clients, both the external and the internal one.
+        /// </summary>
+        /// <remarks>
+        /// There is internal telemetry associated with calling this method to prevent bad usage.
+        /// </remarks>
         public void Flush()
         {
+            InternalStream.OnNext(new FlushEvent()); // You're not guaranteed to flush this event
             _telemetryClient.Flush();
             InternalClient.Flush();
         }
