@@ -7,14 +7,21 @@
     using Microsoft.ApplicationInsights.DataContracts;
     using Newtonsoft.Json;
 
+    /// <summary>
+    /// The base class from all BigBrother telemetry based events that are going to be
+    /// tracked by AI as <see cref="EventTelemetry"/> events.
+    /// </summary>
     public class BbTelemetryEvent : BbEvent
     {
+        /// <summary>
+        /// Converts this event into an Application Insights <see cref="EventTelemetry"/> event ready to be tracked by
+        /// the AI client.
+        /// </summary>
+        /// <returns>The converted <see cref="EventTelemetry"/> event.</returns>
         [CanBeNull] public virtual EventTelemetry ToTelemetry()
         {
             try
             {
-                // TODO: This is too slow to be used out of alpha, replace with either emit or T4 gen + Roslyn
-                // TODO: When this is removed it also makes the current depedency on newtonsoft.json go away
                 var properties = JsonConvert.DeserializeObject<Dictionary<string, string>>(
                     JsonConvert.SerializeObject(this));
 

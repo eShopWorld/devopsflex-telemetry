@@ -27,3 +27,10 @@ public class TestTelemetryEvent : BbTelemetryEvent
 
     public string Description { get; set; }
 }
+
+public class MyEvent : BbTelemetryEvent
+{
+    public string Address { get; set; }
+
+    public string Name { get; set; }
+}

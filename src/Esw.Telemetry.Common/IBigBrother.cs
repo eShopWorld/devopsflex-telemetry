@@ -1,12 +1,14 @@
 ﻿namespace Esw.Telemetry.Common
 {
+    using JetBrains.Annotations;
+
     public interface IBigBrother
     {
         /// <summary>
         /// Publishes a <see cref="BbEvent"/> through the pipeline.
         /// </summary>
         /// <param name="bbEvent">The event that we want to publish.</param>
-        void Publish(BbEvent bbEvent);
+        void Publish([NotNull]BbEvent bbEvent);
 
         /// <summary>
         /// Forces the telemetry channel to be in developer mode, where it will instantly push

@@ -5,6 +5,7 @@
     using System.Reactive.Subjects;
     using System.Reactive.Linq;
     using InternalEvents;
+    using JetBrains.Annotations;
     using Microsoft.ApplicationInsights;
     using Microsoft.ApplicationInsights.DataContracts;
     using Microsoft.ApplicationInsights.Extensibility;
@@ -30,7 +31,7 @@
         private readonly Dictionary<Type, IDisposable> _telemetrySubscriptions = new Dictionary<Type, IDisposable>();
 
         /// <summary>
-        /// The main event stream that's exposed publicly (yea, subjects are bad, I know!).
+        /// The main event stream that's exposed publicly (yea ... subjects are bad ... I'll redesign when and if time allows).
         /// </summary>
         private readonly Subject<BbEvent> _telemetryStream = new Subject<BbEvent>();
 
@@ -45,7 +46,7 @@
         /// </summary>
         /// <param name="aiKey">The application's Application Insights instrumentation key.</param>
         /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
-        public BigBrother(string aiKey, string internalKey)
+        public BigBrother([NotNull]string aiKey, [NotNull]string internalKey)
         {
             _telemetryClient = new TelemetryClient
             {
@@ -66,6 +67,7 @@
                                     e =>
                                     {
                                         var tEvent = e.ToTelemetry();
+                                        if (tEvent == null) return;
 
                                         tEvent.SeverityLevel = SeverityLevel.Error;
                                         tEvent.HandledAt = ExceptionHandledAt.UserCode;
@@ -81,6 +83,7 @@
                                                       e =>
                                                       {
                                                           var tEvent = e.ToTelemetry();
+                                                          if (tEvent == null) return;
 
                                                           tEvent.SeverityLevel = SeverityLevel.Warning;
                                                           tEvent.HandledAt = ExceptionHandledAt.Platform;
@@ -125,7 +128,7 @@
         }
 
         /// <summary>
-        /// Use internal by BigBrother to publish usage exceptions to a special
+        /// Used internal by BigBrother to publish usage exceptions to a special
         /// Application Insights account.
         /// </summary>
         /// <param name="ex">The <see cref="Exception"/> that we want to publish.</param>
