@@ -1,8 +1,9 @@
-﻿namespace Esw.Telemetry.Common
+﻿namespace DevOpsFlex.Telemetry
 {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using Esw.Telemetry.Common;
     using JetBrains.Annotations;
     using Microsoft.ApplicationInsights.DataContracts;
     using Newtonsoft.Json;
@@ -23,10 +24,7 @@
         /// This could be improved by a generic IContractResolver, but we don't care singe we're not planning on keeping JsonConvert.
         /// </summary>
         /// <returns>false.</returns>
-        public bool ShouldSerializeException()
-        {
-            return false;
-        }
+        public bool ShouldSerializeException() { return false; }
 
         /// <summary>
         /// Converts this event into an Application Insights <see cref="ExceptionTelemetry"/> event ready to be tracked by

@@ -1,5 +1,5 @@
 ﻿using System;
-using Esw.Telemetry.Common;
+using DevOpsFlex.Telemetry;
 using Xunit;
 
 // ReSharper disable once CheckNamespace
@@ -26,11 +26,4 @@ public class TestTelemetryEvent : BbTelemetryEvent
     public Guid Id { get; set; }
 
     public string Description { get; set; }
-}
-
-public class MyEvent : BbTelemetryEvent
-{
-    public string Address { get; set; }
-
-    public string Name { get; set; }
 }

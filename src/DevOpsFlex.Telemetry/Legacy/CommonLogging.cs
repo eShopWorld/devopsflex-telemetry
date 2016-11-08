@@ -1,5 +1,7 @@
-﻿namespace Esw.Telemetry.Common.Legacy
+﻿namespace DevOpsFlex.Telemetry.Legacy
 {
+    using System;
+
     internal class LegacyTrace : BbTelemetryEvent
     {
         public string Message { get; set; }
@@ -37,13 +39,6 @@
     {
         public string Message { get; set; }
     }
-}
-
-namespace Common.Logging
-{
-    using System;
-    using Esw.Telemetry.Common;
-    using Esw.Telemetry.Common.Legacy;
 
     public static class Log
     {

@@ -1,4 +1,4 @@
-﻿namespace Esw.Telemetry.Common.InternalEvents
+﻿namespace DevOpsFlex.Telemetry.InternalEvents
 {
     /// <summary>
     /// Used internally to track calls to the <see cref="IBigBrother.Flush"/> method and find situations where it

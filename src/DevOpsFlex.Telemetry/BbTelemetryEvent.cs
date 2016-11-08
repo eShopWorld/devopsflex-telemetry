@@ -1,8 +1,9 @@
-﻿namespace Esw.Telemetry.Common
+﻿namespace DevOpsFlex.Telemetry
 {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using Esw.Telemetry.Common;
     using JetBrains.Annotations;
     using Microsoft.ApplicationInsights.DataContracts;
     using Newtonsoft.Json;
