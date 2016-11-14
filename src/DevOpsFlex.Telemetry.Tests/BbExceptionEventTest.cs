@@ -8,7 +8,7 @@ public class BbExceptionEventTest
 {
     public class ToTelemetry
     {
-        [Fact]
+        [Fact, Trait("Category", "Unit")]
         public void Ensure_ExceptionIsntSerializedToProperties()
         {
             const string message = "BOOM";

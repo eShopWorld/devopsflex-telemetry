@@ -5,7 +5,7 @@ using Xunit;
 // ReSharper disable once CheckNamespace
 public class BigBrotherTest
 {
-    //[Fact, Trait("Category", "Dev")]
+    [Fact, Trait("Category", "Dev")]
     public void EntryPoint()
     {
         var bb = new BigBrother("", "").DeveloperMode();
