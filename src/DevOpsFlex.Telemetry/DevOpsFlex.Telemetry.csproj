@@ -170,7 +170,6 @@
     <Compile Include="BigBrother.cs" />
     <Compile Include="IBigBrother.cs" />
     <Compile Include="InternalEvents\FlushEvent.cs" />
-    <Compile Include="Legacy\CommonLogging.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
