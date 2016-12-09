@@ -1,24 +1,23 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
-    <id>DevOpsFlex.Tests.Core</id>
-    <version>1.0.0</version>
-    <title>DevOpsFlex.Tests.Core</title>
+    <id>DevOpsFlex.Telemetry</id>
+    <version>1.0.0-rc</version>
+    <title>DevOpsFlex.Telemetry</title>
     <authors>David Rodrigues</authors>
     <owners>eShopWorld</owners>
-    <licenseUrl>https://github.com/eShopWorld/Esw.UnitTest.Common/blob/master/LICENSE</licenseUrl>
-    <projectUrl>https://github.com/eShopWorld/Esw.UnitTest.Common</projectUrl>
+    <licenseUrl>https://github.com/eShopWorld/devopsflex-telemetry/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/eShopWorld/devopsflex-telemetry</projectUrl>
     <!--<iconUrl>http://ICON_URL_HERE_OR_DELETE_THIS_LINE</iconUrl>-->
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>eShopWorld common test stack</description>
+    <description>eShopWorld common telemetry application insights</description>
     <releaseNotes>Initial release.</releaseNotes>
     <copyright>Copyright 2016</copyright>
-    <tags>Test, Unit Test, xUnit, Moq, FluentAssertions</tags>
+    <tags>Application Insights, Telemetry, Log</tags>
     <dependencies>
-      <dependency id="DevOpsFlex.Tests.Core.Analyzers" version="[1.0.0,)" />
-      <dependency id="FluentAssertions" version="[4.17.0,)" />
-      <dependency id="Moq" version="[4.5.28,)" />
-      <dependency id="xunit" version="[2.1.0,)" />
+      <dependency id="Microsoft.ApplicationInsights" version="[2.2.0,)" />
+      <dependency id="JetBrains.Annotations" version="[10.2.1,)" />
+      <dependency id="System.Reactive" version="[3.1.1,)" />
     </dependencies>
   </metadata>
 </package>
