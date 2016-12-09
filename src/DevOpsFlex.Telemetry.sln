@@ -5,7 +5,9 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevOpsFlex.Telemetry", "DevOpsFlex.Telemetry\DevOpsFlex.Telemetry.csproj", "{87962F6F-9C10-401B-A6ED-9CAD79767957}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevOpsFlex.Telemetry.Tests", "DevOpsFlex.Telemetry.Tests\DevOpsFlex.Telemetry.Tests.csproj", "{72C83570-148E-4E21-9A6F-B3279740101D}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{EBD0B3CA-7CD0-418F-82B3-F3F1E19C8C12}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevOpsFlex.Telemetry.Tests", "Tests\DevOpsFlex.Telemetry.Tests\DevOpsFlex.Telemetry.Tests.csproj", "{72C83570-148E-4E21-9A6F-B3279740101D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,5 +26,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{72C83570-148E-4E21-9A6F-B3279740101D} = {EBD0B3CA-7CD0-418F-82B3-F3F1E19C8C12}
 	EndGlobalSection
 EndGlobal
