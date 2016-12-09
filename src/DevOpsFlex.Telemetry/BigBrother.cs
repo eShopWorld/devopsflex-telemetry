@@ -71,7 +71,6 @@
                                         if (tEvent == null) return;
 
                                         tEvent.SeverityLevel = SeverityLevel.Error;
-                                        tEvent.HandledAt = ExceptionHandledAt.UserCode;
 
                                         _telemetryClient.TrackException(tEvent);
                                     }));
@@ -87,7 +86,6 @@
                                                           if (tEvent == null) return;
 
                                                           tEvent.SeverityLevel = SeverityLevel.Warning;
-                                                          tEvent.HandledAt = ExceptionHandledAt.Platform;
 
                                                           _telemetryClient.TrackException(tEvent);
                                                       });
