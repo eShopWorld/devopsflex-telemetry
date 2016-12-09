@@ -1,6 +1,5 @@
 ﻿namespace DevOpsFlex.Telemetry
 {
-    using Esw.Telemetry.Common;
     using JetBrains.Annotations;
 
     public interface IBigBrother

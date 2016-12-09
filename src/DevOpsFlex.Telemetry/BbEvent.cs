@@ -1,4 +1,4 @@
-﻿namespace Esw.Telemetry.Common
+﻿namespace DevOpsFlex.Telemetry
 {
     /// <summary>
     /// Base class for all events pushed by <see cref="BigBrother"/>. Can't be inherited directly but is base

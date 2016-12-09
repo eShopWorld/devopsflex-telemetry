@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using System.Reactive.Linq;
     using System.Reactive.Subjects;
-    using Esw.Telemetry.Common;
     using InternalEvents;
     using JetBrains.Annotations;
     using Microsoft.ApplicationInsights;
