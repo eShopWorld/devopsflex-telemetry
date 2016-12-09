@@ -173,7 +173,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
     <None Include="DevOpsFlex.Telemetry.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
