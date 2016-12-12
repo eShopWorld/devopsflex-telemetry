@@ -66,6 +66,17 @@ bb.DeveloperMode();
 
 <br />
 
+### Do I just include this package for instrumentation?
+
+Depends on what time of application you're writting. This only includes the
+[core Application Insights package](https://www.nuget.org/packages/Microsoft.ApplicationInsights/),
+so if your application can leverage other packages it should also include any of the top level AI packages.
+For example, web applications should also include the
+[Application Insights for Web package](https://www.nuget.org/packages/Microsoft.ApplicationInsights.Web/).
+
+
+<br />
+
 ### What is this AI key for inner telemetry?
 
 This is the Application Insights account where `BigBrother` pushes internal telemetry.
