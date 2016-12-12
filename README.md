@@ -8,8 +8,6 @@ You instanciate `BigBrother` and then you use it to `Publish` events.
 Ideally you store a singleton instance of `BigBrother` in your DI container and reference it by
 it's interface `IBigBrother`.
 
-<br />
-
 ### What are these events that I "publish"?
 
 Events are strongly typed structures of data, written as
@@ -48,8 +46,6 @@ bb.Publish(new PaymentEvent
 });
 ```
 
-<br />
-
 ### What can I also do with it?
 
 You can force a Flush of the AI client, which will send all events right away:
@@ -64,8 +60,6 @@ this is to force deployments to never have channels in DeveloperMode even if dev
 bb.DeveloperMode();
 ```
 
-<br />
-
 ### Do I just include this package for instrumentation?
 
 Depends on what time of application you're writting. This only includes the
@@ -73,9 +67,6 @@ Depends on what time of application you're writting. This only includes the
 so if your application can leverage other packages it should also include any of the top level AI packages.
 For example, web applications should also include the
 [Application Insights for Web package](https://www.nuget.org/packages/Microsoft.ApplicationInsights.Web/).
-
-
-<br />
 
 ### What is this AI key for inner telemetry?
 
@@ -85,8 +76,6 @@ it is stream to the inner telemetry account.
 We also track certain events, to see if we have wrong usage of BigBrother,
 for example we track all calls to `Flush`, so if you're pushing events and using `Flush` right after,
 we know about it!
-
-<br />
 
 ### I want to write some tests now, but I don't want to send events
 

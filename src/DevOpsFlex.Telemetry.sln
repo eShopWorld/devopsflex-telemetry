@@ -12,6 +12,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9752AC51-8371-4633-8715-6D72C112EEC9}"
 	ProjectSection(SolutionItems) = preProject
 		codecoverage.runsettings = codecoverage.runsettings
+		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
 Global
