@@ -2,6 +2,9 @@
 {
     using JetBrains.Annotations;
 
+    /// <summary>
+    /// Contract that provides a way to publish telemetry events for instrumentation.
+    /// </summary>
     public interface IBigBrother
     {
         /// <summary>

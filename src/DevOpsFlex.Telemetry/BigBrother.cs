@@ -12,7 +12,7 @@
 
     /// <summary>
     /// Deals with everything that's public in telemetry.
-    /// This is the main entry point in the <see cref="Esw.Telemetry.Common"/> API.
+    /// This is the main entry point in the <see cref="DevOpsFlex.Telemetry"/> API.
     /// </summary>
     public class BigBrother : IBigBrother, IDisposable
     {
