@@ -1,5 +1,6 @@
 ﻿namespace DevOpsFlex.Telemetry
 {
+    using System;
     using JetBrains.Annotations;
 
     /// <summary>
@@ -18,6 +19,12 @@
         /// telemetry to the Application Insights account.
         /// </summary>
         IBigBrother DeveloperMode();
+
+        /// <summary>
+        /// Creates a strict correlation handle for synchronous correlation.
+        /// </summary>
+        /// <returns>The correlation handle as an <see cref="IDisposable"/>.</returns>
+        IDisposable CreateCorrelation();
 
         /// <summary>
         /// Flush out all telemetry clients, both the external and the internal one.

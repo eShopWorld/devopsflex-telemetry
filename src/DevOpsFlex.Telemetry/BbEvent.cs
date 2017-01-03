@@ -7,6 +7,11 @@
     public class BbEvent
     {
         /// <summary>
+        /// Stores the internal correlation vector.
+        /// </summary>
+        internal string CorrelationVector { get; set; }
+
+        /// <summary>
         /// Internally initializes an instance of <see cref="BbEvent"/>.
         /// </summary>
         internal BbEvent() { }

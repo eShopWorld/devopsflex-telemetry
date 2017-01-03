@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Reactive.Linq;
     using System.Reactive.Subjects;
     using InternalEvents;
@@ -16,7 +17,15 @@
     /// </summary>
     public class BigBrother : IBigBrother, IDisposable
     {
+        /// <summary>
+        /// The unique internal <see cref="TelemetryClient"/> used to stream events to the AI account.
+        /// </summary>
         private static readonly TelemetryClient InternalClient;
+
+        /// <summary>
+        /// The internal telemetry stream, used by this package to report errors and usage to an internal AI account.
+        /// </summary>
+        private static readonly Subject<BbEvent> InternalStream = new Subject<BbEvent>();
 
         /// <summary>
         /// Static initialization of static resources in <see cref="BigBrother"/> instances.
@@ -36,9 +45,9 @@
         private readonly Subject<BbEvent> _telemetryStream = new Subject<BbEvent>();
 
         /// <summary>
-        /// The internal telemetry stream, used by this package to report errors and usage to an internal AI account.
+        /// The current strict correlation handle.
         /// </summary>
-        private static readonly Subject<BbEvent> InternalStream = new Subject<BbEvent>();
+        internal CorrelationHandle Handle;
 
         /// <summary>
         /// Initializes a new instance of <see cref="BigBrother"/>.
@@ -96,6 +105,11 @@
         /// <param name="bbEvent">The event that we want to publish.</param>
         public void Publish(BbEvent bbEvent)
         {
+            if (Handle != null)
+            {
+                bbEvent.CorrelationVector = Handle.Id.ToString();
+            }
+
             _telemetryStream.OnNext(bbEvent);
         }
 
@@ -110,6 +124,31 @@
 #endif
 
             return this;
+        }
+
+        /// <summary>
+        /// Creates a strict correlation handle for synchronous correlation.
+        /// </summary>
+        /// <returns>The correlation handle as an <see cref="IDisposable"/>.</returns>
+        public IDisposable CreateCorrelation()
+        {
+            if (Handle != null)
+            {
+                var ex = new InvalidOperationException("You\'re trying to create a second correlation handle while one is active. Use lose correlation instead if you\'re trying to correlate parallel work.");
+#if DEBUG
+                if (Debugger.IsAttached)
+                {
+                    throw ex;
+                }
+#endif
+                PublishError(ex);
+            }
+            else
+            {
+                Handle = new CorrelationHandle(this);
+            }
+
+            return Handle;
         }
 
         /// <summary>
