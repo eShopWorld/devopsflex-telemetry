@@ -1,5 +1,6 @@
 ﻿using System;
 using DevOpsFlex.Telemetry;
+using DevOpsFlex.Tests.Core;
 using FluentAssertions;
 using Xunit;
 
@@ -8,7 +9,7 @@ public class BbExceptionEventTest
 {
     public class ToTelemetry
     {
-        [Fact, Trait("Category", "Unit")]
+        [Fact, IsUnit]
         public void Ensure_ExceptionIsntSerializedToProperties()
         {
             const string message = "BOOM";

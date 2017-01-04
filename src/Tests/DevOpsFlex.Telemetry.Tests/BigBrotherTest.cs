@@ -1,5 +1,6 @@
 ﻿using System;
 using DevOpsFlex.Telemetry;
+using DevOpsFlex.Tests.Core;
 using Xunit;
 
 // ReSharper disable once CheckNamespace
@@ -7,7 +8,7 @@ public class BigBrotherTest
 {
     private readonly string _devKey = Environment.GetEnvironmentVariable("devai", EnvironmentVariableTarget.User);
 
-    [Fact, Trait("Category", "Dev")]
+    [Fact, IsDev]
     public void EntryPoint_PushTelemetry()
     {
         var bb = new BigBrother(_devKey, _devKey).DeveloperMode();
@@ -22,7 +23,7 @@ public class BigBrotherTest
         bb.Flush();
     }
 
-    [Fact, Trait("Category", "Dev")]
+    [Fact, IsDev]
     public void EntryPoint_PushException()
     {
         const string message = "KABOOM!!!";

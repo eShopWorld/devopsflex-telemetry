@@ -8,10 +8,10 @@
     /// </summary>
     public class CorrelationHandle
     {
-        private const int DefaultKeepAliveMinutes = 10;
+        internal const int DefaultKeepAliveMinutes = 10;
 
-        private readonly int _keepAliveMinutes;
-        private DateTime _lastTouch;
+        internal readonly int KeepAliveMinutes;
+        internal DateTime LastTouch;
 
         /// <summary>
         /// Gets the Vector associated with this handle.
@@ -23,7 +23,7 @@
         /// </summary>
         /// <param name="now">The DateTime.Now that is passed in to speed up enumerations.</param>
         /// <returns>True if the handle should be kept alive, false otherwise.</returns>
-        public bool IsAlive(DateTime now) => _lastTouch.AddMinutes(_keepAliveMinutes) < now;
+        public bool IsAlive(DateTime now) => LastTouch.AddMinutes(KeepAliveMinutes) > now;
 
         /// <summary>
         /// Initializes a new instance of <see cref="CorrelationHandle"/>.
@@ -31,7 +31,7 @@
         public CorrelationHandle()
         {
             Vector = Guid.NewGuid().ToBase64();
-            _lastTouch = DateTime.Now;
+            LastTouch = DateTime.Now;
         }
 
         /// <summary>
@@ -41,7 +41,7 @@
         public CorrelationHandle(int keepAliveMinutes)
             :this()
         {
-            _keepAliveMinutes = keepAliveMinutes;
+            KeepAliveMinutes = keepAliveMinutes;
         }
 
         /// <summary>
@@ -49,13 +49,21 @@
         /// </summary>
         public void Touch()
         {
-            _lastTouch = DateTime.Now;
+            LastTouch = DateTime.Now;
         }
 
     }
 
+    /// <summary>
+    /// Contains internal extension methods usefull for the <see cref="CorrelationHandle"/>.
+    /// </summary>
     internal static class CorrelationVectorExtensions
     {
+        /// <summary>
+        /// Converts a <see cref="Guid"/> to a Base64 encoded string. This will reduce the <see cref="Guid"/> size to about 20% without using compression.
+        /// </summary>
+        /// <param name="guid">The <see cref="Guid"/> that we want to convert.</param>
+        /// <returns>The Base64 encoded string.</returns>
         internal static string ToBase64(this Guid guid)
         {
             return Convert.ToBase64String(Encoding.Default.GetBytes(guid.ToString()));
