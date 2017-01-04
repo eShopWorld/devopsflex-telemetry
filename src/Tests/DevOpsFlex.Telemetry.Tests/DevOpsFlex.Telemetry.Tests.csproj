@@ -212,6 +212,7 @@
     <Compile Include="BigBrotherTest.cs" />
     <Compile Include="CorrelationHandleTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StrictCorrelationHandleTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\DevOpsFlex.Telemetry\DevOpsFlex.Telemetry.csproj">

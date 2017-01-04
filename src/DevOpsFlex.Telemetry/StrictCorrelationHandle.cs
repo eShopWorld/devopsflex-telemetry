@@ -18,6 +18,7 @@
         public StrictCorrelationHandle(BigBrother bb)
         {
             Bb = bb;
+            Bb.Handle = this;
         }
 
         /// <summary>

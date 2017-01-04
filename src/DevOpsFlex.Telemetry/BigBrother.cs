@@ -56,6 +56,11 @@
         internal StrictCorrelationHandle Handle;
 
         /// <summary>
+        /// Just here for internal easy Mocking of the concrete class.
+        /// </summary>
+        internal BigBrother() { }
+
+        /// <summary>
         /// Initializes a new instance of <see cref="BigBrother"/>.
         /// This constructor does a bit of work, so if you're mocking this, mock the <see cref="IBigBrother"/> contract instead.
         /// </summary>
@@ -154,22 +159,16 @@
         /// <returns>The correlation handle as an <see cref="IDisposable"/>.</returns>
         public IDisposable CreateCorrelation()
         {
-            if (Handle != null)
-            {
-                var ex = new InvalidOperationException("You\'re trying to create a second correlation handle while one is active. Use lose correlation instead if you\'re trying to correlate work in parallel with different correlations.");
-#if DEBUG
-                if (Debugger.IsAttached)
-                {
-                    throw ex;
-                }
-#endif
-                PublishError(ex);
-            }
-            else
-            {
-                Handle = new StrictCorrelationHandle(this);
-            }
+            if (Handle == null) return new StrictCorrelationHandle(this);
 
+            var ex = new InvalidOperationException("You\'re trying to create a second correlation handle while one is active. Use lose correlation instead if you\'re trying to correlate work in parallel with different correlations.");
+#if DEBUG
+            if (Debugger.IsAttached)
+            {
+                throw ex;
+            }
+#endif
+            PublishError(ex);
             return Handle;
         }
 
