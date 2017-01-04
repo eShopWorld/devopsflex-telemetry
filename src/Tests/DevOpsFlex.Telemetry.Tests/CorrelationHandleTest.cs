@@ -34,5 +34,25 @@ public class CorrelationHandleTest
 
             handle.IsAlive(DateTime.Now).Should().BeFalse();
         }
+
+        [Fact, IsUnit]
+        public async Task Test_KeepAlive1Minute_PlusTouch()
+        {
+            var handle = new CorrelationHandle(1);
+
+            await Task.Delay(TimeSpan.FromSeconds(30));
+            handle.IsAlive(DateTime.Now).Should().BeTrue();
+
+            await Task.Delay(TimeSpan.FromSeconds(30));
+            handle.IsAlive(DateTime.Now).Should().BeFalse();
+
+            handle.Touch();
+
+            await Task.Delay(TimeSpan.FromSeconds(30));
+            handle.IsAlive(DateTime.Now).Should().BeTrue();
+
+            await Task.Delay(TimeSpan.FromSeconds(30));
+            handle.IsAlive(DateTime.Now).Should().BeFalse();
+        }
     }
 }
