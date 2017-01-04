@@ -3,8 +3,10 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Linq;
     using System.Reactive.Linq;
     using System.Reactive.Subjects;
+    using System.Threading;
     using InternalEvents;
     using JetBrains.Annotations;
     using Microsoft.ApplicationInsights;
@@ -38,16 +40,20 @@
         private readonly TelemetryClient _telemetryClient;
         private readonly IDisposable _internalSubscription;
         private readonly Dictionary<Type, IDisposable> _telemetrySubscriptions = new Dictionary<Type, IDisposable>();
+        private readonly Dictionary<object, CorrelationHandle> _correlationHandles = new Dictionary<object, CorrelationHandle>();
+        private readonly Timer _correlationReleaseTimer;
 
         /// <summary>
         /// The main event stream that's exposed publicly (yea ... subjects are bad ... I'll redesign when and if time allows).
         /// </summary>
         private readonly Subject<BbEvent> _telemetryStream = new Subject<BbEvent>();
 
+        private int _keepAliveMinutes = 10;
+
         /// <summary>
         /// The current strict correlation handle.
         /// </summary>
-        internal CorrelationHandle Handle;
+        internal StrictCorrelationHandle Handle;
 
         /// <summary>
         /// Initializes a new instance of <see cref="BigBrother"/>.
@@ -57,6 +63,8 @@
         /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
         public BigBrother([NotNull]string aiKey, [NotNull]string internalKey)
         {
+            _correlationReleaseTimer = new Timer(ReleaseCorrelationVectors, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+
             _telemetryClient = new TelemetryClient
             {
                 InstrumentationKey = aiKey
@@ -103,11 +111,26 @@
         /// Publishes a <see cref="BbEvent"/> through the pipeline.
         /// </summary>
         /// <param name="bbEvent">The event that we want to publish.</param>
-        public void Publish(BbEvent bbEvent)
+        /// <param name="correlation">The correlation handle if you want to correlate events</param>
+        public void Publish(BbEvent bbEvent, object correlation = null)
         {
-            if (Handle != null)
+            if (correlation != null) // lose > strict, so we override strict if a lose is passed in
             {
-                bbEvent.CorrelationVector = Handle.Id.ToString();
+                if (_correlationHandles.ContainsKey(correlation))
+                {
+                    bbEvent.CorrelationVector = _correlationHandles[correlation].Vector;
+                    _correlationHandles[correlation].Touch();
+                }
+                else
+                {
+                    var handle = new CorrelationHandle(_keepAliveMinutes);
+                    _correlationHandles.Add(correlation, handle);
+                    bbEvent.CorrelationVector = handle.Vector;
+                }
+            }
+            else if (Handle != null)
+            {
+                bbEvent.CorrelationVector = Handle.Vector;
             }
 
             _telemetryStream.OnNext(bbEvent);
@@ -122,7 +145,6 @@
 #if DEBUG
             TelemetryConfiguration.Active.TelemetryChannel.DeveloperMode = true;
 #endif
-
             return this;
         }
 
@@ -134,7 +156,7 @@
         {
             if (Handle != null)
             {
-                var ex = new InvalidOperationException("You\'re trying to create a second correlation handle while one is active. Use lose correlation instead if you\'re trying to correlate parallel work.");
+                var ex = new InvalidOperationException("You\'re trying to create a second correlation handle while one is active. Use lose correlation instead if you\'re trying to correlate work in parallel with different correlations.");
 #if DEBUG
                 if (Debugger.IsAttached)
                 {
@@ -145,7 +167,7 @@
             }
             else
             {
-                Handle = new CorrelationHandle(this);
+                Handle = new StrictCorrelationHandle(this);
             }
 
             return Handle;
@@ -165,6 +187,15 @@
         }
 
         /// <summary>
+        /// Sets the ammount of minutes to keep a lose correlation object reference alive.
+        /// </summary>
+        /// <param name="minutes">The number of minutes to keep a lose correlation handle alive.</param>
+        public void SetCorrelationKeepAlive(int minutes)
+        {
+            _keepAliveMinutes = minutes;
+        }
+
+        /// <summary>
         /// Used internal by BigBrother to publish usage exceptions to a special
         /// Application Insights account.
         /// </summary>
@@ -175,31 +206,30 @@
         }
 
         /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// Does a periodic release of old correlation vector object references.
         /// </summary>
-        public void Dispose()
+        /// <param name="state"></param>
+        internal void ReleaseCorrelationVectors(object state)
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            var now = DateTime.Now; // Do DateTime.Now once per tick to speed up the release->collect pass.
+
+            foreach (var handle in _correlationHandles.Where(h => h.Value.IsAlive(now)))
+            {
+                _correlationHandles.Remove(handle.Key);
+            }
         }
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
-        /// <param name="disposing">
-        /// true if called by Dispose(), where we also want to Dispose managed resources,
-        /// false if called by the finalizer where we do not want to dispose of managed resources.
-        /// </param>
-        protected virtual void Dispose(bool disposing)
+        public void Dispose()
         {
-            if (disposing)
-            {
-                foreach (var key in _telemetrySubscriptions.Keys)
-                {
-                    _telemetrySubscriptions[key]?.Dispose();
-                }
+            _correlationReleaseTimer?.Dispose();
+            _internalSubscription?.Dispose();
 
-                _internalSubscription?.Dispose();
+            foreach (var key in _telemetrySubscriptions.Keys)
+            {
+                _telemetrySubscriptions[key]?.Dispose();
             }
         }
     }

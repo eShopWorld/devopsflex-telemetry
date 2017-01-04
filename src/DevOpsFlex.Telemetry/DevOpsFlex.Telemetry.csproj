@@ -171,12 +171,15 @@
     <Compile Include="BbTelemetryEvent.cs" />
     <Compile Include="BigBrother.cs" />
     <Compile Include="CorrelationHandle.cs" />
+    <Compile Include="StrictCorrelationHandle.cs" />
     <Compile Include="IBigBrother.cs" />
     <Compile Include="InternalEvents\FlushEvent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="DevOpsFlex.Telemetry.nuspec" />
+    <None Include="DevOpsFlex.Telemetry.nuspec">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup />

@@ -12,7 +12,8 @@
         /// Publishes a <see cref="BbEvent"/> through the pipeline.
         /// </summary>
         /// <param name="bbEvent">The event that we want to publish.</param>
-        void Publish([NotNull]BbEvent bbEvent);
+        /// <param name="correlation">The correlation handle if you want to correlate events</param>
+        void Publish([NotNull]BbEvent bbEvent, object correlation = null);
 
         /// <summary>
         /// Forces the telemetry channel to be in developer mode, where it will instantly push
@@ -33,5 +34,11 @@
         /// There is internal telemetry associated with calling this method to prevent bad usage.
         /// </remarks>
         void Flush();
+
+        /// <summary>
+        /// Sets the ammount of minutes to keep a lose correlation object reference alive.
+        /// </summary>
+        /// <param name="minutes">The number of minutes to keep a lose correlation handle alive.</param>
+        void SetCorrelationKeepAlive(int minutes);
     }
 }
