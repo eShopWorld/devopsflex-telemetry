@@ -38,7 +38,7 @@
         /// <summary>
         /// Sets the ammount of minutes to keep a lose correlation object reference alive.
         /// </summary>
-        /// <param name="minutes">The number of minutes to keep a lose correlation handle alive.</param>
-        void SetCorrelationKeepAlive(int minutes);
+        /// <param name="span">The <see cref="TimeSpan"/> to keep a lose correlation handle alive.</param>
+        void SetCorrelationKeepAlive(TimeSpan span);
     }
 }

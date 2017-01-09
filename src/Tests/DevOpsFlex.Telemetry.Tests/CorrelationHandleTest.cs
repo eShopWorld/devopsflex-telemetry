@@ -22,36 +22,36 @@ public class CorrelationHandleTest
         }
 
         [Fact, IsUnit]
-        public async Task Test_KeepAlive1Minute()
+        public async Task Test_KeepAlive5Seconds()
         {
-            var handle = new CorrelationHandle(1);
+            var handle = new CorrelationHandle(TimeSpan.FromSeconds(5));
 
-            await Task.Delay(TimeSpan.FromSeconds(30));
+            await Task.Delay(TimeSpan.FromSeconds(3));
 
             handle.IsAlive(DateTime.Now).Should().BeTrue();
 
-            await Task.Delay(TimeSpan.FromSeconds(30));
+            await Task.Delay(TimeSpan.FromSeconds(3));
 
             handle.IsAlive(DateTime.Now).Should().BeFalse();
         }
 
         [Fact, IsUnit]
-        public async Task Test_KeepAlive1Minute_PlusTouch()
+        public async Task Test_KeepAlive5Seconds_PlusTouch()
         {
-            var handle = new CorrelationHandle(1);
+            var handle = new CorrelationHandle(TimeSpan.FromSeconds(5));
 
-            await Task.Delay(TimeSpan.FromSeconds(30));
+            await Task.Delay(TimeSpan.FromSeconds(3));
             handle.IsAlive(DateTime.Now).Should().BeTrue();
 
-            await Task.Delay(TimeSpan.FromSeconds(30));
+            await Task.Delay(TimeSpan.FromSeconds(3));
             handle.IsAlive(DateTime.Now).Should().BeFalse();
 
             handle.Touch();
 
-            await Task.Delay(TimeSpan.FromSeconds(30));
+            await Task.Delay(TimeSpan.FromSeconds(3));
             handle.IsAlive(DateTime.Now).Should().BeTrue();
 
-            await Task.Delay(TimeSpan.FromSeconds(30));
+            await Task.Delay(TimeSpan.FromSeconds(3));
             handle.IsAlive(DateTime.Now).Should().BeFalse();
         }
     }

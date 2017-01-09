@@ -48,7 +48,7 @@
         /// </summary>
         private readonly Subject<BbEvent> _telemetryStream = new Subject<BbEvent>();
 
-        private int _keepAliveMinutes = 10;
+        private TimeSpan _defaultKeepAlive = TimeSpan.FromMinutes(10);
 
         /// <summary>
         /// The current strict correlation handle.
@@ -128,7 +128,7 @@
                 }
                 else
                 {
-                    var handle = new CorrelationHandle(_keepAliveMinutes);
+                    var handle = new CorrelationHandle(_defaultKeepAlive);
                     _correlationHandles.Add(correlation, handle);
                     bbEvent.CorrelationVector = handle.Vector;
                 }
@@ -188,10 +188,10 @@
         /// <summary>
         /// Sets the ammount of minutes to keep a lose correlation object reference alive.
         /// </summary>
-        /// <param name="minutes">The number of minutes to keep a lose correlation handle alive.</param>
-        public void SetCorrelationKeepAlive(int minutes)
+        /// <param name="span">The <see cref="TimeSpan"/> to keep a lose correlation handle alive.</param>
+        public void SetCorrelationKeepAlive(TimeSpan span)
         {
-            _keepAliveMinutes = minutes;
+            _defaultKeepAlive = span;
         }
 
         /// <summary>

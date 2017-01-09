@@ -8,9 +8,7 @@
     /// </summary>
     public class CorrelationHandle
     {
-        internal const int DefaultKeepAliveMinutes = 10;
-
-        internal readonly int KeepAliveMinutes;
+        internal readonly TimeSpan KeepAlive;
         internal DateTime LastTouch;
 
         /// <summary>
@@ -23,7 +21,7 @@
         /// </summary>
         /// <param name="now">The DateTime.Now that is passed in to speed up enumerations.</param>
         /// <returns>True if the handle should be kept alive, false otherwise.</returns>
-        public bool IsAlive(DateTime now) => LastTouch.AddMinutes(KeepAliveMinutes) > now;
+        public bool IsAlive(DateTime now) => LastTouch.Add(KeepAlive) > now;
 
         /// <summary>
         /// Initializes a new instance of <see cref="CorrelationHandle"/>.
@@ -37,11 +35,11 @@
         /// <summary>
         /// Initializes a new instance of <see cref="CorrelationHandle"/>.
         /// </summary>
-        /// <param name="keepAliveMinutes">The number of minutes to keep this handle alive.</param>
-        public CorrelationHandle(int keepAliveMinutes)
+        /// <param name="keepAlive">The number of minutes to keep this handle alive.</param>
+        public CorrelationHandle(TimeSpan keepAlive)
             :this()
         {
-            KeepAliveMinutes = keepAliveMinutes;
+            KeepAlive = keepAlive;
         }
 
         /// <summary>
