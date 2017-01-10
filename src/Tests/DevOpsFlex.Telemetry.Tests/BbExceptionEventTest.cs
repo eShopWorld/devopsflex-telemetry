@@ -27,6 +27,19 @@ public class BbExceptionEventTest
             tEvent?.Properties[nameof(TestExceptionEvent.Message)].Should().Be(message);
         }
     }
+
+    public class ExceptionExtensions
+    {
+        [Fact, IsUnit]
+        public void Test_ToBbEventConversion()
+        {
+            var exception = new InvalidOperationException("KABOOM!");
+
+            var result = exception.ToBbEvent();
+
+            result.Exception.Should().Be(exception);
+        }
+    }
 }
 
 public class TestExceptionEvent : BbExceptionEvent

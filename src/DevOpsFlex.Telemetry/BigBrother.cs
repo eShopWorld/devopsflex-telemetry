@@ -20,14 +20,14 @@
     public class BigBrother : IBigBrother, IDisposable
     {
         /// <summary>
-        /// The unique internal <see cref="TelemetryClient"/> used to stream events to the AI account.
+        /// The unique internal <see cref="Microsoft.ApplicationInsights.TelemetryClient"/> used to stream events to the AI account.
         /// </summary>
-        private static readonly TelemetryClient InternalClient;
+        internal static readonly TelemetryClient InternalClient;
 
         /// <summary>
         /// The internal telemetry stream, used by this package to report errors and usage to an internal AI account.
         /// </summary>
-        private static readonly Subject<BbEvent> InternalStream = new Subject<BbEvent>();
+        internal static readonly Subject<BbEvent> InternalStream = new Subject<BbEvent>();
 
         /// <summary>
         /// Static initialization of static resources in <see cref="BigBrother"/> instances.
@@ -37,18 +37,21 @@
             InternalClient = new TelemetryClient();
         }
 
-        private readonly TelemetryClient _telemetryClient;
-        private readonly IDisposable _internalSubscription;
-        private readonly Dictionary<Type, IDisposable> _telemetrySubscriptions = new Dictionary<Type, IDisposable>();
-        private readonly Dictionary<object, CorrelationHandle> _correlationHandles = new Dictionary<object, CorrelationHandle>();
-        private readonly Timer _correlationReleaseTimer;
+        internal readonly TelemetryClient TelemetryClient;
+        internal readonly IDisposable InternalSubscription;
+        internal readonly Dictionary<Type, IDisposable> TelemetrySubscriptions = new Dictionary<Type, IDisposable>();
+        internal readonly Dictionary<object, CorrelationHandle> CorrelationHandles = new Dictionary<object, CorrelationHandle>();
+        internal readonly Timer CorrelationReleaseTimer;
 
         /// <summary>
         /// The main event stream that's exposed publicly (yea ... subjects are bad ... I'll redesign when and if time allows).
         /// </summary>
-        private readonly Subject<BbEvent> _telemetryStream = new Subject<BbEvent>();
+        internal readonly Subject<BbEvent> TelemetryStream = new Subject<BbEvent>();
 
-        private TimeSpan _defaultKeepAlive = TimeSpan.FromMinutes(10);
+        /// <summary>
+        /// Default keep alive <see cref="TimeSpan"/> for lose correlation handles created by the consumer.
+        /// </summary>
+        internal TimeSpan DefaultKeepAlive = TimeSpan.FromMinutes(10);
 
         /// <summary>
         /// The current strict correlation handle.
@@ -68,23 +71,23 @@
         /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
         public BigBrother([NotNull]string aiKey, [NotNull]string internalKey)
         {
-            _correlationReleaseTimer = new Timer(ReleaseCorrelationVectors, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+            CorrelationReleaseTimer = new Timer(ReleaseCorrelationVectors, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
 
-            _telemetryClient = new TelemetryClient
+            TelemetryClient = new TelemetryClient
             {
                 InstrumentationKey = aiKey
             };
 
             InternalClient.InstrumentationKey = internalKey;
 
-            _telemetrySubscriptions.Add(
+            TelemetrySubscriptions.Add(
                 typeof(BbTelemetryEvent),
-                _telemetryStream.OfType<BbTelemetryEvent>()
-                                .Subscribe(e => _telemetryClient.TrackEvent(e.ToTelemetry())));
+                TelemetryStream.OfType<BbTelemetryEvent>()
+                                .Subscribe(e => TelemetryClient.TrackEvent(e.ToTelemetry())));
 
-            _telemetrySubscriptions.Add(
+            TelemetrySubscriptions.Add(
                 typeof(BbExceptionEvent),
-                _telemetryStream.OfType<BbExceptionEvent>()
+                TelemetryStream.OfType<BbExceptionEvent>()
                                 .Subscribe(
                                     e =>
                                     {
@@ -93,13 +96,13 @@
 
                                         tEvent.SeverityLevel = SeverityLevel.Error;
 
-                                        _telemetryClient.TrackException(tEvent);
+                                        TelemetryClient.TrackException(tEvent);
                                     }));
 
-            _internalSubscription = InternalStream.OfType<BbTelemetryEvent>()
-                                                  .Subscribe(e => _telemetryClient.TrackEvent(e.ToTelemetry()));
+            InternalSubscription = InternalStream.OfType<BbTelemetryEvent>()
+                                                  .Subscribe(e => TelemetryClient.TrackEvent(e.ToTelemetry()));
 
-            _internalSubscription = InternalStream.OfType<BbExceptionEvent>()
+            InternalSubscription = InternalStream.OfType<BbExceptionEvent>()
                                                   .Subscribe(
                                                       e =>
                                                       {
@@ -108,7 +111,7 @@
 
                                                           tEvent.SeverityLevel = SeverityLevel.Warning;
 
-                                                          _telemetryClient.TrackException(tEvent);
+                                                          TelemetryClient.TrackException(tEvent);
                                                       });
         }
 
@@ -121,15 +124,15 @@
         {
             if (correlation != null) // lose > strict, so we override strict if a lose is passed in
             {
-                if (_correlationHandles.ContainsKey(correlation))
+                if (CorrelationHandles.ContainsKey(correlation))
                 {
-                    bbEvent.CorrelationVector = _correlationHandles[correlation].Vector;
-                    _correlationHandles[correlation].Touch();
+                    bbEvent.CorrelationVector = CorrelationHandles[correlation].Vector;
+                    CorrelationHandles[correlation].Touch();
                 }
                 else
                 {
-                    var handle = new CorrelationHandle(_defaultKeepAlive);
-                    _correlationHandles.Add(correlation, handle);
+                    var handle = new CorrelationHandle(DefaultKeepAlive);
+                    CorrelationHandles.Add(correlation, handle);
                     bbEvent.CorrelationVector = handle.Vector;
                 }
             }
@@ -138,7 +141,7 @@
                 bbEvent.CorrelationVector = Handle.Vector;
             }
 
-            _telemetryStream.OnNext(bbEvent);
+            TelemetryStream.OnNext(bbEvent);
         }
 
         /// <summary>
@@ -181,7 +184,7 @@
         public void Flush()
         {
             InternalStream.OnNext(new FlushEvent()); // You're not guaranteed to flush this event
-            _telemetryClient.Flush();
+            TelemetryClient.Flush();
             InternalClient.Flush();
         }
 
@@ -191,7 +194,7 @@
         /// <param name="span">The <see cref="TimeSpan"/> to keep a lose correlation handle alive.</param>
         public void SetCorrelationKeepAlive(TimeSpan span)
         {
-            _defaultKeepAlive = span;
+            DefaultKeepAlive = span;
         }
 
         /// <summary>
@@ -212,9 +215,9 @@
         {
             var now = DateTime.Now; // Do DateTime.Now once per tick to speed up the release->collect pass.
 
-            foreach (var handle in _correlationHandles.Where(h => h.Value.IsAlive(now)))
+            foreach (var handle in CorrelationHandles.Where(h => h.Value.IsAlive(now)))
             {
-                _correlationHandles.Remove(handle.Key);
+                CorrelationHandles.Remove(handle.Key);
             }
         }
 
@@ -223,12 +226,12 @@
         /// </summary>
         public void Dispose()
         {
-            _correlationReleaseTimer?.Dispose();
-            _internalSubscription?.Dispose();
+            CorrelationReleaseTimer?.Dispose();
+            InternalSubscription?.Dispose();
 
-            foreach (var key in _telemetrySubscriptions.Keys)
+            foreach (var key in TelemetrySubscriptions.Keys)
             {
-                _telemetrySubscriptions[key]?.Dispose();
+                TelemetrySubscriptions[key]?.Dispose();
             }
         }
     }

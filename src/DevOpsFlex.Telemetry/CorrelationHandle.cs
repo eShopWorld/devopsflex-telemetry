@@ -6,7 +6,7 @@
     /// <summary>
     /// Represents a lose correlation handle that binds together a time frame for keep alive and a vector.
     /// </summary>
-    public class CorrelationHandle
+    internal class CorrelationHandle
     {
         internal readonly TimeSpan KeepAlive;
         internal DateTime LastTouch;
@@ -14,19 +14,19 @@
         /// <summary>
         /// Gets the Vector associated with this handle.
         /// </summary>
-        public string Vector { get; }
+        internal string Vector { get; }
 
         /// <summary>
         /// Returns true if this handle should be kept alive or not based on the keep alive time frame.
         /// </summary>
         /// <param name="now">The DateTime.Now that is passed in to speed up enumerations.</param>
         /// <returns>True if the handle should be kept alive, false otherwise.</returns>
-        public bool IsAlive(DateTime now) => LastTouch.Add(KeepAlive) > now;
+        internal bool IsAlive(DateTime now) => LastTouch.Add(KeepAlive) > now;
 
         /// <summary>
         /// Initializes a new instance of <see cref="CorrelationHandle"/>.
         /// </summary>
-        public CorrelationHandle()
+        internal CorrelationHandle()
         {
             Vector = Guid.NewGuid().ToBase64();
             LastTouch = DateTime.Now;
@@ -36,7 +36,7 @@
         /// Initializes a new instance of <see cref="CorrelationHandle"/>.
         /// </summary>
         /// <param name="keepAlive">The number of minutes to keep this handle alive.</param>
-        public CorrelationHandle(TimeSpan keepAlive)
+        internal CorrelationHandle(TimeSpan keepAlive)
             :this()
         {
             KeepAlive = keepAlive;
@@ -45,7 +45,7 @@
         /// <summary>
         /// Touches (Refreshes) the keep alive timer on the handle.
         /// </summary>
-        public void Touch()
+        internal void Touch()
         {
             LastTouch = DateTime.Now;
         }
