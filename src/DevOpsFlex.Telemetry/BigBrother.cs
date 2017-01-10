@@ -46,8 +46,14 @@
         /// </summary>
         internal readonly Subject<BbEvent> TelemetryStream = new Subject<BbEvent>();
 
+        /// <summary>
+        /// The external telemetry client, used to publish events through <see cref="BigBrother"/>.
+        /// </summary>
         internal TelemetryClient TelemetryClient;
 
+        /// <summary>
+        /// The internal telemetry client, used by internal package instrumentation.
+        /// </summary>
         internal IDisposable InternalSubscription;
 
         /// <summary>
@@ -75,6 +81,7 @@
         {
             CorrelationReleaseTimer = new Timer(ReleaseCorrelationVectors, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
 
+            // ReSharper disable VirtualMemberCallInConstructor
             SetupTelemetryClient(aiKey, internalKey);
             SetupSubscriptions();
         }
@@ -166,7 +173,7 @@
         /// </summary>
         /// <param name="aiKey">The application's Application Insights instrumentation key.</param>
         /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
-        internal void SetupTelemetryClient([NotNull]string aiKey, [NotNull]string internalKey)
+        internal virtual void SetupTelemetryClient([NotNull]string aiKey, [NotNull]string internalKey)
         {
             TelemetryClient = new TelemetryClient
             {
@@ -179,7 +186,7 @@
         /// <summary>
         /// Sets up internal subscriptions, this isolates subscriptioons from the actual constructor logic during tests.
         /// </summary>
-        internal void SetupSubscriptions()
+        internal virtual void SetupSubscriptions()
         {
             TelemetrySubscriptions.Add(
                 typeof(BbTelemetryEvent),

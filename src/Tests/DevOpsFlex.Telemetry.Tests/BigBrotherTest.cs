@@ -1,46 +1,91 @@
 ﻿using System;
+using System.Reactive.Linq;
+using System.Threading.Tasks;
 using DevOpsFlex.Telemetry;
+using DevOpsFlex.Telemetry.Tests;
 using DevOpsFlex.Tests.Core;
+using FluentAssertions;
+using Moq;
 using Xunit;
 
 // ReSharper disable once CheckNamespace
 public class BigBrotherTest
 {
-    private readonly string _devKey = Environment.GetEnvironmentVariable("devai", EnvironmentVariableTarget.User);
+    internal static readonly string DevKey = Environment.GetEnvironmentVariable("devai", EnvironmentVariableTarget.User);
 
-    [Fact, IsDev]
-    public void EntryPoint_PushTelemetry()
+    public class Dev
     {
-        var bb = new BigBrother(_devKey, _devKey).DeveloperMode();
-
-        bb.Publish(
-            new TestTelemetryEvent
-            {
-                Id = Guid.NewGuid(),
-                Description = "some random piece of text"
-            });
-
-        bb.Flush();
-    }
-
-    [Fact, IsDev]
-    public void EntryPoint_PushException()
-    {
-        const string message = "KABOOM!!!";
-        var bb = new BigBrother(_devKey, _devKey).DeveloperMode();
-
-        try
+        [Fact, IsDev]
+        public void EntryPoint_PushTelemetry()
         {
-            BlowUp(message);
-        }
-        catch (Exception ex)
-        {
-            bb.Publish(ex.ToBbEvent());
+            var bb = new BigBrother(DevKey, DevKey).DeveloperMode();
+
+            bb.Publish(
+                new TestTelemetryEvent
+                {
+                    Id = Guid.NewGuid(),
+                    Description = "some random piece of text"
+                });
+
             bb.Flush();
         }
+
+        [Fact, IsDev]
+        public void EntryPoint_PushException()
+        {
+            const string message = "KABOOM!!!";
+            var bb = new BigBrother(DevKey, DevKey).DeveloperMode();
+
+            try
+            {
+                BlowUp(message);
+            }
+            catch (Exception ex)
+            {
+                bb.Publish(ex.ToBbEvent());
+                bb.Flush();
+            }
+        }
     }
 
-    private static void BlowUp(string message)
+    public class CreateCorrelation
+    {
+        [Fact, IsUnit]
+        public void Test_CreateWithoutOne()
+        {
+            var bbMock = new Mock<BigBrother> {CallBase = true}.WithoutSetup();
+
+            var result = bbMock.Object.CreateCorrelation();
+
+            bbMock.Object.Handle.Should().Be(result);
+        }
+
+        /// <remarks>
+        /// You can't debug this test, because in debug this will throw instead of the normal behaviour flow.
+        /// </remarks>
+        [Fact, IsUnit]
+        public void Ensure_CreateWithtOneReturnsSame()
+        {
+            var bbMock = new Mock<BigBrother> {CallBase = true}.WithoutSetup();
+
+            BbExceptionEvent errorEvent = null;
+            BigBrother.InternalStream.OfType<BbExceptionEvent>()
+                      .Subscribe(
+                          e =>
+                          {
+                              errorEvent = e;
+                          });
+
+            var handle1 = bbMock.Object.CreateCorrelation();
+            var handle2 = bbMock.Object.CreateCorrelation();
+            handle2.Should().Be(handle1);
+
+            errorEvent.Should().NotBeNull();
+            errorEvent.Exception.Should().BeOfType<InvalidOperationException>();
+        }
+    }
+
+    internal static void BlowUp(string message)
     {
         throw new Exception(message);
     }
