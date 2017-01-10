@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Reactive.Linq;
-using System.Threading.Tasks;
 using DevOpsFlex.Telemetry;
 using DevOpsFlex.Telemetry.Tests;
 using DevOpsFlex.Tests.Core;

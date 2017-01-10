@@ -122,7 +122,10 @@
         public IBigBrother DeveloperMode()
         {
 #if DEBUG
-            TelemetryConfiguration.Active.TelemetryChannel.DeveloperMode = true;
+            if (TelemetryConfiguration.Active != null && TelemetryConfiguration.Active.TelemetryChannel != null)
+            {
+                TelemetryConfiguration.Active.TelemetryChannel.DeveloperMode = true;
+            }
 #endif
             return this;
         }
