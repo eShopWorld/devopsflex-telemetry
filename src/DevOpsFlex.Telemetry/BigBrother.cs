@@ -37,7 +37,6 @@
             InternalClient = new TelemetryClient();
         }
 
-        internal readonly Dictionary<Type, IDisposable> TelemetrySubscriptions = new Dictionary<Type, IDisposable>();
         internal readonly Dictionary<object, CorrelationHandle> CorrelationHandles = new Dictionary<object, CorrelationHandle>();
         internal readonly Timer CorrelationReleaseTimer;
 
@@ -47,14 +46,19 @@
         internal readonly Subject<BbEvent> TelemetryStream = new Subject<BbEvent>();
 
         /// <summary>
+        /// Contains a typed dictionary of all the subscriptions to different types of telemetry.
+        /// </summary>
+        internal Dictionary<Type, IDisposable> TelemetrySubscriptions = new Dictionary<Type, IDisposable>();
+
+        /// <summary>
+        /// Contains an internal typed dictionary of all the subscriptions to different types of telemetry that instrument this package.
+        /// </summary>
+        internal Dictionary<Type, IDisposable> InternalSubscriptions = new Dictionary<Type, IDisposable>();
+
+        /// <summary>
         /// The external telemetry client, used to publish events through <see cref="BigBrother"/>.
         /// </summary>
         internal TelemetryClient TelemetryClient;
-
-        /// <summary>
-        /// The internal telemetry client, used by internal package instrumentation.
-        /// </summary>
-        internal IDisposable InternalSubscription;
 
         /// <summary>
         /// Default keep alive <see cref="TimeSpan"/> for lose correlation handles created by the consumer.
@@ -210,20 +214,24 @@
                                         TelemetryClient.TrackException(tEvent);
                                     }));
 
-            InternalSubscription = InternalStream.OfType<BbTelemetryEvent>()
-                                                  .Subscribe(e => TelemetryClient.TrackEvent(e.ToTelemetry()));
+            InternalSubscriptions.Add(
+                typeof(BbTelemetryEvent),
+                InternalStream.OfType<BbTelemetryEvent>()
+                              .Subscribe(e => TelemetryClient.TrackEvent(e.ToTelemetry())));
 
-            InternalSubscription = InternalStream.OfType<BbExceptionEvent>()
-                                                  .Subscribe(
-                                                      e =>
-                                                      {
-                                                          var tEvent = e.ToTelemetry();
-                                                          if (tEvent == null) return;
+            InternalSubscriptions.Add(
+                typeof(BbTelemetryEvent),
+                InternalStream.OfType<BbExceptionEvent>()
+                              .Subscribe(
+                                  e =>
+                                  {
+                                      var tEvent = e.ToTelemetry();
+                                      if (tEvent == null) return;
 
-                                                          tEvent.SeverityLevel = SeverityLevel.Warning;
+                                      tEvent.SeverityLevel = SeverityLevel.Warning;
 
-                                                          TelemetryClient.TrackException(tEvent);
-                                                      });
+                                      TelemetryClient.TrackException(tEvent);
+                                  }));
         }
 
         /// <summary>
@@ -256,12 +264,20 @@
         public void Dispose()
         {
             CorrelationReleaseTimer?.Dispose();
-            InternalSubscription?.Dispose();
 
             foreach (var key in TelemetrySubscriptions.Keys)
             {
                 TelemetrySubscriptions[key]?.Dispose();
             }
+            TelemetrySubscriptions.Clear();
+            TelemetrySubscriptions = null;
+
+            foreach (var key in InternalSubscriptions.Keys)
+            {
+                InternalSubscriptions[key]?.Dispose();
+            }
+            InternalSubscriptions.Clear();
+            InternalSubscriptions = null;
         }
     }
 }
