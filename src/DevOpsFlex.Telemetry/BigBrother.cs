@@ -37,8 +37,6 @@
             InternalClient = new TelemetryClient();
         }
 
-        internal readonly TelemetryClient TelemetryClient;
-        internal readonly IDisposable InternalSubscription;
         internal readonly Dictionary<Type, IDisposable> TelemetrySubscriptions = new Dictionary<Type, IDisposable>();
         internal readonly Dictionary<object, CorrelationHandle> CorrelationHandles = new Dictionary<object, CorrelationHandle>();
         internal readonly Timer CorrelationReleaseTimer;
@@ -47,6 +45,10 @@
         /// The main event stream that's exposed publicly (yea ... subjects are bad ... I'll redesign when and if time allows).
         /// </summary>
         internal readonly Subject<BbEvent> TelemetryStream = new Subject<BbEvent>();
+
+        internal TelemetryClient TelemetryClient;
+
+        internal IDisposable InternalSubscription;
 
         /// <summary>
         /// Default keep alive <see cref="TimeSpan"/> for lose correlation handles created by the consumer.
@@ -73,46 +75,8 @@
         {
             CorrelationReleaseTimer = new Timer(ReleaseCorrelationVectors, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
 
-            TelemetryClient = new TelemetryClient
-            {
-                InstrumentationKey = aiKey
-            };
-
-            InternalClient.InstrumentationKey = internalKey;
-
-            TelemetrySubscriptions.Add(
-                typeof(BbTelemetryEvent),
-                TelemetryStream.OfType<BbTelemetryEvent>()
-                                .Subscribe(e => TelemetryClient.TrackEvent(e.ToTelemetry())));
-
-            TelemetrySubscriptions.Add(
-                typeof(BbExceptionEvent),
-                TelemetryStream.OfType<BbExceptionEvent>()
-                                .Subscribe(
-                                    e =>
-                                    {
-                                        var tEvent = e.ToTelemetry();
-                                        if (tEvent == null) return;
-
-                                        tEvent.SeverityLevel = SeverityLevel.Error;
-
-                                        TelemetryClient.TrackException(tEvent);
-                                    }));
-
-            InternalSubscription = InternalStream.OfType<BbTelemetryEvent>()
-                                                  .Subscribe(e => TelemetryClient.TrackEvent(e.ToTelemetry()));
-
-            InternalSubscription = InternalStream.OfType<BbExceptionEvent>()
-                                                  .Subscribe(
-                                                      e =>
-                                                      {
-                                                          var tEvent = e.ToTelemetry();
-                                                          if (tEvent == null) return;
-
-                                                          tEvent.SeverityLevel = SeverityLevel.Warning;
-
-                                                          TelemetryClient.TrackException(tEvent);
-                                                      });
+            SetupTelemetryClient(aiKey, internalKey);
+            SetupSubscriptions();
         }
 
         /// <summary>
@@ -195,6 +159,61 @@
         public void SetCorrelationKeepAlive(TimeSpan span)
         {
             DefaultKeepAlive = span;
+        }
+
+        /// <summary>
+        /// Sets up the internal telemetry clients, both the one used to push normal events and the one used to push internal instrumentation.
+        /// </summary>
+        /// <param name="aiKey">The application's Application Insights instrumentation key.</param>
+        /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
+        internal void SetupTelemetryClient([NotNull]string aiKey, [NotNull]string internalKey)
+        {
+            TelemetryClient = new TelemetryClient
+            {
+                InstrumentationKey = aiKey
+            };
+
+            InternalClient.InstrumentationKey = internalKey;
+        }
+
+        /// <summary>
+        /// Sets up internal subscriptions, this isolates subscriptioons from the actual constructor logic during tests.
+        /// </summary>
+        internal void SetupSubscriptions()
+        {
+            TelemetrySubscriptions.Add(
+                typeof(BbTelemetryEvent),
+                TelemetryStream.OfType<BbTelemetryEvent>()
+                                .Subscribe(e => TelemetryClient.TrackEvent(e.ToTelemetry())));
+
+            TelemetrySubscriptions.Add(
+                typeof(BbExceptionEvent),
+                TelemetryStream.OfType<BbExceptionEvent>()
+                                .Subscribe(
+                                    e =>
+                                    {
+                                        var tEvent = e.ToTelemetry();
+                                        if (tEvent == null) return;
+
+                                        tEvent.SeverityLevel = SeverityLevel.Error;
+
+                                        TelemetryClient.TrackException(tEvent);
+                                    }));
+
+            InternalSubscription = InternalStream.OfType<BbTelemetryEvent>()
+                                                  .Subscribe(e => TelemetryClient.TrackEvent(e.ToTelemetry()));
+
+            InternalSubscription = InternalStream.OfType<BbExceptionEvent>()
+                                                  .Subscribe(
+                                                      e =>
+                                                      {
+                                                          var tEvent = e.ToTelemetry();
+                                                          if (tEvent == null) return;
+
+                                                          tEvent.SeverityLevel = SeverityLevel.Warning;
+
+                                                          TelemetryClient.TrackException(tEvent);
+                                                      });
         }
 
         /// <summary>
