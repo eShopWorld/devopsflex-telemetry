@@ -37,7 +37,14 @@
             InternalClient = new TelemetryClient();
         }
 
+        /// <summary>
+        /// Contains a lookup reference for each lose correlation handle provided.
+        /// </summary>
         internal readonly Dictionary<object, CorrelationHandle> CorrelationHandles = new Dictionary<object, CorrelationHandle>();
+
+        /// <summary>
+        /// Contains the timer used to clear old correlation handles from the lookup <see cref="Dictionary{TKey,TValue}"/>
+        /// </summary>
         internal readonly Timer CorrelationReleaseTimer;
 
         /// <summary>

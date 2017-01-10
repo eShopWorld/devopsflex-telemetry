@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using DevOpsFlex.Telemetry;
 using DevOpsFlex.Telemetry.Tests;
 using DevOpsFlex.Tests.Core;
@@ -47,12 +48,99 @@ public class BigBrotherTest
         }
     }
 
+    public class Publish
+    {
+        [Fact, IsUnit]
+        public async Task Test_PublishWithoutCorrelation()
+        {
+            var bbMock = new Mock<BigBrother> { CallBase = true }.WithoutSetup();
+            var tEvent = new TestTelemetryEvent();
+
+            TestTelemetryEvent rEvent = null;
+            bbMock.Object.TelemetryStream.OfType<TestTelemetryEvent>().Subscribe(e => rEvent = e);
+
+            bbMock.Object.Publish(tEvent);
+
+            await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription get's love
+
+            rEvent.Should().NotBeNull();
+            rEvent.Should().Be(tEvent);
+            rEvent.CorrelationVector.Should().BeNull();
+        }
+
+        [Fact, IsUnit]
+        public async Task Test_PublishUnderStrictCorrelation()
+        {
+            var bbMock = new Mock<BigBrother> { CallBase = true }.WithoutSetup();
+
+            using (bbMock.Object.CreateCorrelation())
+            {
+                var tEvent = new TestTelemetryEvent();
+
+                TestTelemetryEvent rEvent = null;
+                bbMock.Object.TelemetryStream.OfType<TestTelemetryEvent>().Subscribe(e => rEvent = e);
+
+                bbMock.Object.Publish(tEvent);
+
+                await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription get's love
+
+                rEvent.Should().NotBeNull();
+                rEvent.Should().Be(tEvent);
+                bbMock.Object.Handle.Should().NotBeNull();
+                rEvent.CorrelationVector.Should().Be(bbMock.Object.Handle.Vector);
+            }
+        }
+
+        [Fact, IsUnit]
+        public async Task Test_PublishUnderLoseCorrelation()
+        {
+            var bbMock = new Mock<BigBrother> { CallBase = true }.WithoutSetup();
+            var handle = new object();
+            var tEvent = new TestTelemetryEvent();
+
+            TestTelemetryEvent rEvent = null;
+            bbMock.Object.TelemetryStream.OfType<TestTelemetryEvent>().Subscribe(e => rEvent = e);
+
+            bbMock.Object.Publish(tEvent, handle);
+
+            await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription get's love
+
+            rEvent.Should().NotBeNull();
+            rEvent.Should().Be(tEvent);
+            rEvent.CorrelationVector.Should().Be(bbMock.Object.CorrelationHandles[handle].Vector);
+        }
+
+        [Fact, IsUnit]
+        public async Task Ensure_LoseOverridesStrictCorrelation()
+        {
+            var bbMock = new Mock<BigBrother> { CallBase = true }.WithoutSetup();
+            var handle = new object();
+            var tEvent = new TestTelemetryEvent();
+
+            using (bbMock.Object.CreateCorrelation())
+            {
+                TestTelemetryEvent rEvent = null;
+                bbMock.Object.TelemetryStream.OfType<TestTelemetryEvent>().Subscribe(e => rEvent = e);
+
+                bbMock.Object.Publish(tEvent, handle);
+
+                await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription get's love
+
+                rEvent.Should().NotBeNull();
+                rEvent.Should().Be(tEvent);
+                rEvent.CorrelationVector.Should().Be(bbMock.Object.CorrelationHandles[handle].Vector);
+
+                bbMock.Object.Handle.Should().NotBeNull();
+            }
+        }
+    }
+
     public class CreateCorrelation
     {
         [Fact, IsUnit]
         public void Test_CreateWithoutOne()
         {
-            var bbMock = new Mock<BigBrother> {CallBase = true}.WithoutSetup();
+            var bbMock = new Mock<BigBrother> { CallBase = true }.WithoutSetup();
 
             var result = bbMock.Object.CreateCorrelation();
 
@@ -65,7 +153,7 @@ public class BigBrotherTest
         [Fact, IsUnit]
         public void Ensure_CreateWithtOneReturnsSame()
         {
-            var bbMock = new Mock<BigBrother> {CallBase = true}.WithoutSetup();
+            var bbMock = new Mock<BigBrother> { CallBase = true }.WithoutSetup();
 
             BbExceptionEvent errorEvent = null;
             BigBrother.InternalStream.OfType<BbExceptionEvent>()
@@ -95,4 +183,10 @@ public class TestTelemetryEvent : BbTelemetryEvent
     public Guid Id { get; set; }
 
     public string Description { get; set; }
+
+    public TestTelemetryEvent()
+    {
+        Id = Guid.NewGuid();
+        Description = Lorem.GetSentence();
+    }
 }
