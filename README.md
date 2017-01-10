@@ -46,6 +46,56 @@ bb.Publish(new PaymentEvent
 });
 ```
 
+### How do I correlate events?
+
+`BigBrother` supports two types of correlation: __Strict__ and __Lose__.
+
+__Strict__ correlation is when you are doing syncronous processing and you only ever want
+one correlation handle over time, so you get an IDisposable back to facilitate using blocks:
+```C#
+IBigBrother bb = new BigBrother("[Application Insights Key]", "[Application Insights Key - For inner telemetry]");
+
+using (bb.CreateCorrelation())
+{
+    bb.Publish(new PaymentEvent
+    {
+        ProcessedOn = DateTime.Now,
+        Ammount = 100,
+        Currency = "USD"
+    }); // These two events will have the same correlation ID
+
+    bb.Publish(new PaymentEvent
+    {
+        ProcessedOn = DateTime.Now,
+        Ammount = 200,
+        Currency = "EUR"
+    }); // These two events will have the same correlation ID
+}
+```
+If you try to create two strict correlation handles it will throw in DEBUG with the debugger attached,
+otherwise just record error and give you back the first handle.
+
+__Lose__ correlation is when you are doing parallel processing and you want multiple correlation handles
+active at the same time. To support this you can use anything that inherits from `object` as a handle.
+```C#
+IBigBrother bb = new BigBrother("[Application Insights Key]", "[Application Insights Key - For inner telemetry]");
+var handle = new object();
+
+bb.Publish(new PaymentEvent
+{
+    ProcessedOn = DateTime.Now,
+    Ammount = 100,
+    Currency = "USD"
+}, handle); // These two events will have the same correlation ID
+
+bb.Publish(new PaymentEvent
+{
+    ProcessedOn = DateTime.Now,
+    Ammount = 200,
+    Currency = "USD"
+}, handle); // These two events will have the same correlation ID
+```
+
 ### What can I also do with it?
 
 You can force a Flush of the AI client, which will send all events right away:
