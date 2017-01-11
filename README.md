@@ -95,6 +95,11 @@ bb.Publish(new PaymentEvent
     Currency = "USD"
 }, handle); // These two events will have the same correlation ID
 ```
+By default correlation handles are kept for 10 minutes, but you can change this keep alive `TimeSpan` by calling
+```C#
+void SetCorrelationKeepAlive(TimeSpan span)
+```
+They will be released after this time and if you try to use the handle again you'll get a new correlation vector for it.
 
 ### What can I also do with it?
 
