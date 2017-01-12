@@ -221,7 +221,6 @@
   </Choose>
   <ItemGroup>
     <Compile Include="BbExceptionEventTest.cs" />
-    <Compile Include="BigBrotherMockExtensions.cs" />
     <Compile Include="BigBrotherTest.cs" />
     <Compile Include="CorrelationHandleTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

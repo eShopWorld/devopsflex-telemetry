@@ -3,8 +3,6 @@ using System.Fakes;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using DevOpsFlex.Telemetry;
-using DevOpsFlex.Telemetry.Fakes;
-using DevOpsFlex.Telemetry.Tests;
 using DevOpsFlex.Tests.Core;
 using FluentAssertions;
 using Microsoft.QualityTools.Testing.Fakes;
@@ -56,7 +54,7 @@ public class BigBrotherTest
         [Fact, IsUnit]
         public async Task Test_PublishWithoutCorrelation()
         {
-            var bbMock = new Mock<BigBrother> { CallBase = true }.WithoutSetup();
+            var bbMock = new Mock<BigBrother> { CallBase = true };
             var tEvent = new TestTelemetryEvent();
 
             TestTelemetryEvent rEvent = null;
@@ -74,7 +72,7 @@ public class BigBrotherTest
         [Fact, IsUnit]
         public async Task Test_PublishUnderStrictCorrelation()
         {
-            var bbMock = new Mock<BigBrother> { CallBase = true }.WithoutSetup();
+            var bbMock = new Mock<BigBrother> { CallBase = true };
 
             using (bbMock.Object.CreateCorrelation())
             {
@@ -97,7 +95,7 @@ public class BigBrotherTest
         [Fact, IsUnit]
         public async Task Test_PublishUnderLoseCorrelation()
         {
-            var bbMock = new Mock<BigBrother> { CallBase = true }.WithoutSetup();
+            var bbMock = new Mock<BigBrother> { CallBase = true };
             var handle = new object();
             var tEvent = new TestTelemetryEvent();
 
@@ -117,7 +115,7 @@ public class BigBrotherTest
         [Fact, IsUnit]
         public async Task Ensure_LoseOverridesStrictCorrelation()
         {
-            var bbMock = new Mock<BigBrother> { CallBase = true }.WithoutSetup();
+            var bbMock = new Mock<BigBrother> { CallBase = true };
             var handle = new object();
             var tEvent = new TestTelemetryEvent();
 
@@ -144,7 +142,7 @@ public class BigBrotherTest
         [Fact, IsUnit]
         public void Test_CreateWithoutOne()
         {
-            var bbMock = new Mock<BigBrother> { CallBase = true }.WithoutSetup();
+            var bbMock = new Mock<BigBrother> { CallBase = true };
 
             var result = bbMock.Object.CreateCorrelation();
 
@@ -157,7 +155,7 @@ public class BigBrotherTest
         [Fact, IsUnit]
         public void Ensure_CreateWithtOneReturnsSame()
         {
-            var bbMock = new Mock<BigBrother> { CallBase = true }.WithoutSetup();
+            var bbMock = new Mock<BigBrother> { CallBase = true };
 
             BbExceptionEvent errorEvent = null;
             BigBrother.InternalStream.OfType<BbExceptionEvent>()
@@ -174,8 +172,8 @@ public class BigBrotherTest
 
     public class ReleaseCorrelationVectors
     {
-        [Fact, IsUnit]
-        public void Foo()
+        [Fact, IsFakes]
+        public void Test_ReleaseHandleNotAlive()
         {
             using (ShimsContext.Create())
             {
@@ -184,9 +182,6 @@ public class BigBrotherTest
 
                 // ReSharper disable once AccessToModifiedClosure
                 ShimDateTime.NowGet = () => now;
-
-                ShimBigBrother.AllInstances.SetupSubscriptions = _ => { };
-                ShimBigBrother.AllInstances.SetupTelemetryClientStringString = (_, __, ___) => { };
 
                 var bb = new BigBrother();
                 bb.Publish(new TestTelemetryEvent(), handle); // no setup on the subscriptions, so nothing will get published

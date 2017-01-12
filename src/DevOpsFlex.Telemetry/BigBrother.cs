@@ -92,7 +92,6 @@
         {
             CorrelationReleaseTimer = new Timer(ReleaseCorrelationVectors, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
 
-            // ReSharper disable VirtualMemberCallInConstructor
             SetupTelemetryClient(aiKey, internalKey);
             SetupSubscriptions();
         }
@@ -187,7 +186,7 @@
         /// </summary>
         /// <param name="aiKey">The application's Application Insights instrumentation key.</param>
         /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
-        internal virtual void SetupTelemetryClient([NotNull]string aiKey, [NotNull]string internalKey)
+        internal void SetupTelemetryClient([NotNull]string aiKey, [NotNull]string internalKey)
         {
             TelemetryClient = new TelemetryClient
             {
@@ -200,7 +199,7 @@
         /// <summary>
         /// Sets up internal subscriptions, this isolates subscriptioons from the actual constructor logic during tests.
         /// </summary>
-        internal virtual void SetupSubscriptions()
+        internal void SetupSubscriptions()
         {
             TelemetrySubscriptions.Add(
                 typeof(BbTelemetryEvent),
