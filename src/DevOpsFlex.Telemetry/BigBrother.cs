@@ -254,12 +254,12 @@
         /// <summary>
         /// Does a periodic release of old correlation vector object references.
         /// </summary>
-        /// <param name="state"></param>
-        internal void ReleaseCorrelationVectors(object state)
+        /// <param name="_">[IGNORED] Timer state on callback.</param>
+        internal void ReleaseCorrelationVectors(object _)
         {
             var now = DateTime.Now; // Do DateTime.Now once per tick to speed up the release->collect pass.
 
-            foreach (var handle in CorrelationHandles.Where(h => h.Value.IsAlive(now)))
+            foreach (var handle in CorrelationHandles.Where(h => h.Value.IsAlive(now)).ToList())
             {
                 CorrelationHandles.Remove(handle.Key);
             }

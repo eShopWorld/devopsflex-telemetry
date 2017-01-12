@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Fakes;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using DevOpsFlex.Telemetry;
+using DevOpsFlex.Telemetry.Fakes;
 using DevOpsFlex.Telemetry.Tests;
 using DevOpsFlex.Tests.Core;
 using FluentAssertions;
+using Microsoft.QualityTools.Testing.Fakes;
 using Moq;
 using Xunit;
 
@@ -61,7 +64,7 @@ public class BigBrotherTest
 
             bbMock.Object.Publish(tEvent);
 
-            await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription get's love
+            await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription gets love
 
             rEvent.Should().NotBeNull();
             rEvent.Should().Be(tEvent);
@@ -82,7 +85,7 @@ public class BigBrotherTest
 
                 bbMock.Object.Publish(tEvent);
 
-                await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription get's love
+                await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription gets love
 
                 rEvent.Should().NotBeNull();
                 rEvent.Should().Be(tEvent);
@@ -99,11 +102,12 @@ public class BigBrotherTest
             var tEvent = new TestTelemetryEvent();
 
             TestTelemetryEvent rEvent = null;
-            bbMock.Object.TelemetryStream.OfType<TestTelemetryEvent>().Subscribe(e => rEvent = e);
+            bbMock.Object.TelemetryStream.OfType<TestTelemetryEvent>()
+                  .Subscribe(e => rEvent = e);
 
             bbMock.Object.Publish(tEvent, handle);
 
-            await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription get's love
+            await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription gets love
 
             rEvent.Should().NotBeNull();
             rEvent.Should().Be(tEvent);
@@ -124,7 +128,7 @@ public class BigBrotherTest
 
                 bbMock.Object.Publish(tEvent, handle);
 
-                await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription get's love
+                await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription gets love
 
                 rEvent.Should().NotBeNull();
                 rEvent.Should().Be(tEvent);
@@ -157,11 +161,7 @@ public class BigBrotherTest
 
             BbExceptionEvent errorEvent = null;
             BigBrother.InternalStream.OfType<BbExceptionEvent>()
-                      .Subscribe(
-                          e =>
-                          {
-                              errorEvent = e;
-                          });
+                      .Subscribe(e => errorEvent = e);
 
             var handle1 = bbMock.Object.CreateCorrelation();
             var handle2 = bbMock.Object.CreateCorrelation();
@@ -169,6 +169,32 @@ public class BigBrotherTest
 
             errorEvent.Should().NotBeNull();
             errorEvent.Exception.Should().BeOfType<InvalidOperationException>();
+        }
+    }
+
+    public class ReleaseCorrelationVectors
+    {
+        [Fact, IsUnit]
+        public void Foo()
+        {
+            using (ShimsContext.Create())
+            {
+                var now = DateTime.Now.AddMinutes(15); // offset now by 15 minutes, this way we don't need to play around with the internal handle
+                var handle = new object();
+
+                // ReSharper disable once AccessToModifiedClosure
+                ShimDateTime.NowGet = () => now;
+
+                ShimBigBrother.AllInstances.SetupSubscriptions = _ => { };
+                ShimBigBrother.AllInstances.SetupTelemetryClientStringString = (_, __, ___) => { };
+
+                var bb = new BigBrother();
+                bb.Publish(new TestTelemetryEvent(), handle); // no setup on the subscriptions, so nothing will get published
+
+                bb.ReleaseCorrelationVectors(null);
+
+                bb.CorrelationHandles.Should().BeEmpty();
+            }
         }
     }
 
