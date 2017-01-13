@@ -180,7 +180,6 @@ public class BigBrotherTest
                 var now = DateTime.Now.AddMinutes(15); // offset now by 15 minutes, this way we don't need to play around with the internal handle
                 var handle = new object();
 
-                // ReSharper disable once AccessToModifiedClosure
                 ShimDateTime.NowGet = () => now;
 
                 var bb = new BigBrother();

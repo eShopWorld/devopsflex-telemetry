@@ -226,7 +226,7 @@
                               .Subscribe(e => TelemetryClient.TrackEvent(e.ToTelemetry())));
 
             InternalSubscriptions.Add(
-                typeof(BbTelemetryEvent),
+                typeof(BbExceptionEvent),
                 InternalStream.OfType<BbExceptionEvent>()
                               .Subscribe(
                                   e =>
