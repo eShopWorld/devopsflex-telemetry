@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using System.Reactive.Linq;
     using System.Reactive.Subjects;
@@ -267,6 +268,7 @@
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
+        [ExcludeFromCodeCoverage]
         public void Dispose()
         {
             CorrelationReleaseTimer?.Dispose();
