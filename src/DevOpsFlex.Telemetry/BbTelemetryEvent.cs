@@ -33,6 +33,7 @@
 
                 if (CorrelationVector != null)
                 {
+                    tEvent.Context.Operation.CorrelationVector = CorrelationVector;
                     tEvent.Context.Operation.Id = CorrelationVector;
                 }
 

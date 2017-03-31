@@ -44,6 +44,12 @@
                     Timestamp = DateTimeOffset.Now
                 };
 
+                if (CorrelationVector != null)
+                {
+                    tEvent.Context.Operation.CorrelationVector = CorrelationVector;
+                    tEvent.Context.Operation.Id = CorrelationVector;
+                }
+
                 foreach (var key in properties.Keys)
                 {
                     tEvent.Properties.Add(key, properties[key]);
