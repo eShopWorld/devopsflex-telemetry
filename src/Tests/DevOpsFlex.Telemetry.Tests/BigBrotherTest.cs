@@ -2,6 +2,7 @@
 using System.Fakes;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using DevOpsFlex.Core;
 using DevOpsFlex.Telemetry;
 using DevOpsFlex.Tests.Core;
 using FluentAssertions;
@@ -43,7 +44,7 @@ public class BigBrotherTest
             }
             catch (Exception ex)
             {
-                bb.Publish(ex.ToBbEvent());
+                bb.Publish(BbEventExtensions.ToBbEvent(ex));
                 bb.Flush();
             }
         }

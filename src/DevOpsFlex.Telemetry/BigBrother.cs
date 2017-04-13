@@ -5,9 +5,11 @@
     using System.Diagnostics;
     using System.Diagnostics.CodeAnalysis;
     using System.Linq;
+    using System.Reactive;
     using System.Reactive.Linq;
     using System.Reactive.Subjects;
     using System.Threading;
+    using Core;
     using InternalEvents;
     using JetBrains.Annotations;
     using Microsoft.ApplicationInsights;
@@ -16,7 +18,7 @@
 
     /// <summary>
     /// Deals with everything that's public in telemetry.
-    /// This is the main entry point in the <see cref="DevOpsFlex.Telemetry"/> API.
+    /// This is the main entry point in the <see cref="Telemetry"/> API.
     /// </summary>
     public class BigBrother : IBigBrother, IDisposable
     {
@@ -26,7 +28,7 @@
         internal static readonly TelemetryClient InternalClient;
 
         /// <summary>
-        /// The internal telemetry stream, used by this package to report errors and usage to an internal AI account.
+        /// The internal telemetry stream, used by packages to report errors and usage to an internal AI account.
         /// </summary>
         internal static readonly Subject<BbEvent> InternalStream = new Subject<BbEvent>();
 
@@ -98,29 +100,45 @@
         }
 
         /// <summary>
+        /// Provides access to internal Rx resources for improved extensability and testability.
+        /// </summary>
+        /// <param name="telemetryObservable">The main event <see cref="IObservable{BbEvent}"/> that's exposed publicly.</param>
+        /// <param name="telemetryObserver">The main event <see cref="IObserver{BbEvent}"/> that's used when Publishing.</param>
+        /// <param name="internalObservable">The internal <see cref="IObservable{BbEvent}"/>, used by packages to report errors and usage to an internal AI account.</param>
+        public void Deconstruct(out IObservable<BbEvent> telemetryObservable, out IObserver<BbEvent> telemetryObserver, out IObservable<BbEvent> internalObservable)
+        {
+            telemetryObservable = TelemetryStream.AsObservable();
+            telemetryObserver = TelemetryStream.AsObserver();
+            internalObservable = InternalStream.AsObservable();
+        }
+
+        /// <summary>
         /// Publishes a <see cref="BbEvent"/> through the pipeline.
         /// </summary>
         /// <param name="bbEvent">The event that we want to publish.</param>
         /// <param name="correlation">The correlation handle if you want to correlate events</param>
         public void Publish(BbEvent bbEvent, object correlation = null)
         {
-            if (correlation != null) // lose > strict, so we override strict if a lose is passed in
+            if (bbEvent is BbTelemetryEvent tEvent)
             {
-                if (CorrelationHandles.ContainsKey(correlation))
+                if (correlation != null) // lose > strict, so we override strict if a lose is passed in
                 {
-                    bbEvent.CorrelationVector = CorrelationHandles[correlation].Vector;
-                    CorrelationHandles[correlation].Touch();
+                    if (CorrelationHandles.ContainsKey(correlation))
+                    {
+                        tEvent.CorrelationVector = CorrelationHandles[correlation].Vector;
+                        CorrelationHandles[correlation].Touch();
+                    }
+                    else
+                    {
+                        var handle = new CorrelationHandle(DefaultKeepAlive);
+                        CorrelationHandles.Add(correlation, handle);
+                        tEvent.CorrelationVector = handle.Vector;
+                    }
                 }
-                else
+                else if (Handle != null)
                 {
-                    var handle = new CorrelationHandle(DefaultKeepAlive);
-                    CorrelationHandles.Add(correlation, handle);
-                    bbEvent.CorrelationVector = handle.Vector;
+                    tEvent.CorrelationVector = Handle.Vector;
                 }
-            }
-            else if (Handle != null)
-            {
-                bbEvent.CorrelationVector = Handle.Vector;
             }
 
             TelemetryStream.OnNext(bbEvent);

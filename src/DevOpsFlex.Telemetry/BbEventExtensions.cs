@@ -1,59 +1,35 @@
 ﻿namespace DevOpsFlex.Telemetry
 {
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics;
+    using Core;
     using JetBrains.Annotations;
     using Microsoft.ApplicationInsights.DataContracts;
-    using Newtonsoft.Json;
 
     /// <summary>
-    /// The base class from all BigBrother <see cref="Exception"/> based events that are going to be
-    /// tracked by AI as <see cref="ExceptionTelemetry"/> events.
+    /// Contains extension methods to the base type <see cref="BbEvent"/> and any derived event class.
     /// </summary>
-    public class BbExceptionEvent : BbEvent
+    public static class BbEventExtensions
     {
         /// <summary>
-        /// Gets and sets the raw <see cref="Exception"/> that is associated with this event.
-        /// </summary>
-        public Exception Exception { get; set; }
-
-        /// <summary>
-        /// Quick dirty way to prevent JsonConvert from attempting to serialize the exception.
-        /// This could be improved by a generic IContractResolver, but we don't care singe we're not planning on keeping JsonConvert.
-        /// </summary>
-        /// <returns>false.</returns>
-        public bool ShouldSerializeException() { return false; }
-
-        /// <summary>
-        /// Converts this event into an Application Insights <see cref="ExceptionTelemetry"/> event ready to be tracked by
+        /// Converts this event into an Application Insights <see cref="EventTelemetry"/> event ready to be tracked by
         /// the AI client.
         /// </summary>
-        /// <returns>The converted <see cref="ExceptionTelemetry"/> event.</returns>
-        [CanBeNull] public virtual ExceptionTelemetry ToTelemetry()
+        /// <param name="event">The event we want to convert to an AI event.</param>
+        /// <returns>The converted <see cref="EventTelemetry"/> event.</returns>
+        [CanBeNull]
+        internal static EventTelemetry ToTelemetry(this BbTelemetryEvent @event)
         {
             try
             {
-                var properties = JsonConvert.DeserializeObject<Dictionary<string, string>>(
-                    JsonConvert.SerializeObject(this));
-
-                var tEvent = new ExceptionTelemetry
+                var tEvent = new EventTelemetry
                 {
-                    Message = Exception.Message,
-                    Exception = Exception,
+                    Name = @event.GetType().Name,
                     Timestamp = DateTimeOffset.Now
                 };
 
-                if (CorrelationVector != null)
-                {
-                    tEvent.Context.Operation.CorrelationVector = CorrelationVector;
-                    tEvent.Context.Operation.Id = CorrelationVector;
-                }
-
-                foreach (var key in properties.Keys)
-                {
-                    tEvent.Properties.Add(key, properties[key]);
-                }
+                tEvent.SetCorrelation(@event);
+                @event.CopyPropertiesInto(tEvent.Properties);
 
                 return tEvent;
             }
@@ -69,13 +45,43 @@
                 return null;
             }
         }
-    }
 
-    /// <summary>
-    /// Containst conversion extensions to <see cref="Exception"/> to produce events of, or based of <see cref="BbExceptionEvent"/>.
-    /// </summary>
-    public static class BbExceptionEventExtensions
-    {
+        /// <summary>
+        /// Converts this event into an Application Insights <see cref="EventTelemetry"/> event ready to be tracked by
+        /// the AI client.
+        /// </summary>
+        /// <param name="event">The event we want to convert to an AI event.</param>
+        /// <returns>The converted <see cref="EventTelemetry"/> event.</returns>
+        [CanBeNull]
+        internal static ExceptionTelemetry ToTelemetry(this BbExceptionEvent @event)
+        {
+            try
+            {
+                var tEvent = new ExceptionTelemetry
+                {
+                    Message = @event.Exception.Message,
+                    Exception = @event.Exception,
+                    Timestamp = DateTimeOffset.Now
+                };
+
+                tEvent.SetCorrelation(@event);
+                @event.CopyPropertiesInto(tEvent.Properties);
+
+                return tEvent;
+            }
+            catch (Exception ex)
+            {
+#if DEBUG
+                if (Debugger.IsAttached)
+                {
+                    throw;
+                }
+#endif
+                BigBrother.PublishError(ex);
+                return null;
+            }
+        }
+
         /// <summary>
         /// Converts a generic <see cref="Exception"/> into a <see cref="BbExceptionEvent"/>.
         /// </summary>

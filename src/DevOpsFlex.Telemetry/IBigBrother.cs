@@ -1,6 +1,7 @@
 ﻿namespace DevOpsFlex.Telemetry
 {
     using System;
+    using Core;
     using JetBrains.Annotations;
 
     /// <summary>
