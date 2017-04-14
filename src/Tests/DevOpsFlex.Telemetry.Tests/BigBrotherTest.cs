@@ -159,15 +159,17 @@ public class BigBrotherTest
             var bbMock = new Mock<BigBrother> { CallBase = true };
 
             BbExceptionEvent errorEvent = null;
-            BigBrother.InternalStream.OfType<BbExceptionEvent>()
-                      .Subscribe(e => errorEvent = e);
 
-            var handle1 = bbMock.Object.CreateCorrelation();
-            var handle2 = bbMock.Object.CreateCorrelation();
-            handle2.Should().Be(handle1);
+            using (BigBrother.InternalStream.OfType<BbExceptionEvent>()
+                             .Subscribe(e => errorEvent = e))
+            {
+                var handle1 = bbMock.Object.CreateCorrelation();
+                var handle2 = bbMock.Object.CreateCorrelation();
+                handle2.Should().Be(handle1);
 
-            errorEvent.Should().NotBeNull();
-            errorEvent.Exception.Should().BeOfType<InvalidOperationException>();
+                errorEvent.Should().NotBeNull();
+                errorEvent.Exception.Should().BeOfType<InvalidOperationException>();
+            }
         }
     }
 
@@ -206,6 +208,19 @@ public class TestTelemetryEvent : BbTelemetryEvent
     public string Description { get; set; }
 
     public TestTelemetryEvent()
+    {
+        Id = Guid.NewGuid();
+        Description = Lorem.GetSentence();
+    }
+}
+
+public class TestExceptionEvent : BbExceptionEvent
+{
+    public Guid Id { get; set; }
+
+    public string Description { get; set; }
+
+    public TestExceptionEvent()
     {
         Id = Guid.NewGuid();
         Description = Lorem.GetSentence();

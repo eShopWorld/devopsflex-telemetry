@@ -222,6 +222,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="BbEventExtensionsTest.cs" />
     <Compile Include="BigBrotherTest.cs" />
     <Compile Include="CorrelationHandleTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
