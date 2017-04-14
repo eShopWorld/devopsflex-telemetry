@@ -32,6 +32,10 @@
         /// </summary>
         internal static readonly Subject<BbEvent> InternalStream = new Subject<BbEvent>();
 
+        /// <summary>
+        /// The top level frame on the <see cref="StackTrace"/> when <see cref="BigBrother"/> was instanciated.
+        ///     This is used mostly for correlation logic.
+        /// </summary>
         internal static string BirthPlace;
 
         /// <summary>
@@ -89,7 +93,7 @@
 
         /// <summary>
         /// Initializes a new instance of <see cref="BigBrother"/>.
-        /// This constructor does a bit of work, so if you're mocking this, mock the <see cref="IBigBrother"/> contract instead.
+        ///     This constructor does a bit of work, so if you're mocking this, mock the <see cref="IBigBrother"/> contract instead.
         /// </summary>
         /// <param name="aiKey">The application's Application Insights instrumentation key.</param>
         /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
@@ -151,7 +155,7 @@
 
         /// <summary>
         /// Forces the telemetry channel to be in developer mode, where it will instantly push
-        /// telemetry to the Application Insights account.
+        ///     telemetry to the Application Insights account.
         /// </summary>
         public IBigBrother DeveloperMode()
         {
@@ -266,7 +270,7 @@
 
         /// <summary>
         /// Used internal by BigBrother to publish usage exceptions to a special
-        /// Application Insights account.
+        ///     Application Insights account.
         /// </summary>
         /// <param name="ex">The <see cref="Exception"/> that we want to publish.</param>
         internal static void PublishError(Exception ex)
