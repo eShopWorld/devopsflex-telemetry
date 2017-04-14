@@ -32,6 +32,8 @@
         /// </summary>
         internal static readonly Subject<BbEvent> InternalStream = new Subject<BbEvent>();
 
+        internal static string BirthPlace;
+
         /// <summary>
         /// Static initialization of static resources in <see cref="BigBrother"/> instances.
         /// </summary>
@@ -94,6 +96,9 @@
         public BigBrother([NotNull]string aiKey, [NotNull]string internalKey)
         {
             CorrelationReleaseTimer = new Timer(ReleaseCorrelationVectors, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+
+            var trace = new StackTrace();
+            BirthPlace = trace.GetFrame(trace.FrameCount - 1).GetMethod().DeclaringType?.FullName;
 
             SetupTelemetryClient(aiKey, internalKey);
             SetupSubscriptions();
