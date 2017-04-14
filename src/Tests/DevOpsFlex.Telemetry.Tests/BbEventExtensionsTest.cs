@@ -108,19 +108,16 @@ public class BbEventExtensionsTest
                     Exception = new Exception("KABUM!!!")
                 };
 
-                var wrontEventType = false;
                 ShimTelemetryExtensions.SetCorrelationITelemetryBbTelemetryEvent = (t, e) => throw exception;
-                BigBrother.InternalStream.Subscribe(e =>
+                using (BigBrother.InternalStream.OfType<BbExceptionEvent>()
+                                 .Subscribe(e =>
+                                 {
+                                     e.Exception.Should().Be(exception);
+                                 }))
                 {
-                    if (e is BbExceptionEvent exEvent)
-                        exEvent.Exception.Should().Be(exception);
-                    else
-                        wrontEventType = true;
-                });
-
-                var result = tEvent.ToTelemetry();
-                result.Should().BeNull();
-                wrontEventType.Should().BeFalse();
+                    var result = tEvent.ToTelemetry();
+                    result.Should().BeNull();
+                }
             }
         }
     }
