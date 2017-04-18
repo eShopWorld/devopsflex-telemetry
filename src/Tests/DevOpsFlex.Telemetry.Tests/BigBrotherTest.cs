@@ -3,6 +3,7 @@ using System.Fakes;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using DevOpsFlex.Core;
+using DevOpsFlex.Core.Fakes;
 using DevOpsFlex.Telemetry;
 using DevOpsFlex.Tests.Core;
 using FluentAssertions;
@@ -59,15 +60,16 @@ public class BigBrotherTest
             var tEvent = new TestTelemetryEvent();
 
             TestTelemetryEvent rEvent = null;
-            bbMock.Object.TelemetryStream.OfType<TestTelemetryEvent>().Subscribe(e => rEvent = e);
+            using (bbMock.Object.TelemetryStream.OfType<TestTelemetryEvent>().Subscribe(e => rEvent = e))
+            {
+                bbMock.Object.Publish(tEvent);
 
-            bbMock.Object.Publish(tEvent);
+                await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription gets love
 
-            await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription gets love
-
-            rEvent.Should().NotBeNull();
-            rEvent.Should().Be(tEvent);
-            rEvent.CorrelationVector.Should().BeNull();
+                rEvent.Should().NotBeNull();
+                rEvent.Should().Be(tEvent);
+                rEvent.CorrelationVector.Should().BeNull();
+            }
         }
 
         [Fact, IsUnit]
@@ -75,12 +77,11 @@ public class BigBrotherTest
         {
             var bbMock = new Mock<BigBrother> { CallBase = true };
 
+            TestTelemetryEvent rEvent = null;
             using (bbMock.Object.CreateCorrelation())
+            using (bbMock.Object.TelemetryStream.OfType<TestTelemetryEvent>().Subscribe(e => rEvent = e))
             {
                 var tEvent = new TestTelemetryEvent();
-
-                TestTelemetryEvent rEvent = null;
-                bbMock.Object.TelemetryStream.OfType<TestTelemetryEvent>().Subscribe(e => rEvent = e);
 
                 bbMock.Object.Publish(tEvent);
 
@@ -101,16 +102,17 @@ public class BigBrotherTest
             var tEvent = new TestTelemetryEvent();
 
             TestTelemetryEvent rEvent = null;
-            bbMock.Object.TelemetryStream.OfType<TestTelemetryEvent>()
-                  .Subscribe(e => rEvent = e);
+            using (bbMock.Object.TelemetryStream.OfType<TestTelemetryEvent>()
+                         .Subscribe(e => rEvent = e))
+            {
+                bbMock.Object.Publish(tEvent, handle);
 
-            bbMock.Object.Publish(tEvent, handle);
+                await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription gets love
 
-            await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription gets love
-
-            rEvent.Should().NotBeNull();
-            rEvent.Should().Be(tEvent);
-            rEvent.CorrelationVector.Should().Be(bbMock.Object.CorrelationHandles[handle].Vector);
+                rEvent.Should().NotBeNull();
+                rEvent.Should().Be(tEvent);
+                rEvent.CorrelationVector.Should().Be(bbMock.Object.CorrelationHandles[handle].Vector);
+            }
         }
 
         [Fact, IsUnit]
@@ -120,11 +122,10 @@ public class BigBrotherTest
             var handle = new object();
             var tEvent = new TestTelemetryEvent();
 
+            TestTelemetryEvent rEvent = null;
             using (bbMock.Object.CreateCorrelation())
+            using (bbMock.Object.TelemetryStream.OfType<TestTelemetryEvent>().Subscribe(e => rEvent = e))
             {
-                TestTelemetryEvent rEvent = null;
-                bbMock.Object.TelemetryStream.OfType<TestTelemetryEvent>().Subscribe(e => rEvent = e);
-
                 bbMock.Object.Publish(tEvent, handle);
 
                 await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription gets love
@@ -134,6 +135,24 @@ public class BigBrotherTest
                 rEvent.CorrelationVector.Should().Be(bbMock.Object.CorrelationHandles[handle].Vector);
 
                 bbMock.Object.Handle.Should().NotBeNull();
+            }
+        }
+
+        [Fact, IsUnit]
+        public void Test_Publish_EndsTimedEvents()
+        {
+            using (ShimsContext.Create())
+            {
+                var endCalled = false;
+
+                ShimBbTimedEvent.AllInstances.End = _ => endCalled = true;
+
+                var bbMock = new Mock<BigBrother> { CallBase = true };
+                var tEvent = new BbTimedEvent();
+
+                bbMock.Object.Publish(tEvent);
+
+                endCalled.Should().BeTrue();
             }
         }
     }

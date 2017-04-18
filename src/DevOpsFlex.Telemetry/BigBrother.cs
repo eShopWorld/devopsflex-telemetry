@@ -79,7 +79,7 @@
         /// <summary>
         /// Default keep alive <see cref="TimeSpan"/> for lose correlation handles created by the consumer.
         /// </summary>
-        internal TimeSpan DefaultKeepAlive = TimeSpan.FromMinutes(10);
+        internal TimeSpan DefaultCorrelationKeepAlive = TimeSpan.FromMinutes(10);
 
         /// <summary>
         /// The current strict correlation handle.
@@ -128,26 +128,13 @@
         /// <param name="correlation">The correlation handle if you want to correlate events</param>
         public void Publish(BbEvent bbEvent, object correlation = null)
         {
+            if (bbEvent is BbTimedEvent timedEvent)
+            {
+                timedEvent.End();
+            }
             if (bbEvent is BbTelemetryEvent tEvent)
             {
-                if (correlation != null) // lose > strict, so we override strict if a lose is passed in
-                {
-                    if (CorrelationHandles.ContainsKey(correlation))
-                    {
-                        tEvent.CorrelationVector = CorrelationHandles[correlation].Vector;
-                        CorrelationHandles[correlation].Touch();
-                    }
-                    else
-                    {
-                        var handle = new CorrelationHandle(DefaultKeepAlive);
-                        CorrelationHandles.Add(correlation, handle);
-                        tEvent.CorrelationVector = handle.Vector;
-                    }
-                }
-                else if (Handle != null)
-                {
-                    tEvent.CorrelationVector = Handle.Vector;
-                }
+                SetupCorrelation(tEvent, correlation);
             }
 
             TelemetryStream.OnNext(bbEvent);
@@ -206,7 +193,7 @@
         /// <param name="span">The <see cref="TimeSpan"/> to keep a lose correlation handle alive.</param>
         public void SetCorrelationKeepAlive(TimeSpan span)
         {
-            DefaultKeepAlive = span;
+            DefaultCorrelationKeepAlive = span;
         }
 
         /// <summary>
@@ -289,6 +276,33 @@
             foreach (var handle in CorrelationHandles.Where(h => h.Value.IsAlive(now)).ToList())
             {
                 CorrelationHandles.Remove(handle.Key);
+            }
+        }
+
+        /// <summary>
+        /// Deals with all the details of setting up the correlation vector inside the event object.
+        /// </summary>
+        /// <param name="event">The event that we want to correlate through.</param>
+        /// <param name="correlation">The correlation handle used to correlate.</param>
+        internal void SetupCorrelation(BbTelemetryEvent @event, object correlation)
+        {
+            if (correlation != null) // lose > strict, so we override strict if a lose is passed in
+            {
+                if (CorrelationHandles.ContainsKey(correlation))
+                {
+                    @event.CorrelationVector = CorrelationHandles[correlation].Vector;
+                    CorrelationHandles[correlation].Touch();
+                }
+                else
+                {
+                    var handle = new CorrelationHandle(DefaultCorrelationKeepAlive);
+                    CorrelationHandles.Add(correlation, handle);
+                    @event.CorrelationVector = handle.Vector;
+                }
+            }
+            else if (Handle != null)
+            {
+                @event.CorrelationVector = Handle.Vector;
             }
         }
 

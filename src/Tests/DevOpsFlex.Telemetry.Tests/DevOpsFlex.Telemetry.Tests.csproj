@@ -42,7 +42,10 @@
       <HintPath>..\..\..\packages\Castle.Core.4.0.0\lib\net45\Castle.Core.dll</HintPath>
     </Reference>
     <Reference Include="DevOpsFlex.Core, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\DevOpsFlex.Core.1.0.1\lib\net462\DevOpsFlex.Core.dll</HintPath>
+      <HintPath>..\..\..\packages\DevOpsFlex.Core.1.0.2\lib\net462\DevOpsFlex.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="DevOpsFlex.Core.1.0.0.0.Fakes">
+      <HintPath>FakesAssemblies\DevOpsFlex.Core.1.0.0.0.Fakes.dll</HintPath>
     </Reference>
     <Reference Include="DevOpsFlex.Telemetry.Fakes">
       <HintPath>FakesAssemblies\DevOpsFlex.Telemetry.Fakes.dll</HintPath>
@@ -240,6 +243,7 @@
     <Fakes Include="Fakes\System.fakes" />
     <Fakes Include="Fakes\mscorlib.fakes" />
     <Fakes Include="Fakes\DevOpsFlex.Telemetry.fakes" />
+    <Fakes Include="Fakes\DevOpsFlex.Core.fakes" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
