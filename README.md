@@ -15,6 +15,8 @@ Events are strongly typed structures of data, written as
 They inherit from any of the base event types, except `BbEvent`. Currently the following event types are supported:
 ![](docs/bb_events.png)
 
+`BigDataEvent` isn't related to telemetry, it's purely here for showing the entire class structure. This special event type should only be used for events that aren't telemetry events but that should end up in the Data Lake store.
+
 **Here's a few examples:**
 ```c#
 public class MyExceptionEvent : BbExceptionEvent
