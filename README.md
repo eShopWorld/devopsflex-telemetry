@@ -12,10 +12,10 @@ it's interface `IBigBrother`.
 
 Events are strongly typed structures of data, written as
 [POCOs](https://en.wikipedia.org/wiki/Plain_Old_CLR_Object).
-They inherit from either `BbTelemetryEvent` if they are a pure event or from `BbExceptionEvent`
-if they represent and exception in your application.
+They inherit from any of the base event types, except `BbEvent`. Currently the following event types are supported:
+![](docs/bb_events.png)
 
-Here's a few examples:
+**Here's a few examples:**
 ```c#
 public class MyExceptionEvent : BbExceptionEvent
 {
@@ -117,7 +117,7 @@ bb.DeveloperMode();
 
 ### Do I just include this package for instrumentation?
 
-Depends on what time of application you're writting. This only includes the
+Depends on what type of application you're writting. This only includes the
 [core Application Insights package](https://www.nuget.org/packages/Microsoft.ApplicationInsights/),
 so if your application can leverage other packages it should also include any of the top level AI packages.
 For example, web applications should also include the
