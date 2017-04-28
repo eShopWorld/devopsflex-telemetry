@@ -42,7 +42,7 @@
       <HintPath>..\..\..\packages\Castle.Core.4.0.0\lib\net45\Castle.Core.dll</HintPath>
     </Reference>
     <Reference Include="DevOpsFlex.Core, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\DevOpsFlex.Core.1.0.2\lib\net462\DevOpsFlex.Core.dll</HintPath>
+      <HintPath>..\..\..\packages\DevOpsFlex.Core.1.0.3\lib\net462\DevOpsFlex.Core.dll</HintPath>
     </Reference>
     <Reference Include="DevOpsFlex.Core.1.0.0.0.Fakes">
       <HintPath>FakesAssemblies\DevOpsFlex.Core.1.0.0.0.Fakes.dll</HintPath>

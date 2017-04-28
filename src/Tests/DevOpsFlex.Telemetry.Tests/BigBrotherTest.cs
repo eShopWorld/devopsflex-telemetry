@@ -19,17 +19,11 @@ public class BigBrotherTest
     public class Dev
     {
         [Fact, IsDev]
-        public void EntryPoint_PushTelemetry()
+        public void EntryPoint_PushEvent()
         {
             var bb = new BigBrother(DevKey, DevKey).DeveloperMode();
 
-            bb.Publish(
-                new TestTelemetryEvent
-                {
-                    Id = Guid.NewGuid(),
-                    Description = "some random piece of text"
-                });
-
+            bb.Publish(new TestTelemetryEvent());
             bb.Flush();
         }
 
@@ -49,6 +43,16 @@ public class BigBrotherTest
                 bb.Flush();
             }
         }
+
+        [Fact, IsDev]
+        public void EntryPoint_PushTimed()
+        {
+            var bb = new BigBrother(DevKey, DevKey).DeveloperMode();
+
+            bb.Publish(new TestTimedEvent());
+            bb.Flush();
+        }
+
     }
 
     public class Publish
@@ -214,6 +218,45 @@ public class BigBrotherTest
         }
     }
 
+    public class SetupSubscriptions
+    {
+        [Fact, IsUnit]
+        public async Task Test_Telemetry_IsSubscribed()
+        {
+            var e = new TestTelemetryEvent();
+            var bbMock = new Mock<BigBrother> {CallBase = true};
+            bbMock.Setup(x => x.HandleEvent(It.IsAny<BbTelemetryEvent>())).Verifiable();
+
+            bbMock.Object.SetupSubscriptions();
+            bbMock.Object.Publish(e);
+
+            await Task.Delay(TimeSpan.FromSeconds(1)); // give the subscription some love
+
+            bbMock.Verify(x => x.HandleEvent(e), Times.Once);
+
+            // wipe all internal subscriptions
+            BigBrotherExtensions.WipeInternalSubscriptions();
+        }
+
+        [Fact, IsUnit]
+        public async Task Test_Internal_IsSubscribed()
+        {
+            var e = new TestTelemetryEvent();
+            var bbMock = new Mock<BigBrother> { CallBase = true };
+            bbMock.Setup(x => x.HandleInternalEvent(It.IsAny<BbTelemetryEvent>())).Verifiable();
+
+            bbMock.Object.SetupSubscriptions();
+            BigBrother.InternalStream.OnNext(e);
+
+            await Task.Delay(TimeSpan.FromSeconds(1)); // give the subscription some love
+
+            bbMock.Verify(x => x.HandleInternalEvent(e), Times.Once);
+
+            // wipe all internal subscriptions
+            BigBrotherExtensions.WipeInternalSubscriptions();
+        }
+    }
+
     internal static void BlowUp(string message)
     {
         throw new Exception(message);
@@ -243,5 +286,30 @@ public class TestExceptionEvent : BbExceptionEvent
     {
         Id = Guid.NewGuid();
         Description = Lorem.GetSentence();
+    }
+}
+
+public class TestTimedEvent : BbTimedEvent
+{
+    public Guid Id { get; set; }
+
+    public string Description { get; set; }
+
+    public TestTimedEvent()
+    {
+        Id = Guid.NewGuid();
+        Description = Lorem.GetSentence();
+    }
+}
+
+public static class BigBrotherExtensions
+{
+    public static void WipeInternalSubscriptions()
+    {
+        foreach (var sub in BigBrother.InternalSubscriptions.Values)
+        {
+            sub.Dispose();
+        }
+        BigBrother.InternalSubscriptions.Clear();
     }
 }

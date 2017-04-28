@@ -33,6 +33,11 @@
         internal static readonly Subject<BbEvent> InternalStream = new Subject<BbEvent>();
 
         /// <summary>
+        /// Contains an internal typed dictionary of all the subscriptions to different types of telemetry that instrument this package.
+        /// </summary>
+        internal static readonly Dictionary<Type, IDisposable> InternalSubscriptions = new Dictionary<Type, IDisposable>();
+
+        /// <summary>
         /// The top level frame on the <see cref="StackTrace"/> when <see cref="BigBrother"/> was instanciated.
         ///     This is used mostly for correlation logic.
         /// </summary>
@@ -65,11 +70,6 @@
         /// Contains a typed dictionary of all the subscriptions to different types of telemetry.
         /// </summary>
         internal Dictionary<Type, IDisposable> TelemetrySubscriptions = new Dictionary<Type, IDisposable>();
-
-        /// <summary>
-        /// Contains an internal typed dictionary of all the subscriptions to different types of telemetry that instrument this package.
-        /// </summary>
-        internal Dictionary<Type, IDisposable> InternalSubscriptions = new Dictionary<Type, IDisposable>();
 
         /// <summary>
         /// The external telemetry client, used to publish events through <see cref="BigBrother"/>.
@@ -218,42 +218,67 @@
         {
             TelemetrySubscriptions.Add(
                 typeof(BbTelemetryEvent),
-                TelemetryStream.OfType<BbTelemetryEvent>()
-                                .Subscribe(e => TelemetryClient.TrackEvent(e.ToTelemetry())));
-
-            TelemetrySubscriptions.Add(
-                typeof(BbExceptionEvent),
-                TelemetryStream.OfType<BbExceptionEvent>()
-                                .Subscribe(
-                                    e =>
-                                    {
-                                        var tEvent = e.ToTelemetry();
-                                        if (tEvent == null) return;
-
-                                        tEvent.SeverityLevel = SeverityLevel.Error;
-
-                                        TelemetryClient.TrackException(tEvent);
-                                    }));
+                TelemetryStream.OfType<BbTelemetryEvent>().Subscribe(HandleEvent));
 
             InternalSubscriptions.Add(
                 typeof(BbTelemetryEvent),
-                InternalStream.OfType<BbTelemetryEvent>()
-                              .Subscribe(e => TelemetryClient.TrackEvent(e.ToTelemetry())));
-
-            InternalSubscriptions.Add(
-                typeof(BbExceptionEvent),
-                InternalStream.OfType<BbExceptionEvent>()
-                              .Subscribe(
-                                  e =>
-                                  {
-                                      var tEvent = e.ToTelemetry();
-                                      if (tEvent == null) return;
-
-                                      tEvent.SeverityLevel = SeverityLevel.Warning;
-
-                                      TelemetryClient.TrackException(tEvent);
-                                  }));
+                InternalStream.OfType<BbTelemetryEvent>().Subscribe(HandleInternalEvent));
         }
+
+        /// <summary>
+        /// Handles external events that are fired by <see cref="Publish"/>.
+        /// </summary>
+        /// <param name="event">The event being handled.</param>
+        internal virtual void HandleEvent(BbTelemetryEvent @event)
+        {
+            switch (@event)
+            {
+                case BbExceptionEvent ex:
+                    var tEvent = ex.ToTelemetry();
+                    if (tEvent == null) return;
+
+                    tEvent.SeverityLevel = SeverityLevel.Error;
+
+                    TelemetryClient.TrackException(tEvent);
+                    break;
+
+                case BbTimedEvent te:
+                    TelemetryClient.TrackEvent(te.ToTelemetry());
+                    break;
+
+                default:
+                    TelemetryClient.TrackEvent(@event.ToTelemetry());
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Handles external events that are fired by the <see cref="InternalStream"/>.
+        /// </summary>
+        /// <param name="event">The event being handled.</param>
+        internal virtual void HandleInternalEvent(BbTelemetryEvent @event)
+        {
+            switch (@event)
+            {
+                case BbExceptionEvent ex:
+                    var tEvent = ex.ToTelemetry();
+                    if (tEvent == null) return;
+
+                    tEvent.SeverityLevel = SeverityLevel.Error;
+
+                    InternalClient.TrackException(tEvent);
+                    break;
+
+                case BbTimedEvent te:
+                    InternalClient.TrackEvent(te.ToTelemetry());
+                    break;
+
+                default:
+                    InternalClient.TrackEvent(@event.ToTelemetry());
+                    break;
+            }
+        }
+
 
         /// <summary>
         /// Used internal by BigBrother to publish usage exceptions to a special
@@ -326,7 +351,6 @@
                 InternalSubscriptions[key]?.Dispose();
             }
             InternalSubscriptions.Clear();
-            InternalSubscriptions = null;
         }
     }
 }

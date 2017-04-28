@@ -18,7 +18,7 @@
         /// <param name="event">The event we want to convert to an AI event.</param>
         /// <returns>The converted <see cref="EventTelemetry"/> event.</returns>
         [CanBeNull]
-        internal static EventTelemetry ToTelemetry(this BbTelemetryEvent @event)
+        internal static EventTelemetry ToTelemetry([NotNull]this BbTelemetryEvent @event)
         {
             try
             {
@@ -53,7 +53,7 @@
         /// <param name="event">The event we want to convert to an AI event.</param>
         /// <returns>The converted <see cref="EventTelemetry"/> event.</returns>
         [CanBeNull]
-        internal static ExceptionTelemetry ToTelemetry(this BbExceptionEvent @event)
+        internal static ExceptionTelemetry ToTelemetry([NotNull]this BbExceptionEvent @event)
         {
             try
             {
@@ -63,6 +63,43 @@
                     Exception = @event.Exception,
                     Timestamp = DateTimeOffset.Now
                 };
+
+                tEvent.SetCorrelation(@event);
+                @event.CopyPropertiesInto(tEvent.Properties);
+
+                return tEvent;
+            }
+            catch (Exception ex)
+            {
+#if DEBUG
+                if (Debugger.IsAttached)
+                {
+                    throw;
+                }
+#endif
+                BigBrother.PublishError(ex);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Converts this event into an Application Insights <see cref="EventTelemetry"/> event ready to be tracked by
+        /// the AI client.
+        /// </summary>
+        /// <param name="event">The event we want to convert to an AI event.</param>
+        /// <returns>The converted <see cref="EventTelemetry"/> event.</returns>
+        [CanBeNull]
+        internal static EventTelemetry ToTelemetry([NotNull]this BbTimedEvent @event)
+        {
+            try
+            {
+                var tEvent = new EventTelemetry
+                {
+                    Name = @event.GetType().Name,
+                    Timestamp = DateTimeOffset.Now,
+                };
+
+                tEvent.Metrics[nameof(BbTimedEvent.ProcessingTime)] = @event.ProcessingTime.TotalSeconds;
 
                 tEvent.SetCorrelation(@event);
                 @event.CopyPropertiesInto(tEvent.Properties);

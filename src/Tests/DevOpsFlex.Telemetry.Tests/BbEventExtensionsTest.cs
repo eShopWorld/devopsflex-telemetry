@@ -43,6 +43,37 @@ public class BbEventExtensionsTest
         }
 
         [Fact, IsUnit]
+        public void Test_Timed_IsPopulated()
+        {
+            using (ShimsContext.Create())
+            {
+                var now = DateTime.Now;
+                var nowPlus10 = DateTime.Now.AddMinutes(10);
+                ShimDateTime.NowGet = () => now;
+
+                var tEvent = new TestTimedEvent();
+                ShimDateTime.NowGet = () => nowPlus10;
+
+                var correlationSet = false;
+                ShimTelemetryExtensions.SetCorrelationITelemetryBbTelemetryEvent = (t, e) =>
+                {
+                    if (e == tEvent)
+                        correlationSet = true;
+                };
+
+                var result = tEvent.ToTelemetry();
+
+                result.Should().NotBeNull();
+                correlationSet.Should().BeTrue();
+                (result?.Name).Should().Be(tEvent.GetType().Name);
+                (result?.Timestamp).Should().Be(nowPlus10);
+                (result?.Properties[nameof(TestExceptionEvent.Id)]).Should().Be(tEvent.Id.ToString());
+                (result?.Properties[nameof(TestExceptionEvent.Description)]).Should().Be(tEvent.Description);
+                (result?.Metrics[nameof(BbTimedEvent.ProcessingTime)]).Should().BeApproximately(600, 6);
+            }
+        }
+
+        [Fact, IsUnit]
         public void Test_Exception_IsPopulated()
         {
             using (ShimsContext.Create())
@@ -107,6 +138,27 @@ public class BbEventExtensionsTest
                 {
                     Exception = new Exception("KABUM!!!")
                 };
+
+                ShimTelemetryExtensions.SetCorrelationITelemetryBbTelemetryEvent = (t, e) => throw exception;
+                using (BigBrother.InternalStream.OfType<BbExceptionEvent>()
+                                 .Subscribe(e =>
+                                 {
+                                     e.Exception.Should().Be(exception);
+                                 }))
+                {
+                    var result = tEvent.ToTelemetry();
+                    result.Should().BeNull();
+                }
+            }
+        }
+
+        [Fact, IsUnit]
+        public void Test_Timed_PublishesOnException()
+        {
+            using (ShimsContext.Create())
+            {
+                var exception = new Exception("Exploding the test here");
+                var tEvent = new TestTimedEvent();
 
                 ShimTelemetryExtensions.SetCorrelationITelemetryBbTelemetryEvent = (t, e) => throw exception;
                 using (BigBrother.InternalStream.OfType<BbExceptionEvent>()
