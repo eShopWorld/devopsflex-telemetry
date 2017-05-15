@@ -34,6 +34,13 @@ public class PaymentEvent : BbTelemetryEvent
 
     public string Currency { get; set; }
 }
+
+public class PaymentAttemptEvent : BbTimedEvent
+{
+    public float Ammount { get; set; }
+
+    public string Currency { get; set; }
+}
 ```
 
 Now that you have some events, publishing them is just:
@@ -46,6 +53,27 @@ bb.Publish(new PaymentEvent
     Ammount = 100,
     Currency = "USD"
 });
+```
+
+### Timed Events
+
+Timed events, besides tracking the normal event custom dimensions will also measure a `ProcessingTime` metric and push it
+to ApplicationInsights. The time window starts when the event is instantiated and finishes when the event is Published.
+
+```c#
+IBigBrother bb = new BigBrother("[Application Insights Key]", "[Application Insights Key - For inner telemetry]");
+
+// Time starts being tracked here
+var event = new PaymentAttemptEvent
+            {
+                Ammount = 100,
+                Currency = "USD"
+            });
+
+// Do something that takes a while
+Task.Delay(TimeSpan.FromMinutes(5)).Wait();
+
+bb.Publish(event); // Time frame stops here
 ```
 
 ### How do I correlate events?
