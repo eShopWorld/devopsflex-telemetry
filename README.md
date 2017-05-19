@@ -104,7 +104,7 @@ using (bb.CreateCorrelation())
 ```
 If you try to create two strict correlation handles it will throw in DEBUG with the debugger attached,
 otherwise just record error and give you back the first handle.
-
+a
 __Lose__ correlation is when you are doing parallel processing and you want multiple correlation handles
 active at the same time. To support this you can use anything that inherits from `object` as a handle.
 ```C#
@@ -167,11 +167,11 @@ we know about it!
 `BigBrother` does a bit of heavy lifting on both it's constructor and the class static constructor,
 so you should always stub `IBigBrother` instead, to avoid the heavy lifting done on the constructors.
 
-`BigBrother` Can slo be deconstructed to gain access to the internal Observables and Observers:
+`BigBrother` Can also be deconstructed to gain access to the internal Observables and Observers:
 ```c#
 public void Deconstruct(out IObservable<BbEvent> telemetryObservable, out IObserver<BbEvent> telemetryObserver, out IObservable<BbEvent> internalObservable)
 ```
 
 This can be used in Unit Tests to instead of verifying Publish calls, the test just subscribes to the internal streams
 and asserts in the scope of that subscription. If you go down this route, be carefull with parallel tests and multiple
-subscriptions and make sure you always dispose of subscriptions to those streams at the end of the test.
+subscriptions and make sure you always dispose of subscriptions to those Observables at the end of the test.
