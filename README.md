@@ -166,3 +166,12 @@ we know about it!
 
 `BigBrother` does a bit of heavy lifting on both it's constructor and the class static constructor,
 so you should always stub `IBigBrother` instead, to avoid the heavy lifting done on the constructors.
+
+`BigBrother` Can slo be deconstructed to gain access to the internal Observables and Observers:
+```c#
+public void Deconstruct(out IObservable<BbEvent> telemetryObservable, out IObserver<BbEvent> telemetryObserver, out IObservable<BbEvent> internalObservable)
+```
+
+This can be used in Unit Tests to instead of verifying Publish calls, the test just subscribes to the internal streams
+and asserts in the scope of that subscription. If you go down this route, be carefull with parallel tests and multiple
+subscriptions and make sure you always dispose of subscriptions to those streams at the end of the test.
