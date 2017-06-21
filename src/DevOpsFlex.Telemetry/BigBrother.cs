@@ -52,6 +52,11 @@
         }
 
         /// <summary>
+        /// Lock gate for dictionary bounded access.
+        /// </summary>
+        internal readonly object Gate = new object();
+
+        /// <summary>
         /// Contains a lookup reference for each lose correlation handle provided.
         /// </summary>
         internal readonly Dictionary<object, CorrelationHandle> CorrelationHandles = new Dictionary<object, CorrelationHandle>();
@@ -220,9 +225,18 @@
                 typeof(BbTelemetryEvent),
                 TelemetryStream.OfType<BbTelemetryEvent>().Subscribe(HandleEvent));
 
-            InternalSubscriptions.Add(
-                typeof(BbTelemetryEvent),
-                InternalStream.OfType<BbTelemetryEvent>().Subscribe(HandleInternalEvent));
+            lock (Gate)
+            {
+                if (InternalSubscriptions.ContainsKey(typeof(BbTelemetryEvent)))
+                {
+                    InternalSubscriptions[typeof(BbTelemetryEvent)].Dispose();
+                    InternalSubscriptions.Remove(typeof(BbTelemetryEvent));
+                }
+
+                InternalSubscriptions.Add(
+                    typeof(BbTelemetryEvent),
+                    InternalStream.OfType<BbTelemetryEvent>().Subscribe(HandleInternalEvent));
+            }
         }
 
         /// <summary>

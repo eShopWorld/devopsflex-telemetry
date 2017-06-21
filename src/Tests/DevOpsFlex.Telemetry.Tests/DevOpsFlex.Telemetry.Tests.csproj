@@ -51,7 +51,7 @@
       <HintPath>FakesAssemblies\DevOpsFlex.Telemetry.Fakes.dll</HintPath>
     </Reference>
     <Reference Include="DevOpsFlex.Tests.Core, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\DevOpsFlex.Tests.Core.1.0.9\lib\net462\DevOpsFlex.Tests.Core.dll</HintPath>
+      <HintPath>..\..\..\packages\DevOpsFlex.Tests.Core.1.0.10\lib\net462\DevOpsFlex.Tests.Core.dll</HintPath>
     </Reference>
     <Reference Include="FluentAssertions, Version=4.19.2.0, Culture=neutral, PublicKeyToken=33f2691a05b67b6a, processorArchitecture=MSIL">
       <HintPath>..\..\..\packages\FluentAssertions.4.19.2\lib\net45\FluentAssertions.dll</HintPath>
@@ -228,7 +228,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Analyzer Include="..\..\..\packages\DevOpsFlex.Tests.Core.Analyzers.1.0.9\analyzers\dotnet\cs\DevOpsFlex.Tests.Core.Analyzers.dll" />
+    <Analyzer Include="..\..\..\packages\DevOpsFlex.Tests.Core.Analyzers.1.0.10\analyzers\dotnet\cs\DevOpsFlex.Tests.Core.Analyzers.dll" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
