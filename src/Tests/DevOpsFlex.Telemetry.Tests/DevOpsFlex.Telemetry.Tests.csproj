@@ -220,11 +220,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
     <Fakes Include="Fakes\System.fakes" />
     <Fakes Include="Fakes\mscorlib.fakes" />
     <Fakes Include="Fakes\DevOpsFlex.Telemetry.fakes" />
     <Fakes Include="Fakes\DevOpsFlex.Core.fakes" />
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

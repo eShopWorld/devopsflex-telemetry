@@ -33,9 +33,19 @@
         internal static readonly Subject<BbEvent> InternalStream = new Subject<BbEvent>();
 
         /// <summary>
-        /// Contains an internal typed dictionary of all the subscriptions to different types of telemetry that instrument this package.
+        /// The internal Exception stream, used to push direct exceptions to non-telemetry sinks.
+        /// </summary>
+        internal static readonly Subject<Exception> ExceptionStream = new Subject<Exception>();
+
+        /// <summary>
+        /// Contains an internal stream typed dictionary of all the subscriptions to different types of telemetry that instrument this package.
         /// </summary>
         internal static readonly Dictionary<Type, IDisposable> InternalSubscriptions = new Dictionary<Type, IDisposable>();
+
+        /// <summary>
+        /// Contains an exception stream typed dictionary of all the subscriptions to different types of telemetry that instrument this package.
+        /// </summary>
+        internal static readonly Dictionary<Type, IDisposable> ExceptionSubscriptions = new Dictionary<Type, IDisposable>();
 
         /// <summary>
         /// The top level frame on the <see cref="StackTrace"/> when <see cref="BigBrother"/> was instanciated.
@@ -221,22 +231,8 @@
         /// </summary>
         internal void SetupSubscriptions()
         {
-            TelemetrySubscriptions.Add(
-                typeof(BbTelemetryEvent),
-                TelemetryStream.OfType<BbTelemetryEvent>().Subscribe(HandleEvent));
-
-            lock (Gate)
-            {
-                if (InternalSubscriptions.ContainsKey(typeof(BbTelemetryEvent)))
-                {
-                    InternalSubscriptions[typeof(BbTelemetryEvent)].Dispose();
-                    InternalSubscriptions.Remove(typeof(BbTelemetryEvent));
-                }
-
-                InternalSubscriptions.Add(
-                    typeof(BbTelemetryEvent),
-                    InternalStream.OfType<BbTelemetryEvent>().Subscribe(HandleInternalEvent));
-            }
+            TelemetrySubscriptions[typeof(BbTelemetryEvent)] = TelemetryStream.OfType<BbTelemetryEvent>().Subscribe(HandleEvent);
+            InternalSubscriptions[typeof(BbTelemetryEvent)] = InternalStream.OfType<BbTelemetryEvent>().Subscribe(HandleInternalEvent);
         }
 
         /// <summary>
