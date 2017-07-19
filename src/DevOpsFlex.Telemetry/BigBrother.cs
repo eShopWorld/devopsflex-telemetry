@@ -1,6 +1,7 @@
 ﻿namespace DevOpsFlex.Telemetry
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Diagnostics.CodeAnalysis;
@@ -30,22 +31,22 @@
         /// <summary>
         /// The internal telemetry stream, used by packages to report errors and usage to an internal AI account.
         /// </summary>
-        internal static readonly Subject<BbEvent> InternalStream = new Subject<BbEvent>();
+        internal static readonly ISubject<BbEvent> InternalStream = new Subject<BbEvent>();
 
         /// <summary>
         /// The internal Exception stream, used to push direct exceptions to non-telemetry sinks.
         /// </summary>
-        internal static readonly Subject<Exception> ExceptionStream = new Subject<Exception>();
+        internal static readonly ISubject<Exception> ExceptionStream = new Subject<Exception>();
 
         /// <summary>
         /// Contains an internal stream typed dictionary of all the subscriptions to different types of telemetry that instrument this package.
         /// </summary>
-        internal static readonly Dictionary<Type, IDisposable> InternalSubscriptions = new Dictionary<Type, IDisposable>();
+        internal static readonly ConcurrentDictionary<Type, IDisposable> InternalSubscriptions = new ConcurrentDictionary<Type, IDisposable>();
 
         /// <summary>
         /// Contains an exception stream typed dictionary of all the subscriptions to different types of telemetry that instrument this package.
         /// </summary>
-        internal static readonly Dictionary<Type, IDisposable> ExceptionSubscriptions = new Dictionary<Type, IDisposable>();
+        internal static readonly ConcurrentDictionary<Type, IDisposable> ExceptionSubscriptions = new ConcurrentDictionary<Type, IDisposable>();
 
         /// <summary>
         /// The top level frame on the <see cref="StackTrace"/> when <see cref="BigBrother"/> was instanciated.
@@ -62,14 +63,9 @@
         }
 
         /// <summary>
-        /// Lock gate for dictionary bounded access.
-        /// </summary>
-        internal readonly object Gate = new object();
-
-        /// <summary>
         /// Contains a lookup reference for each lose correlation handle provided.
         /// </summary>
-        internal readonly Dictionary<object, CorrelationHandle> CorrelationHandles = new Dictionary<object, CorrelationHandle>();
+        internal readonly ConcurrentDictionary<object, CorrelationHandle> CorrelationHandles = new ConcurrentDictionary<object, CorrelationHandle>();
 
         /// <summary>
         /// Contains the timer used to clear old correlation handles from the lookup <see cref="Dictionary{TKey,TValue}"/>
@@ -84,7 +80,7 @@
         /// <summary>
         /// Contains a typed dictionary of all the subscriptions to different types of telemetry.
         /// </summary>
-        internal Dictionary<Type, IDisposable> TelemetrySubscriptions = new Dictionary<Type, IDisposable>();
+        internal ConcurrentDictionary<Type, IDisposable> TelemetrySubscriptions = new ConcurrentDictionary<Type, IDisposable>();
 
         /// <summary>
         /// The external telemetry client, used to publish events through <see cref="BigBrother"/>.
@@ -137,6 +133,16 @@
         }
 
         /// <summary>
+        /// Writes an <see cref="Exception"/> directly to any sinks previously setup.
+        ///     This method will not publish the exception to Application Insights, it will just sink it.
+        /// </summary>
+        /// <param name="ex">The <see cref="Exception"/> we want to write.</param>
+        public static void Write(Exception ex)
+        {
+            ExceptionStream.OnNext(ex);
+        }
+
+        /// <summary>
         /// Publishes a <see cref="BbEvent"/> through the pipeline.
         /// </summary>
         /// <param name="bbEvent">The event that we want to publish.</param>
@@ -178,7 +184,7 @@
         {
             if (Handle == null) return new StrictCorrelationHandle(this);
 
-            var ex = new InvalidOperationException("You\'re trying to create a second correlation handle while one is active. Use lose correlation instead if you\'re trying to correlate work in parallel with different correlations.");
+            var ex = new InvalidOperationException("You're trying to create a second correlation handle while one is active. Use lose correlation instead if you're trying to correlate work in parallel with different correlations.");
 #if DEBUG
             if (Debugger.IsAttached)
             {
@@ -231,8 +237,13 @@
         /// </summary>
         internal void SetupSubscriptions()
         {
-            TelemetrySubscriptions[typeof(BbTelemetryEvent)] = TelemetryStream.OfType<BbTelemetryEvent>().Subscribe(HandleEvent);
-            InternalSubscriptions[typeof(BbTelemetryEvent)] = InternalStream.OfType<BbTelemetryEvent>().Subscribe(HandleInternalEvent);
+            TelemetrySubscriptions.TryAdd(
+                typeof(BbTelemetryEvent),
+                TelemetryStream.OfType<BbTelemetryEvent>().Subscribe(HandleEvent));
+
+            InternalSubscriptions.AddSubscription(
+                typeof(BbTelemetryEvent),
+                InternalStream.OfType<BbTelemetryEvent>().Subscribe(HandleInternalEvent));
         }
 
         /// <summary>
@@ -310,7 +321,7 @@
 
             foreach (var handle in CorrelationHandles.Where(h => h.Value.IsAlive(now)).ToList())
             {
-                CorrelationHandles.Remove(handle.Key);
+                CorrelationHandles.TryRemove(handle.Key, out CorrelationHandle _);
             }
         }
 
@@ -331,7 +342,7 @@
                 else
                 {
                     var handle = new CorrelationHandle(DefaultCorrelationKeepAlive);
-                    CorrelationHandles.Add(correlation, handle);
+                    CorrelationHandles.TryAdd(correlation, handle);
                     @event.CorrelationVector = handle.Vector;
                 }
             }

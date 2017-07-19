@@ -15,11 +15,12 @@
     <copyright>Copyright 2016</copyright>
     <tags>Application Insights, Telemetry, Log</tags>
     <dependencies>
-      <dependency id="NETStandard.Library" version="[1.6.1,)" />
-      <dependency id="Microsoft.ApplicationInsights" version="[2.3.0,)" />
-      <dependency id="JetBrains.Annotations" version="[10.4.0,)" />
-      <dependency id="System.Reactive" version="[3.1.1,)" />
       <dependency id="DevOpsFlex.Core" version="[1.0.3,)" />
+      <dependency id="JetBrains.Annotations" version="[10.4.0,)" />
+      <dependency id="Microsoft.ApplicationInsights" version="[2.4.0,)" />
+      <dependency id="NETStandard.Library" version="[1.6.1,)" />
+      <dependency id="Polly" version="[5.2.0,)" />
+      <dependency id="System.Reactive" version="[3.1.1,)" />
     </dependencies>
   </metadata>
 </package>

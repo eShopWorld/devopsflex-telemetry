@@ -47,6 +47,9 @@
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="Polly, Version=5.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Polly.5.2.0\lib\net45\Polly.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.AppContext, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\..\packages\System.AppContext.4.3.0\lib\net46\System.AppContext.dll</HintPath>
@@ -151,6 +154,7 @@
     <Compile Include="BbEventExtensions.cs" />
     <Compile Include="BigBrother.cs" />
     <Compile Include="CorrelationHandle.cs" />
+    <Compile Include="CollectionExtensions.cs" />
     <Compile Include="StrictCorrelationHandle.cs" />
     <Compile Include="IBigBrother.cs" />
     <Compile Include="InternalEvents\FlushEvent.cs" />
