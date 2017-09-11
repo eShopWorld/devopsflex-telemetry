@@ -2,8 +2,6 @@
 {
     using System;
     using System.Collections.Concurrent;
-    using System.Threading.Tasks;
-    using Polly;
 
     /// <summary>
     /// Contains extensions methods to facilitate working with Collections.
