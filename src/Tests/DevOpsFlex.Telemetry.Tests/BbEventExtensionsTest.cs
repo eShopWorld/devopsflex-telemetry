@@ -80,10 +80,7 @@ public class BbEventExtensionsTest
             {
                 const string message = "KABUM!!!";
                 var exception = new Exception(message);
-                var tEvent = new TestExceptionEvent
-                {
-                    Exception = exception
-                };
+                var tEvent = new TestExceptionEvent(exception);
 
                 var now = DateTime.Now;
                 ShimDateTime.NowGet = () => now;
@@ -134,10 +131,7 @@ public class BbEventExtensionsTest
             using (ShimsContext.Create())
             {
                 var exception = new Exception("Exploding the test here");
-                var tEvent = new TestExceptionEvent
-                {
-                    Exception = new Exception("KABUM!!!")
-                };
+                var tEvent = new TestExceptionEvent(new Exception("KABUM!!!"));
 
                 ShimTelemetryExtensions.SetCorrelationITelemetryBbTelemetryEvent = (t, e) => throw exception;
                 using (BigBrother.InternalStream.OfType<BbExceptionEvent>()

@@ -20,13 +20,20 @@
         /// Forces the telemetry channel to be in developer mode, where it will instantly push
         /// telemetry to the Application Insights account.
         /// </summary>
-        IBigBrother DeveloperMode();
+        [NotNull] IBigBrother DeveloperMode();
 
         /// <summary>
         /// Creates a strict correlation handle for synchronous correlation.
         /// </summary>
         /// <returns>The correlation handle as an <see cref="IDisposable"/>.</returns>
-        IDisposable CreateCorrelation();
+        [NotNull] IDisposable CreateCorrelation();
+
+        /// <summary>
+        /// Gets the associated <see cref="string"/> Vector to the given handle.
+        /// </summary>
+        /// <param name="handle">The handle used to correlate events.</param>
+        /// <returns>The correlation Vector as a <see cref="string"/>, or null if your handle can't be found.</returns>
+        [CanBeNull] string GetCorrelationVector([NotNull] object handle);
 
         /// <summary>
         /// Flush out all telemetry clients, both the external and the internal one.

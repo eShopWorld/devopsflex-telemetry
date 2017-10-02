@@ -19,7 +19,7 @@
 
     /// <summary>
     /// Deals with everything that's public in telemetry.
-    /// This is the main entry point in the <see cref="Telemetry"/> API.
+    /// This is the main entry point in the <see cref="N:DevOpsFlex.Telemetry" /> API.
     /// </summary>
     public class BigBrother : IBigBrother, IDisposable
     {
@@ -142,11 +142,7 @@
             ExceptionStream.OnNext(ex);
         }
 
-        /// <summary>
-        /// Publishes a <see cref="BbEvent"/> through the pipeline.
-        /// </summary>
-        /// <param name="bbEvent">The event that we want to publish.</param>
-        /// <param name="correlation">The correlation handle if you want to correlate events</param>
+        /// <inheritdoc />
         public void Publish(BbEvent bbEvent, object correlation = null)
         {
             if (bbEvent is BbTimedEvent timedEvent)
@@ -161,10 +157,7 @@
             TelemetryStream.OnNext(bbEvent);
         }
 
-        /// <summary>
-        /// Forces the telemetry channel to be in developer mode, where it will instantly push
-        ///     telemetry to the Application Insights account.
-        /// </summary>
+        /// <inheritdoc />
         public IBigBrother DeveloperMode()
         {
 #if DEBUG
@@ -176,10 +169,7 @@
             return this;
         }
 
-        /// <summary>
-        /// Creates a strict correlation handle for synchronous correlation.
-        /// </summary>
-        /// <returns>The correlation handle as an <see cref="IDisposable"/>.</returns>
+        /// <inheritdoc />
         public IDisposable CreateCorrelation()
         {
             if (Handle == null) return new StrictCorrelationHandle(this);
@@ -188,6 +178,7 @@
 #if DEBUG
             if (Debugger.IsAttached)
             {
+                Debugger.Break();
                 throw ex;
             }
 #endif
@@ -195,12 +186,15 @@
             return Handle;
         }
 
-        /// <summary>
-        /// Flush out all telemetry clients, both the external and the internal one.
-        /// </summary>
-        /// <remarks>
-        /// There is internal telemetry associated with calling this method to prevent bad usage.
-        /// </remarks>
+        /// <inheritdoc />
+        public string GetCorrelationVector(object handle)
+        {
+            return CorrelationHandles.ContainsKey(handle)
+                ? CorrelationHandles[handle].Vector
+                : null;
+        }
+
+        /// <inheritdoc />
         public void Flush()
         {
             InternalStream.OnNext(new FlushEvent()); // You're not guaranteed to flush this event
@@ -208,10 +202,7 @@
             InternalClient.Flush();
         }
 
-        /// <summary>
-        /// Sets the ammount of minutes to keep a lose correlation object reference alive.
-        /// </summary>
-        /// <param name="span">The <see cref="TimeSpan"/> to keep a lose correlation handle alive.</param>
+        /// <inheritdoc />
         public void SetCorrelationKeepAlive(TimeSpan span)
         {
             DefaultCorrelationKeepAlive = span;
