@@ -39,7 +39,7 @@ public class BigBrotherTest
             }
             catch (Exception ex)
             {
-                bb.Publish(BbEventExtensions.ToBbEvent(ex));
+                bb.Publish(ex.ToBbEvent());
                 bb.Flush();
             }
         }
@@ -282,7 +282,8 @@ public class TestExceptionEvent : BbExceptionEvent
 
     public string Description { get; set; }
 
-    public TestExceptionEvent()
+    public TestExceptionEvent(Exception ex)
+        : base(ex)
     {
         Id = Guid.NewGuid();
         Description = Lorem.GetSentence();

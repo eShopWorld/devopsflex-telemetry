@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>DevOpsFlex.Telemetry</id>
-    <version>1.2.3</version>
+    <version>1.2.4</version>
     <title>DevOpsFlex.Telemetry</title>
     <authors>David Rodrigues</authors>
     <owners>eShopWorld</owners>
@@ -15,11 +15,10 @@
     <copyright>Copyright 2016</copyright>
     <tags>Application Insights, Telemetry, Log</tags>
     <dependencies>
-      <dependency id="DevOpsFlex.Core" version="[1.0.3,)" />
-      <dependency id="JetBrains.Annotations" version="[10.4.0,)" />
+      <dependency id="DevOpsFlex.Core" version="[1.0.5,)" />
+      <dependency id="JetBrains.Annotations" version="[11.0.0,)" />
       <dependency id="Microsoft.ApplicationInsights" version="[2.4.0,)" />
       <dependency id="NETStandard.Library" version="[1.6.1,)" />
-      <dependency id="Polly" version="[5.2.0,)" />
       <dependency id="System.Reactive" version="[3.1.1,)" />
     </dependencies>
   </metadata>

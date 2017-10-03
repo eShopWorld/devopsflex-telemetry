@@ -25,7 +25,7 @@
                 var tEvent = new EventTelemetry
                 {
                     Name = @event.GetType().Name,
-                    Timestamp = DateTimeOffset.Now
+                    Timestamp = DateTime.Now
                 };
 
                 tEvent.SetCorrelation(@event);
@@ -38,6 +38,7 @@
 #if DEBUG
                 if (Debugger.IsAttached)
                 {
+                    Debugger.Break();
                     throw;
                 }
 #endif
@@ -57,11 +58,16 @@
         {
             try
             {
+                if (@event.Exception == null)
+                {
+                    throw new InvalidOperationException($"Attempt to publish an Exception Event without an exception for type {@event.GetType().FullName}");
+                }
+
                 var tEvent = new ExceptionTelemetry
                 {
                     Message = @event.Exception.Message,
                     Exception = @event.Exception,
-                    Timestamp = DateTimeOffset.Now
+                    Timestamp = DateTime.Now
                 };
 
                 tEvent.SetCorrelation(@event);
@@ -74,6 +80,7 @@
 #if DEBUG
                 if (Debugger.IsAttached)
                 {
+                    Debugger.Break();
                     throw;
                 }
 #endif
@@ -96,7 +103,7 @@
                 var tEvent = new EventTelemetry
                 {
                     Name = @event.GetType().Name,
-                    Timestamp = DateTimeOffset.Now,
+                    Timestamp = DateTime.Now,
                 };
 
                 tEvent.Metrics[nameof(BbTimedEvent.ProcessingTime)] = @event.ProcessingTime.TotalSeconds;
@@ -111,37 +118,13 @@
 #if DEBUG
                 if (Debugger.IsAttached)
                 {
+                    Debugger.Break();
                     throw;
                 }
 #endif
                 BigBrother.PublishError(ex);
                 return null;
             }
-        }
-
-        /// <summary>
-        /// Converts a generic <see cref="Exception"/> into a <see cref="BbExceptionEvent"/>.
-        /// </summary>
-        /// <param name="exception">The original <see cref="Exception"/>.</param>
-        /// <returns>The converted <see cref="BbExceptionEvent"/>.</returns>
-        public static BbExceptionEvent ToBbEvent(this Exception exception)
-        {
-            return ToBbEvent<BbExceptionEvent>(exception);
-        }
-
-        /// <summary>
-        /// Converts a generic <see cref="Exception"/> into any class that inherits from <see cref="BbExceptionEvent"/>.
-        /// </summary>
-        /// <typeparam name="T">The type of the specific <see cref="BbExceptionEvent"/> super class.</typeparam>
-        /// <param name="exception">The original <see cref="Exception"/>.</param>
-        /// <returns>The converted super class of <see cref="BbExceptionEvent"/>.</returns>
-        public static T ToBbEvent<T>(this Exception exception)
-            where T : BbExceptionEvent, new()
-        {
-            return new T
-            {
-                Exception = exception
-            };
         }
     }
 }
