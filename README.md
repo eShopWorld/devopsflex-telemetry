@@ -131,6 +131,12 @@ void SetCorrelationKeepAlive(TimeSpan span)
 ```
 They will be released after this time and if you try to use the handle again you'll get a new correlation vector for it.
 
+You can also get the correlation vector (as a string) created by `BigBrother` for any handle with:
+```C#
+[CanBeNull] string GetCorrelationVector([NotNull] object handle)
+```
+
+
 ### What can I also do with it?
 
 You can force a Flush of the AI client, which will send all events right away:
