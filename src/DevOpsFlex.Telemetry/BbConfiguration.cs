@@ -1,6 +1,5 @@
 ﻿namespace DevOpsFlex.Telemetry
 {
-    using System;
     using System.Reactive.Linq;
     using Core;
 
@@ -31,9 +30,8 @@
                 case EventSourceSink eSink:
                     var bb = eSink.Bb;
 
-                    bb.TelemetrySubscriptions.AddSubscription(
-                        typeof(EventSourceSink),
-                        bb.TelemetryStream.OfType<BbExceptionEvent>().Subscribe(e => BigBrother.ExceptionStream.OnNext(e.Exception)));
+                    BigBrother.ExceptionSinkSubscription?.Dispose();
+                    BigBrother.ExceptionSinkSubscription = bb.TelemetryStream.OfType<BbExceptionEvent>().Subscribe(BigBrother.ExceptionStream);
 
                     break;
 

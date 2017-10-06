@@ -5,6 +5,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Diagnostics.CodeAnalysis;
+    using System.Diagnostics.Tracing;
     using System.Linq;
     using System.Reactive;
     using System.Reactive.Linq;
@@ -24,11 +25,6 @@
     public class BigBrother : IBigBrother, IDisposable
     {
         /// <summary>
-        /// The unique internal <see cref="Microsoft.ApplicationInsights.TelemetryClient"/> used to stream events to the AI account.
-        /// </summary>
-        internal static readonly TelemetryClient InternalClient;
-
-        /// <summary>
         /// The internal telemetry stream, used by packages to report errors and usage to an internal AI account.
         /// </summary>
         internal static readonly ISubject<BbEvent> InternalStream = new Subject<BbEvent>();
@@ -36,7 +32,12 @@
         /// <summary>
         /// The internal Exception stream, used to push direct exceptions to non-telemetry sinks.
         /// </summary>
-        internal static readonly ISubject<Exception> ExceptionStream = new Subject<Exception>();
+        internal static readonly ISubject<BbExceptionEvent> ExceptionStream = new Subject<BbExceptionEvent>();
+
+        /// <summary>
+        /// The main event stream that's exposed publicly (yea ... subjects are bad ... I'll redesign when and if time allows).
+        /// </summary>
+        internal readonly Subject<BbEvent> TelemetryStream = new Subject<BbEvent>();
 
         /// <summary>
         /// Contains an internal stream typed dictionary of all the subscriptions to different types of telemetry that instrument this package.
@@ -47,6 +48,26 @@
         /// Contains an exception stream typed dictionary of all the subscriptions to different types of telemetry that instrument this package.
         /// </summary>
         internal static readonly ConcurrentDictionary<Type, IDisposable> ExceptionSubscriptions = new ConcurrentDictionary<Type, IDisposable>();
+
+        /// <summary>
+        /// Contains the exception stream typed dictionary of sink subscription.
+        /// </summary>
+        internal static IDisposable ExceptionSinkSubscription;
+
+        /// <summary>
+        /// Constans the static ExceptionStream subscription from this client.
+        /// </summary>
+        internal IDisposable GlobalExceptionSubscription;
+
+        /// <summary>
+        /// Contains a typed dictionary of all the subscriptions to different types of telemetry.
+        /// </summary>
+        internal ConcurrentDictionary<Type, IDisposable> TelemetrySubscriptions = new ConcurrentDictionary<Type, IDisposable>();
+
+        /// <summary>
+        /// The unique internal <see cref="Microsoft.ApplicationInsights.TelemetryClient"/> used to stream events to the AI account.
+        /// </summary>
+        internal static readonly TelemetryClient InternalClient;
 
         /// <summary>
         /// The top level frame on the <see cref="StackTrace"/> when <see cref="BigBrother"/> was instanciated.
@@ -60,6 +81,9 @@
         static BigBrother()
         {
             InternalClient = new TelemetryClient();
+
+            ExceptionSubscriptions.AddSubscription(typeof(EventSource), ExceptionStream.Subscribe(SinkToEventSource));
+            ExceptionSubscriptions.AddSubscription(typeof(Trace), ExceptionStream.Subscribe(SinkToTrace));
         }
 
         /// <summary>
@@ -71,16 +95,6 @@
         /// Contains the timer used to clear old correlation handles from the lookup <see cref="Dictionary{TKey,TValue}"/>
         /// </summary>
         internal readonly Timer CorrelationReleaseTimer;
-
-        /// <summary>
-        /// The main event stream that's exposed publicly (yea ... subjects are bad ... I'll redesign when and if time allows).
-        /// </summary>
-        internal readonly Subject<BbEvent> TelemetryStream = new Subject<BbEvent>();
-
-        /// <summary>
-        /// Contains a typed dictionary of all the subscriptions to different types of telemetry.
-        /// </summary>
-        internal ConcurrentDictionary<Type, IDisposable> TelemetrySubscriptions = new ConcurrentDictionary<Type, IDisposable>();
 
         /// <summary>
         /// The external telemetry client, used to publish events through <see cref="BigBrother"/>.
@@ -133,14 +147,25 @@
         }
 
         /// <summary>
-        /// Writes an <see cref="Exception"/> directly to any sinks previously setup.
+        /// Writes an <see cref="Exception"/> directly to all available sinks outside Application Insights.
         ///     This method will not publish the exception to Application Insights, it will just sink it.
         /// </summary>
         /// <param name="ex">The <see cref="Exception"/> we want to write.</param>
         public static void Write(Exception ex)
         {
-            ExceptionStream.OnNext(ex);
+            ExceptionStream.OnNext(ex.ToBbEvent());
         }
+
+        /// <summary>
+        /// Writes a <see cref="BbExceptionEvent"/> directly to all available sinks outside Application Insights.
+        ///     This method will not publish the exception to Application Insights, it will just sink it.
+        /// </summary>
+        /// <param name="exEvent">The <see cref="BbExceptionEvent"/> we want to write.</param>
+        public static void Write(BbExceptionEvent exEvent)
+        {
+            ExceptionStream.OnNext(exEvent);
+        }
+
 
         /// <inheritdoc />
         public void Publish(BbEvent bbEvent, object correlation = null)
@@ -228,13 +253,19 @@
         /// </summary>
         internal void SetupSubscriptions()
         {
-            TelemetrySubscriptions.TryAdd(
-                typeof(BbTelemetryEvent),
-                TelemetryStream.OfType<BbTelemetryEvent>().Subscribe(HandleEvent));
+            TelemetrySubscriptions.AddSubscription(typeof(BbTelemetryEvent), TelemetryStream.OfType<BbTelemetryEvent>().Subscribe(HandleEvent));
+            InternalSubscriptions.AddSubscription(typeof(BbTelemetryEvent), InternalStream.OfType<BbTelemetryEvent>().Subscribe(HandleInternalEvent));
+            GlobalExceptionSubscription = ExceptionStream.Subscribe(TelemetryStream);
+        }
 
-            InternalSubscriptions.AddSubscription(
-                typeof(BbTelemetryEvent),
-                InternalStream.OfType<BbTelemetryEvent>().Subscribe(HandleInternalEvent));
+        internal static void SinkToEventSource(BbExceptionEvent @event)
+        {
+
+        }
+
+        internal static void SinkToTrace(BbExceptionEvent @event)
+        {
+
         }
 
         /// <summary>
@@ -290,7 +321,6 @@
                     break;
             }
         }
-
 
         /// <summary>
         /// Used internal by BigBrother to publish usage exceptions to a special
