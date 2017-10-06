@@ -11,7 +11,7 @@
     /// <remarks>
     /// Used to sink exceptions in <see cref="BigBrother"/> to support Service Fabric deployments.
     /// </remarks>
-    [EventSource(Name = "DevOpsFlex-Telemetry-Events")]
+    [EventSource(Name = "DevOpsFlex-Telemetry-ExceptionEvents")]
     internal class ErrorEventSource : EventSource
     {
         internal class Keywords
@@ -22,8 +22,7 @@
         internal class Tasks
         {
             internal const EventTask BbExceptionEvent = (EventTask) (1 << 0);
-
-            internal const EventTask Exception = (EventTask) (1 << 0);
+            internal const EventTask Exception =        (EventTask) (1 << 0);
         }
 
         internal static ErrorEventSource Log { get; } = new ErrorEventSource();

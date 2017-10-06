@@ -258,14 +258,22 @@
             GlobalExceptionSubscription = ExceptionStream.Subscribe(TelemetryStream);
         }
 
+        /// <summary>
+        /// Handles <see cref="BbExceptionEvent"/> that is going to be sinked to an <see cref="EventSource"/>.
+        /// </summary>
+        /// <param name="event">The event we want to sink to the <see cref="EventSource"/>.</param>
         internal static void SinkToEventSource(BbExceptionEvent @event)
         {
-
+            ErrorEventSource.Log.Error(@event);
         }
 
+        /// <summary>
+        /// Handles <see cref="BbExceptionEvent"/> that is going to be sinked to a <see cref="Trace"/>.
+        /// </summary>
+        /// <param name="event">The event we want to sink to the <see cref="Trace"/>.</param>
         internal static void SinkToTrace(BbExceptionEvent @event)
         {
-
+            Trace.TraceError($"BbExceptionEvent: {@event.Exception.Message} | StackTrace: {@event.Exception.StackTrace}");
         }
 
         /// <summary>
