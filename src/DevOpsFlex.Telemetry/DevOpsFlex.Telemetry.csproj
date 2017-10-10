@@ -155,6 +155,7 @@
     <Compile Include="CorrelationHandle.cs" />
     <Compile Include="CollectionExtensions.cs" />
     <Compile Include="ErrorEventSource.cs" />
+    <Compile Include="SingleReplayCast.cs" />
     <Compile Include="StrictCorrelationHandle.cs" />
     <Compile Include="IBigBrother.cs" />
     <Compile Include="InternalEvents\FlushEvent.cs" />
