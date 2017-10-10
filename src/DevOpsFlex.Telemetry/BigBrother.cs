@@ -24,6 +24,7 @@
     /// </summary>
     public class BigBrother : IBigBrother, IDisposable
     {
+
         /// <summary>
         /// The internal telemetry stream, used by packages to report errors and usage to an internal AI account.
         /// </summary>
@@ -33,6 +34,12 @@
         /// The internal Exception stream, used to push direct exceptions to non-telemetry sinks.
         /// </summary>
         internal static readonly ISubject<BbExceptionEvent> ExceptionStream = new Subject<BbExceptionEvent>();
+
+        /// <summary>
+        /// The one time replayable internal Exception stream, used to push direct exceptions to non-telemetry sinks.
+        ///     We use this to replay direct exceptions published before <see cref="BigBrother"/> ctor, only once.
+        /// </summary>
+        internal static readonly SingleReplayCast<BbExceptionEvent> ReplayCast = new SingleReplayCast<BbExceptionEvent>(ExceptionStream);
 
         /// <summary>
         /// The main event stream that's exposed publicly (yea ... subjects are bad ... I'll redesign when and if time allows).
@@ -253,6 +260,8 @@
         /// </summary>
         internal void SetupSubscriptions()
         {
+            ReplayCast.Subscribe(TelemetryStream.OnNext); // volatile subscription, don't need to keep it
+
             TelemetrySubscriptions.AddSubscription(typeof(BbTelemetryEvent), TelemetryStream.OfType<BbTelemetryEvent>().Subscribe(HandleEvent));
             InternalSubscriptions.AddSubscription(typeof(BbTelemetryEvent), InternalStream.OfType<BbTelemetryEvent>().Subscribe(HandleInternalEvent));
             GlobalExceptionSubscription = ExceptionStream.Subscribe(TelemetryStream);
