@@ -52,6 +52,7 @@
         public void Dispose()
         {
             ReplayConnection?.Dispose();
+            ReplaySubscription?.Dispose();
             Replay?.Dispose();
         }
     }
