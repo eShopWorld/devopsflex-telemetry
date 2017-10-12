@@ -286,6 +286,42 @@
         }
 
         /// <summary>
+        /// Send an <see cref="EventTelemetry" /> for display in Diagnostic Search and aggregation in Metrics Explorer.
+        /// Create a separate <see cref="EventTelemetry" /> instance for each call to TrackEvent(EventTelemetry).
+        /// </summary>
+        /// <param name="telemetry">An event log item.</param>
+        /// <param name="internal">True if this is an internal event, false otherwise.</param>
+        internal void TrackEvent(EventTelemetry telemetry, bool @internal = false)
+        {
+            if (@internal)
+            {
+                InternalClient.TrackEvent(telemetry);
+            }
+            else
+            {
+                TelemetryClient.TrackEvent(telemetry);
+            }
+        }
+
+        /// <summary>
+        /// Send an <see cref="ExceptionTelemetry" /> for display in Diagnostic Search.
+        /// Create a separate <see cref="ExceptionTelemetry" /> instance for each call to TrackException(ExceptionTelemetry).
+        /// </summary>
+        /// <param name="telemetry">An event log item.</param>
+        /// <param name="internal">True if this is an internal event, false otherwise.</param>
+        internal void TrackException(ExceptionTelemetry telemetry, bool @internal = false)
+        {
+            if (@internal)
+            {
+                InternalClient.TrackException(telemetry);
+            }
+            else
+            {
+                TelemetryClient.TrackException(telemetry);
+            }
+        }
+
+        /// <summary>
         /// Handles external events that are fired by <see cref="Publish"/>.
         /// </summary>
         /// <param name="event">The event being handled.</param>
@@ -293,21 +329,21 @@
         {
             switch (@event)
             {
-                case BbExceptionEvent ex:
-                    var tEvent = ex.ToTelemetry();
+                case BbExceptionEvent telemetry:
+                    var tEvent = telemetry.ToTelemetry();
                     if (tEvent == null) return;
 
                     tEvent.SeverityLevel = SeverityLevel.Error;
 
-                    TelemetryClient.TrackException(tEvent);
+                    TrackException(tEvent);
                     break;
 
-                case BbTimedEvent te:
-                    TelemetryClient.TrackEvent(te.ToTelemetry());
+                case BbTimedEvent telemetry:
+                    TrackEvent(telemetry.ToTelemetry());
                     break;
 
                 default:
-                    TelemetryClient.TrackEvent(@event.ToTelemetry());
+                    TrackEvent(@event.ToTelemetry());
                     break;
             }
         }
@@ -326,15 +362,15 @@
 
                     tEvent.SeverityLevel = SeverityLevel.Error;
 
-                    InternalClient.TrackException(tEvent);
+                    TrackException(tEvent, true);
                     break;
 
                 case BbTimedEvent te:
-                    InternalClient.TrackEvent(te.ToTelemetry());
+                    TrackEvent(te.ToTelemetry(), true);
                     break;
 
                 default:
-                    InternalClient.TrackEvent(@event.ToTelemetry());
+                    TrackEvent(@event.ToTelemetry(), true);
                     break;
             }
         }

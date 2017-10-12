@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Threading;
 using System.Threading.Tasks;
 using DevOpsFlex.Telemetry;
 using DevOpsFlex.Tests.Core;
@@ -15,8 +14,6 @@ public class SingleReplayCastTest
     [Fact, IsUnit]
     public async Task Test_SubscribeAfterEvents()
     {
-        var reset = new ManualResetEventSlim();
-
         var sequence = new[] {1, 2, 3, 4, 5};
         var origin = new Subject<int>();
 
