@@ -10,13 +10,13 @@
     /// <typeparam name="T">The type of the original stream.</typeparam>
     public class SingleReplayCast<T> : IDisposable
     {
+        internal readonly object Gate = new object();
+
         internal ReplaySubject<T> Replay = new ReplaySubject<T>();
 
         internal IDisposable ReplayConnection;
 
         internal IDisposable ReplaySubscription;
-
-        internal readonly object Gate = new object();
 
         /// <summary>
         /// Initializes a new instance of <see cref="SingleReplayCast{T}"/>
@@ -38,7 +38,7 @@
         {
             lock (Gate)
             {
-                if (ReplaySubscription != null)
+                if (ReplaySubscription == null)
                 {
                     Replay.OnCompleted();
                     ReplaySubscription = Replay.Subscribe(action, Dispose);
