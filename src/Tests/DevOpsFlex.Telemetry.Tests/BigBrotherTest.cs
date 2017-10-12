@@ -7,6 +7,7 @@ using DevOpsFlex.Core.Fakes;
 using DevOpsFlex.Telemetry;
 using DevOpsFlex.Tests.Core;
 using FluentAssertions;
+using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.QualityTools.Testing.Fakes;
 using Moq;
 using Xunit;
@@ -254,6 +255,69 @@ public class BigBrotherTest
 
             // wipe all internal subscriptions
             BigBrotherExtensions.WipeInternalSubscriptions();
+        }
+    }
+
+    public class HandleEvent
+    {
+        [Theory, IsUnit]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void Test_With_MetricEvent(bool @internal)
+        {
+            var telemetry = new BbMetricEvent();
+
+            var bbMock = new Mock<BigBrother> {CallBase = true};
+            bbMock.Setup(x => x.TrackEvent(It.IsAny<EventTelemetry>(), @internal)).Verifiable();
+
+            if (@internal)
+                bbMock.Object.HandleInternalEvent(telemetry);
+            else
+                bbMock.Object.HandleEvent(telemetry);
+
+            bbMock.Verify();
+        }
+
+        [Theory, IsUnit]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void Test_With_TimedEvent(bool @internal)
+        {
+            var telemetry = new BbTimedEvent();
+
+            var bbMock = new Mock<BigBrother> { CallBase = true };
+            bbMock.Setup(x => x.TrackEvent(It.IsAny<EventTelemetry>(), @internal)).Verifiable();
+
+            if (@internal)
+                bbMock.Object.HandleInternalEvent(telemetry);
+            else
+                bbMock.Object.HandleEvent(telemetry);
+
+            bbMock.Verify();
+        }
+
+        [Theory, IsUnit]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void Test_With_ExceptionEvent(bool @internal)
+        {
+            var telemetry = new BbExceptionEvent(new Exception("KABUM"));
+
+            var bbMock = new Mock<BigBrother> { CallBase = true };
+            bbMock.Setup(x => x.TrackException(It.IsAny<ExceptionTelemetry>(), @internal))
+                  .Callback<ExceptionTelemetry, bool>(
+                      (t, b) =>
+                      {
+                          t.SeverityLevel.Should().Be(SeverityLevel.Error);
+                      })
+                  .Verifiable();
+
+            if(@internal)
+                bbMock.Object.HandleInternalEvent(telemetry);
+            else
+                bbMock.Object.HandleEvent(telemetry);
+
+            bbMock.Verify();
         }
     }
 

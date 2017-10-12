@@ -18,7 +18,7 @@
         /// <param name="event">The event we want to convert to an AI event.</param>
         /// <returns>The converted <see cref="EventTelemetry"/> event.</returns>
         [CanBeNull]
-        internal static EventTelemetry ToTelemetry([NotNull]this BbTelemetryEvent @event)
+        internal static EventTelemetry ToEventTelemetry([NotNull]this BbTelemetryEvent @event)
         {
             try
             {
@@ -54,7 +54,7 @@
         /// <param name="event">The event we want to convert to an AI event.</param>
         /// <returns>The converted <see cref="EventTelemetry"/> event.</returns>
         [CanBeNull]
-        internal static ExceptionTelemetry ToTelemetry([NotNull]this BbExceptionEvent @event)
+        internal static ExceptionTelemetry ToExceptionTelemetry([NotNull]this BbExceptionEvent @event)
         {
             try
             {
@@ -96,7 +96,7 @@
         /// <param name="event">The event we want to convert to an AI event.</param>
         /// <returns>The converted <see cref="EventTelemetry"/> event.</returns>
         [CanBeNull]
-        internal static EventTelemetry ToTelemetry([NotNull]this BbTimedEvent @event)
+        internal static EventTelemetry ToTimedTelemetry([NotNull]this BbTimedEvent @event)
         {
             try
             {

@@ -291,7 +291,7 @@
         /// </summary>
         /// <param name="telemetry">An event log item.</param>
         /// <param name="internal">True if this is an internal event, false otherwise.</param>
-        internal void TrackEvent(EventTelemetry telemetry, bool @internal = false)
+        internal virtual void TrackEvent(EventTelemetry telemetry, bool @internal = false)
         {
             if (@internal)
             {
@@ -309,7 +309,7 @@
         /// </summary>
         /// <param name="telemetry">An event log item.</param>
         /// <param name="internal">True if this is an internal event, false otherwise.</param>
-        internal void TrackException(ExceptionTelemetry telemetry, bool @internal = false)
+        internal virtual void TrackException(ExceptionTelemetry telemetry, bool @internal = false)
         {
             if (@internal)
             {
@@ -330,7 +330,7 @@
             switch (@event)
             {
                 case BbExceptionEvent telemetry:
-                    var tEvent = telemetry.ToTelemetry();
+                    var tEvent = telemetry.ToExceptionTelemetry();
                     if (tEvent == null) return;
 
                     tEvent.SeverityLevel = SeverityLevel.Error;
@@ -339,11 +339,11 @@
                     break;
 
                 case BbTimedEvent telemetry:
-                    TrackEvent(telemetry.ToTelemetry());
+                    TrackEvent(telemetry.ToTimedTelemetry());
                     break;
 
                 default:
-                    TrackEvent(@event.ToTelemetry());
+                    TrackEvent(@event.ToEventTelemetry());
                     break;
             }
         }
@@ -357,7 +357,7 @@
             switch (@event)
             {
                 case BbExceptionEvent ex:
-                    var tEvent = ex.ToTelemetry();
+                    var tEvent = ex.ToExceptionTelemetry();
                     if (tEvent == null) return;
 
                     tEvent.SeverityLevel = SeverityLevel.Error;
@@ -366,11 +366,11 @@
                     break;
 
                 case BbTimedEvent te:
-                    TrackEvent(te.ToTelemetry(), true);
+                    TrackEvent(te.ToTimedTelemetry(), true);
                     break;
 
                 default:
-                    TrackEvent(@event.ToTelemetry(), true);
+                    TrackEvent(@event.ToEventTelemetry(), true);
                     break;
             }
         }
