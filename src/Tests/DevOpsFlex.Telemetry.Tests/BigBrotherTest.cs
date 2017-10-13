@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Fakes;
 using System.Reactive.Linq;
+using System.Security.AccessControl;
 using System.Threading.Tasks;
 using DevOpsFlex.Core;
 using DevOpsFlex.Core.Fakes;
@@ -318,6 +319,15 @@ public class BigBrotherTest
                 bbMock.Object.HandleEvent(telemetry);
 
             bbMock.Verify();
+        }
+    }
+
+    public class Write
+    {
+        [Fact, IsDev]
+        public void Foo()
+        {
+            BigBrother.Write(new BbExceptionEvent(new Exception("KABUM 123")));
         }
     }
 
