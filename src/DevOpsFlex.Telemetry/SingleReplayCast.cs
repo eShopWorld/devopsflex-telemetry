@@ -40,8 +40,8 @@
             {
                 if (ReplaySubscription == null)
                 {
-                    Replay.OnCompleted();
                     ReplaySubscription = Replay.Subscribe(action, Dispose);
+                    Replay.OnCompleted();
                 }
 
                 return ReplaySubscription;
@@ -49,7 +49,7 @@
         }
 
         /// <inheritdoc />
-        public void Dispose()
+        public virtual void Dispose()
         {
             ReplayConnection?.Dispose();
             ReplaySubscription?.Dispose();

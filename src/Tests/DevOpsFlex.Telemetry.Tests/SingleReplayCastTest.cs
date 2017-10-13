@@ -14,7 +14,7 @@ public class SingleReplayCastTest
     [Fact, IsUnit]
     public async Task Test_SubscribeAfterEvents()
     {
-        var sequence = new[] {1, 2, 3, 4, 5};
+        var sequence = new[] { 1, 2, 3, 4, 5 };
         var origin = new Subject<int>();
 
         var replay = new SingleReplayCast<int>(origin);
@@ -30,6 +30,7 @@ public class SingleReplayCastTest
         {
             await Task.Delay(TimeSpan.FromSeconds(1));
             result.Should().ContainInOrder(sequence);
+            replay.Replay.IsDisposed.Should().BeTrue();
         }
     }
 
