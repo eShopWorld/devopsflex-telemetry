@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Fakes;
 using System.Reactive.Linq;
 using System.Security.AccessControl;
@@ -9,6 +10,7 @@ using DevOpsFlex.Telemetry;
 using DevOpsFlex.Tests.Core;
 using FluentAssertions;
 using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.Diagnostics.Tracing.Session;
 using Microsoft.QualityTools.Testing.Fakes;
 using Moq;
 using Xunit;
@@ -327,7 +329,14 @@ public class BigBrotherTest
         [Fact, IsDev]
         public void Foo()
         {
-            BigBrother.Write(new BbExceptionEvent(new Exception("KABUM 123")));
+            using (var session = new TraceEventSession("SimpleMontitorSession", null))
+            {
+                var eventSourceGuid = TraceEventProviders.GetEventSourceGuidFromName("DevOpsFlex-Telemetry-ErrorEvents");
+                session.EnableProvider(eventSourceGuid);
+            }
+
+            var exception = new Exception("KABUM 123");
+            BigBrother.Write(new BbExceptionEvent(exception));
         }
     }
 
