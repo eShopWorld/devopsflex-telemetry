@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Fakes;
 using System.Reactive.Linq;
-using System.Security.AccessControl;
+using System.Threading;
 using System.Threading.Tasks;
 using DevOpsFlex.Core;
 using DevOpsFlex.Core.Fakes;
@@ -10,6 +9,7 @@ using DevOpsFlex.Telemetry;
 using DevOpsFlex.Tests.Core;
 using FluentAssertions;
 using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.Diagnostics.Tracing;
 using Microsoft.Diagnostics.Tracing.Session;
 using Microsoft.QualityTools.Testing.Fakes;
 using Moq;
@@ -327,16 +327,40 @@ public class BigBrotherTest
     public class Write
     {
         [Fact, IsDev]
-        public void Foo()
+        public void Test_WriteEvent_WithTraceEvent()
         {
-            using (var session = new TraceEventSession("SimpleMontitorSession", null))
-            {
-                var eventSourceGuid = TraceEventProviders.GetEventSourceGuidFromName("DevOpsFlex-Telemetry-ErrorEvents");
-                session.EnableProvider(eventSourceGuid);
-            }
+            const string exceptionMessage = "KABUM";
+            var completed = Task.Factory.StartNew(
+                                    () =>
+                                    {
+                                        using (var session = new TraceEventSession($"TestSession_{nameof(Test_WriteEvent_WithTraceEvent)}"))
+                                        {
+                                            session.Source.Dynamic.AddCallbackForProviderEvent(
+                                                ErrorEventSource.EventSourceName,
+                                                nameof(ErrorEventSource.Tasks.BbExceptionEvent),
+                                                e =>
+                                                {
+                                                    e.PayloadByName("message").Should().Be(exceptionMessage);
+                                                    e.PayloadByName("eventPayload").Should().NotBeNull();
 
-            var exception = new Exception("KABUM 123");
-            BigBrother.Write(new BbExceptionEvent(exception));
+                                                    // ReSharper disable once AccessToDisposedClosure
+                                                    session.Source?.Dispose();
+                                                });
+
+                                            session.EnableProvider(ErrorEventSource.EventSourceName);
+
+                                            Task.Factory.StartNew(() =>
+                                            {
+                                                Task.Delay(TimeSpan.FromSeconds(3));
+                                                BigBrother.Write(new BbExceptionEvent(new Exception(exceptionMessage)));
+                                            });
+
+                                            session.Source.Process();
+                                        }
+                                    })
+                                .Wait(TimeSpan.FromSeconds(30));
+
+            completed.Should().BeTrue();
         }
     }
 

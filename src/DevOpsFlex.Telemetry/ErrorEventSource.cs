@@ -11,9 +11,11 @@
     /// <remarks>
     /// Used to sink exceptions in <see cref="BigBrother"/> to support Service Fabric deployments.
     /// </remarks>
-    [EventSource(Name = "DevOpsFlex-Telemetry-ErrorEvents")]
+    [EventSource(Name = EventSourceName)]
     internal sealed class ErrorEventSource : EventSource
     {
+        internal const string EventSourceName = "DevOpsFlex-Telemetry-ErrorEvents";
+
         public class Keywords
         {
             public const EventKeywords Exception = (EventKeywords) (1 << 0);
