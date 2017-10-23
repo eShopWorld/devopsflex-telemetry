@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using DevOpsFlex.Telemetry;
 using DevOpsFlex.Tests.Core;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 // ReSharper disable once CheckNamespace
@@ -37,30 +38,22 @@ public class SingleReplayCastTest
     [Fact, IsUnit]
     public void Test_DisposeClosesProperly()
     {
-        var connection = new Disposable();
-        var subscription = new Disposable();
+        var connection = new Mock<IDisposable>();
+        connection.Setup(x => x.Dispose()).Verifiable();
+
+        var subscription = new Mock<IDisposable>();
+        subscription.Setup(x => x.Dispose()).Verifiable();
 
         var replay = new SingleReplayCast<int>(Observable.Empty<int>())
         {
-            ReplayConnection = connection,
-            ReplaySubscription = subscription
+            ReplayConnection = connection.Object,
+            ReplaySubscription = subscription.Object
         };
 
         replay.Dispose();
 
-        connection.IsDisposed.Should().BeTrue();
-        subscription.IsDisposed.Should().BeTrue();
-
+        connection.Verify();
+        subscription.Verify();
         replay.Replay.IsDisposed.Should().BeTrue();
-    }
-}
-
-public class Disposable : IDisposable
-{
-    public bool IsDisposed;
-
-    public void Dispose()
-    {
-        IsDisposed = true;
     }
 }
