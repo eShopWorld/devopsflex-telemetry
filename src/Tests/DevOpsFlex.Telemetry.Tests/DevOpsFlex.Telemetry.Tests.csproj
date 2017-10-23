@@ -234,14 +234,9 @@
     <Fakes Include="Fakes\DevOpsFlex.Core.fakes" />
     <None Include="app.config" />
     <None Include="packages.config" />
-    <None Include="_TraceEventProgrammersGuide.docx" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\..\..\packages\DevOpsFlex.Tests.Core.Analyzers.1.0.11\analyzers\dotnet\cs\DevOpsFlex.Tests.Core.Analyzers.dll" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="TraceEvent.ReadMe.txt" />
-    <Content Include="TraceEvent.ReleaseNotes.txt" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
