@@ -59,12 +59,17 @@
         /// <summary>
         /// Contains the exception stream typed dictionary of sink subscription.
         /// </summary>
-        internal static IDisposable ExceptionSinkSubscription;
+        internal IDisposable EventSourceSinkSubscription;
+
+        /// <summary>
+        /// Contains the exception stream typed dictionary of sink subscription.
+        /// </summary>
+        internal IDisposable TraceSinkSubscription;
 
         /// <summary>
         /// Constans the static ExceptionStream subscription from this client.
         /// </summary>
-        internal IDisposable GlobalExceptionSubscription;
+        internal IDisposable GlobalExceptionAiSubscription;
 
         /// <summary>
         /// Contains a typed dictionary of all the subscriptions to different types of telemetry.
@@ -260,11 +265,11 @@
         /// </summary>
         internal void SetupSubscriptions()
         {
-            ReplayCast.Subscribe(TelemetryStream.OnNext); // volatile subscription, don't need to keep it
+            ReplayCast.Subscribe(HandleAiEvent); // volatile subscription, don't need to keep it
 
-            TelemetrySubscriptions.AddSubscription(typeof(BbTelemetryEvent), TelemetryStream.OfType<BbTelemetryEvent>().Subscribe(HandleEvent));
+            TelemetrySubscriptions.AddSubscription(typeof(BbTelemetryEvent), TelemetryStream.OfType<BbTelemetryEvent>().Subscribe(HandleAiEvent));
             InternalSubscriptions.AddSubscription(typeof(BbTelemetryEvent), InternalStream.OfType<BbTelemetryEvent>().Subscribe(HandleInternalEvent));
-            GlobalExceptionSubscription = ExceptionStream.Subscribe(TelemetryStream);
+            GlobalExceptionAiSubscription = ExceptionStream.Subscribe(HandleAiEvent);
         }
 
         /// <summary>
@@ -325,7 +330,7 @@
         /// Handles external events that are fired by <see cref="Publish"/>.
         /// </summary>
         /// <param name="event">The event being handled.</param>
-        internal virtual void HandleEvent(BbTelemetryEvent @event)
+        internal virtual void HandleAiEvent(BbTelemetryEvent @event)
         {
             switch (@event)
             {

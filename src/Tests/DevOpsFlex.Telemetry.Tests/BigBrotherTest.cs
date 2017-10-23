@@ -229,14 +229,14 @@ public class BigBrotherTest
         {
             var e = new TestTelemetryEvent();
             var bbMock = new Mock<BigBrother> {CallBase = true};
-            bbMock.Setup(x => x.HandleEvent(It.IsAny<BbTelemetryEvent>())).Verifiable();
+            bbMock.Setup(x => x.HandleAiEvent(It.IsAny<BbTelemetryEvent>())).Verifiable();
 
             bbMock.Object.SetupSubscriptions();
             bbMock.Object.Publish(e);
 
             await Task.Delay(TimeSpan.FromSeconds(1)); // give the subscription some love
 
-            bbMock.Verify(x => x.HandleEvent(e), Times.Once);
+            bbMock.Verify(x => x.HandleAiEvent(e), Times.Once);
 
             // wipe all internal subscriptions
             BigBrotherExtensions.WipeInternalSubscriptions();
@@ -276,7 +276,7 @@ public class BigBrotherTest
             if (@internal)
                 bbMock.Object.HandleInternalEvent(telemetry);
             else
-                bbMock.Object.HandleEvent(telemetry);
+                bbMock.Object.HandleAiEvent(telemetry);
 
             bbMock.Verify();
         }
@@ -294,7 +294,7 @@ public class BigBrotherTest
             if (@internal)
                 bbMock.Object.HandleInternalEvent(telemetry);
             else
-                bbMock.Object.HandleEvent(telemetry);
+                bbMock.Object.HandleAiEvent(telemetry);
 
             bbMock.Verify();
         }
@@ -318,7 +318,7 @@ public class BigBrotherTest
             if(@internal)
                 bbMock.Object.HandleInternalEvent(telemetry);
             else
-                bbMock.Object.HandleEvent(telemetry);
+                bbMock.Object.HandleAiEvent(telemetry);
 
             bbMock.Verify();
         }
