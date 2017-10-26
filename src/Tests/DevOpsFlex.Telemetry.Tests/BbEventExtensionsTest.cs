@@ -31,7 +31,7 @@ public class BbEventExtensionsTest
                         correlationSet = true;
                 };
 
-                var result = tEvent.ToTelemetry();
+                var result = tEvent.ToEventTelemetry();
 
                 result.Should().NotBeNull();
                 correlationSet.Should().BeTrue();
@@ -61,7 +61,7 @@ public class BbEventExtensionsTest
                         correlationSet = true;
                 };
 
-                var result = tEvent.ToTelemetry();
+                var result = tEvent.ToTimedTelemetry();
 
                 result.Should().NotBeNull();
                 correlationSet.Should().BeTrue();
@@ -92,7 +92,7 @@ public class BbEventExtensionsTest
                         correlationSet = true;
                 };
 
-                var result = tEvent.ToTelemetry();
+                var result = tEvent.ToExceptionTelemetry();
 
                 result.Should().NotBeNull();
                 correlationSet.Should().BeTrue();
@@ -119,7 +119,7 @@ public class BbEventExtensionsTest
                                      e.Exception.Should().Be(exception);
                                  }))
                 {
-                    var result = tEvent.ToTelemetry();
+                    var result = tEvent.ToEventTelemetry();
                     result.Should().BeNull();
                 }
             }
@@ -140,7 +140,7 @@ public class BbEventExtensionsTest
                                      e.Exception.Should().Be(exception);
                                  }))
                 {
-                    var result = tEvent.ToTelemetry();
+                    var result = tEvent.ToExceptionTelemetry();
                     result.Should().BeNull();
                 }
             }
@@ -161,7 +161,7 @@ public class BbEventExtensionsTest
                                      e.Exception.Should().Be(exception);
                                  }))
                 {
-                    var result = tEvent.ToTelemetry();
+                    var result = tEvent.ToTimedTelemetry();
                     result.Should().BeNull();
                 }
             }

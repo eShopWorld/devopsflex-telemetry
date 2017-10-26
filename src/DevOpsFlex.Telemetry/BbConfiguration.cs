@@ -21,19 +21,38 @@
         }
 
         /// <summary>
+        /// Sets up telemetry to use <see cref="System.Diagnostics.Trace"/> to sink events.
+        /// </summary>
+        /// <param name="bb">The <see cref="BigBrother"/> instance we are configuring.</param>
+        /// <returns></returns>
+        public static IConfigureSources UseTraceSink(this BigBrother bb)
+        {
+            return new TraceSink(bb);
+        }
+
+        /// <summary>
         /// Sets up the previous sink to sink all <see cref="BbExceptionEvent"/> events.
         /// </summary>
         /// <param name="source">The previous configuration source.</param>
         public static void ForExceptions(this IConfigureSources source)
         {
+            BigBrother bb;
+
             switch (source)
             {
                 case EventSourceSink eSink:
-                    var bb = eSink.Bb;
+                    bb = eSink.Bb;
 
-                    bb.TelemetrySubscriptions.AddSubscription(
-                        typeof(EventSourceSink),
-                        bb.TelemetryStream.OfType<BbExceptionEvent>().Subscribe(e => BigBrother.ExceptionStream.OnNext(e.Exception)));
+                    bb.EventSourceSinkSubscription?.Dispose();
+                    bb.EventSourceSinkSubscription = bb.TelemetryStream.OfType<BbExceptionEvent>().Subscribe(BigBrother.SinkToEventSource);
+
+                    break;
+
+                case TraceSink tSink:
+                    bb = tSink.Bb;
+
+                    bb.TraceSinkSubscription?.Dispose();
+                    bb.TraceSinkSubscription = bb.TelemetryStream.OfType<BbExceptionEvent>().Subscribe(BigBrother.SinkToTrace);
 
                     break;
 
@@ -44,11 +63,24 @@
     }
 
     /// <summary>
-    /// Fluent implementation of <see cref="IConfigureSources"/> used to pass on a configuration premise -> <see cref="BigBrother"/>.
+    /// Fluent implementation of <see cref="IConfigureSources"/> used to pass on a configuration premise for event sources -> <see cref="BigBrother"/>.
     /// </summary>
     public class EventSourceSink : IConfigureSources
     {
         internal EventSourceSink(BigBrother bb)
+        {
+            Bb = bb;
+        }
+
+        internal BigBrother Bb { get; }
+    }
+
+    /// <summary>
+    /// Fluent implementation of <see cref="IConfigureSources"/> used to pass on a configuration premise for traces -> <see cref="BigBrother"/>.
+    /// </summary>
+    public class TraceSink : IConfigureSources
+    {
+        internal TraceSink(BigBrother bb)
         {
             Bb = bb;
         }

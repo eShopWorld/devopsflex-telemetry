@@ -19,7 +19,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Debug\DevOpsFlex.Telemetry.XML</DocumentationFile>
@@ -154,6 +154,8 @@
     <Compile Include="BigBrother.cs" />
     <Compile Include="CorrelationHandle.cs" />
     <Compile Include="CollectionExtensions.cs" />
+    <Compile Include="ErrorEventSource.cs" />
+    <Compile Include="SingleReplayCast.cs" />
     <Compile Include="StrictCorrelationHandle.cs" />
     <Compile Include="IBigBrother.cs" />
     <Compile Include="InternalEvents\FlushEvent.cs" />
@@ -174,11 +176,4 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\..\packages\NETStandard.Library.2.0.0\build\netstandard2.0\NETStandard.Library.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\NETStandard.Library.2.0.0\build\netstandard2.0\NETStandard.Library.targets'))" />
   </Target>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>
