@@ -30,16 +30,10 @@
         public static ErrorEventSource Log { get; } = new ErrorEventSource();
 
         [NonEvent]
-        public void Error(Exception ex)
-        {
-            ExceptionError(ex.Message, ex.StackTrace);
-        }
+        public void Error(Exception ex) => ExceptionError(ex.Message, ex.StackTrace);
 
         [NonEvent]
-        public void Error(BbExceptionEvent exEvent)
-        {
-            BbEventError(exEvent.Exception.Message, exEvent.Exception.StackTrace, JsonConvert.SerializeObject(exEvent));
-        }
+        public void Error(BbExceptionEvent exEvent) => BbEventError(exEvent.Exception.Message, exEvent.Exception.StackTrace, JsonConvert.SerializeObject(exEvent));
 
         [Event(
             1,
@@ -48,10 +42,7 @@
             Level = EventLevel.Error,
             Channel = EventChannel.Operational
         )]
-        public void ExceptionError(string message, string stackTrace)
-        {
-            WriteEvent(1, message, stackTrace);
-        }
+        public void ExceptionError(string message, string stackTrace) => WriteEvent(1, message, stackTrace);
 
         [Event(
             2,
@@ -60,9 +51,6 @@
             Level = EventLevel.Error,
             Channel = EventChannel.Operational
         )]
-        public void BbEventError(string message, string stackTrace, string eventPayload)
-        {
-            WriteEvent(2,  message, stackTrace, eventPayload);
-        }
+        public void BbEventError(string message, string stackTrace, string eventPayload) => WriteEvent(2,  message, stackTrace, eventPayload);
     }
 }
