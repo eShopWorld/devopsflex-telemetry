@@ -12,7 +12,7 @@ public class StrictCorrelationHandleTest
         [Fact, IsUnit]
         public void Ensure_HandleIsAssignedAndReleased()
         {
-            var bbMock = new Mock<BigBrother> {CallBase = false};
+            var bbMock = new Mock<BigBrother>();
             using (var handle = new StrictCorrelationHandle(bbMock.Object))
             {
                 bbMock.Object.Handle.Should().Be(handle);
