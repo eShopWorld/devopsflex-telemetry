@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Reactive.Linq;
-using System.Threading;
+//using System.Threading;
 using System.Threading.Tasks;
 using DevOpsFlex.Core;
 using DevOpsFlex.Telemetry;
@@ -143,23 +143,20 @@ public class BigBrotherTest
             }
         }
 
-        //[Fact, IsUnit]
-        //public void Test_Publish_EndsTimedEvents()
-        //{
-        //    using (ShimsContext.Create())
-        //    {
-        //        var endCalled = false;
+        [Fact, IsUnit]
+        public async Task Test_Publish_EndsTimedEvents()
+        {
+            var bbMock = new Mock<BigBrother> { CallBase = true };
+            var tEvent = new BbTimedEvent();
 
-        //        ShimBbTimedEvent.AllInstances.End = _ => endCalled = true;
+            await Task.Delay(TimeSpan.FromSeconds(2));
 
-        //        var bbMock = new Mock<BigBrother> { CallBase = true };
-        //        var tEvent = new BbTimedEvent();
+            bbMock.Object.Publish(tEvent);
 
-        //        bbMock.Object.Publish(tEvent);
+            await Task.Delay(TimeSpan.FromSeconds(3));
 
-        //        endCalled.Should().BeTrue();
-        //    }
-        //}
+            tEvent.ProcessingTime.Should().BeCloseTo(TimeSpan.FromSeconds(2), 1000); // can do a 1sec range here because we have a second 3 second delay
+        }
     }
 
     public class CreateCorrelation
@@ -199,24 +196,21 @@ public class BigBrotherTest
 
     public class ReleaseCorrelationVectors
     {
-        //[Fact, IsFakes]
-        //public void Test_ReleaseHandleNotAlive()
-        //{
-        //    using (ShimsContext.Create())
-        //    {
-        //        var now = DateTime.Now.AddMinutes(15); // offset now by 15 minutes, this way we don't need to play around with the internal handle
-        //        var handle = new object();
+        [Fact, IsFakes]
+        public void Test_ReleaseHandleNotAlive()
+        {
+            var now = DateTime.Now.AddMinutes(15); // offset now by 15 minutes, this way we don't need to play around with the internal handle
+            var handle = new object();
 
-        //        ShimDateTime.NowGet = () => now;
+            BigBrother.Now = () => now;
 
-        //        var bb = new BigBrother();
-        //        bb.Publish(new TestTelemetryEvent(), handle); // no setup on the subscriptions, so nothing will get published
+            var bb = new BigBrother();
+            bb.Publish(new TestTelemetryEvent(), handle); // no setup on the subscriptions, so nothing will get published
 
-        //        bb.ReleaseCorrelationVectors(null);
+            bb.ReleaseCorrelationVectors(null);
 
-        //        bb.CorrelationHandles.Should().BeEmpty();
-        //    }
-        //}
+            bb.CorrelationHandles.Should().BeEmpty();
+        }
     }
 
     public class SetupSubscriptions
