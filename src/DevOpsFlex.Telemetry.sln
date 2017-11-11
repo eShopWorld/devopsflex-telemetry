@@ -1,19 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26403.3
+VisualStudioVersion = 15.0.27004.2006
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevOpsFlex.Telemetry", "DevOpsFlex.Telemetry\DevOpsFlex.Telemetry.csproj", "{87962F6F-9C10-401B-A6ED-9CAD79767957}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DevOpsFlex.Telemetry", "DevOpsFlex.Telemetry\DevOpsFlex.Telemetry.csproj", "{76B79D4C-812A-486B-B7C4-92E9E560720E}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{EBD0B3CA-7CD0-418F-82B3-F3F1E19C8C12}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevOpsFlex.Telemetry.Tests", "Tests\DevOpsFlex.Telemetry.Tests\DevOpsFlex.Telemetry.Tests.csproj", "{72C83570-148E-4E21-9A6F-B3279740101D}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9752AC51-8371-4633-8715-6D72C112EEC9}"
-	ProjectSection(SolutionItems) = preProject
-		codecoverage.runsettings = codecoverage.runsettings
-		..\README.md = ..\README.md
-	EndProjectSection
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DevOpsFlex.Telemetry.Tests", "Tests\DevOpsFlex.Telemetry.Tests\DevOpsFlex.Telemetry.Tests.csproj", "{F1E293EF-A634-4DB6-9574-DDC4EC13C655}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,19 +13,19 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{87962F6F-9C10-401B-A6ED-9CAD79767957}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{87962F6F-9C10-401B-A6ED-9CAD79767957}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{87962F6F-9C10-401B-A6ED-9CAD79767957}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{87962F6F-9C10-401B-A6ED-9CAD79767957}.Release|Any CPU.Build.0 = Release|Any CPU
-		{72C83570-148E-4E21-9A6F-B3279740101D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{72C83570-148E-4E21-9A6F-B3279740101D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{72C83570-148E-4E21-9A6F-B3279740101D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{72C83570-148E-4E21-9A6F-B3279740101D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{76B79D4C-812A-486B-B7C4-92E9E560720E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{76B79D4C-812A-486B-B7C4-92E9E560720E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{76B79D4C-812A-486B-B7C4-92E9E560720E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{76B79D4C-812A-486B-B7C4-92E9E560720E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1E293EF-A634-4DB6-9574-DDC4EC13C655}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1E293EF-A634-4DB6-9574-DDC4EC13C655}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1E293EF-A634-4DB6-9574-DDC4EC13C655}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1E293EF-A634-4DB6-9574-DDC4EC13C655}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{72C83570-148E-4E21-9A6F-B3279740101D} = {EBD0B3CA-7CD0-418F-82B3-F3F1E19C8C12}
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6440E2C8-54E5-46D8-8EC6-D19702CF85AB}
 	EndGlobalSection
 EndGlobal

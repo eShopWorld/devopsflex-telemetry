@@ -1,21 +1,18 @@
 ﻿using System;
-using System.Fakes;
 using System.Reactive.Linq;
-using System.Threading;
+//using System.Threading;
 using System.Threading.Tasks;
 using DevOpsFlex.Core;
-using DevOpsFlex.Core.Fakes;
 using DevOpsFlex.Telemetry;
 using DevOpsFlex.Tests.Core;
 using FluentAssertions;
 using Microsoft.ApplicationInsights.DataContracts;
-using Microsoft.Diagnostics.Tracing;
-using Microsoft.Diagnostics.Tracing.Session;
-using Microsoft.QualityTools.Testing.Fakes;
+//using Microsoft.Diagnostics.Tracing;
+//using Microsoft.Diagnostics.Tracing.Session;
 using Moq;
 using Xunit;
 
-// ReSharper disable once CheckNamespace
+//ReSharper disable once CheckNamespace
 public class BigBrotherTest
 {
     internal static readonly string DevKey = Environment.GetEnvironmentVariable("devai", EnvironmentVariableTarget.User);
@@ -147,21 +144,18 @@ public class BigBrotherTest
         }
 
         [Fact, IsUnit]
-        public void Test_Publish_EndsTimedEvents()
+        public async Task Test_Publish_EndsTimedEvents()
         {
-            using (ShimsContext.Create())
-            {
-                var endCalled = false;
+            var bbMock = new Mock<BigBrother> { CallBase = true };
+            var tEvent = new BbTimedEvent();
 
-                ShimBbTimedEvent.AllInstances.End = _ => endCalled = true;
+            await Task.Delay(TimeSpan.FromSeconds(2));
 
-                var bbMock = new Mock<BigBrother> { CallBase = true };
-                var tEvent = new BbTimedEvent();
+            bbMock.Object.Publish(tEvent);
 
-                bbMock.Object.Publish(tEvent);
+            await Task.Delay(TimeSpan.FromSeconds(3));
 
-                endCalled.Should().BeTrue();
-            }
+            tEvent.ProcessingTime.Should().BeCloseTo(TimeSpan.FromSeconds(2), 1000); // can do a 1sec range here because we have a second 3 second delay
         }
     }
 
@@ -205,20 +199,17 @@ public class BigBrotherTest
         [Fact, IsFakes]
         public void Test_ReleaseHandleNotAlive()
         {
-            using (ShimsContext.Create())
-            {
-                var now = DateTime.Now.AddMinutes(15); // offset now by 15 minutes, this way we don't need to play around with the internal handle
-                var handle = new object();
+            var now = DateTime.Now.AddMinutes(15); // offset now by 15 minutes, this way we don't need to play around with the internal handle
+            var handle = new object();
 
-                ShimDateTime.NowGet = () => now;
+            BigBrother.Now = () => now;
 
-                var bb = new BigBrother();
-                bb.Publish(new TestTelemetryEvent(), handle); // no setup on the subscriptions, so nothing will get published
+            var bb = new BigBrother();
+            bb.Publish(new TestTelemetryEvent(), handle); // no setup on the subscriptions, so nothing will get published
 
-                bb.ReleaseCorrelationVectors(null);
+            bb.ReleaseCorrelationVectors(null);
 
-                bb.CorrelationHandles.Should().BeEmpty();
-            }
+            bb.CorrelationHandles.Should().BeEmpty();
         }
     }
 
@@ -228,7 +219,7 @@ public class BigBrotherTest
         public async Task Test_Telemetry_IsSubscribed()
         {
             var e = new TestTelemetryEvent();
-            var bbMock = new Mock<BigBrother> {CallBase = true};
+            var bbMock = new Mock<BigBrother> { CallBase = true };
             bbMock.Setup(x => x.HandleAiEvent(It.IsAny<BbTelemetryEvent>())).Verifiable();
 
             bbMock.Object.SetupSubscriptions();
@@ -270,7 +261,7 @@ public class BigBrotherTest
         {
             var telemetry = new BbMetricEvent();
 
-            var bbMock = new Mock<BigBrother> {CallBase = true};
+            var bbMock = new Mock<BigBrother> { CallBase = true };
             bbMock.Setup(x => x.TrackEvent(It.IsAny<EventTelemetry>(), @internal)).Verifiable();
 
             if (@internal)
@@ -315,7 +306,7 @@ public class BigBrotherTest
                       })
                   .Verifiable();
 
-            if(@internal)
+            if (@internal)
                 bbMock.Object.HandleInternalEvent(telemetry);
             else
                 bbMock.Object.HandleAiEvent(telemetry);
@@ -324,45 +315,47 @@ public class BigBrotherTest
         }
     }
 
-    public class Write
-    {
-        [Fact, IsDev]
-        public void Test_WriteEvent_WithTraceEvent()
-        {
-            const string exceptionMessage = "KABUM";
-            var completed = Task.Factory.StartNew(
-                                    () =>
-                                    {
-                                        using (var session = new TraceEventSession($"TestSession_{nameof(Test_WriteEvent_WithTraceEvent)}"))
-                                        {
-                                            session.Source.Dynamic.AddCallbackForProviderEvent(
-                                                ErrorEventSource.EventSourceName,
-                                                nameof(ErrorEventSource.Tasks.BbExceptionEvent),
-                                                e =>
-                                                {
-                                                    e.PayloadByName("message").Should().Be(exceptionMessage);
-                                                    e.PayloadByName("eventPayload").Should().NotBeNull();
+    // DJFR :: THIS IS A WORKING TEST -> Just needs the TraceEvent package to support NS2.0, the fix is in github already, just awaiting it's release
 
-                                                    // ReSharper disable once AccessToDisposedClosure
-                                                    session.Source?.Dispose();
-                                                });
+    //public class Write
+    //{
+    //    [Fact, IsDev]
+    //    public void Test_WriteEvent_WithTraceEvent()
+    //    {
+    //        const string exceptionMessage = "KABUM";
+    //        var completed = Task.Factory.StartNew(
+    //                                () =>
+    //                                {
+    //                                    using (var session = new TraceEventSession($"TestSession_{nameof(Test_WriteEvent_WithTraceEvent)}"))
+    //                                    {
+    //                                        session.Source.Dynamic.AddCallbackForProviderEvent(
+    //                                            ErrorEventSource.EventSourceName,
+    //                                            nameof(ErrorEventSource.Tasks.BbExceptionEvent),
+    //                                            e =>
+    //                                            {
+    //                                                e.PayloadByName("message").Should().Be(exceptionMessage);
+    //                                                e.PayloadByName("eventPayload").Should().NotBeNull();
 
-                                            session.EnableProvider(ErrorEventSource.EventSourceName);
+    //                                                    // ReSharper disable once AccessToDisposedClosure
+    //                                                    session.Source?.Dispose();
+    //                                            });
 
-                                            Task.Factory.StartNew(() =>
-                                            {
-                                                Task.Delay(TimeSpan.FromSeconds(3));
-                                                BigBrother.Write(new BbExceptionEvent(new Exception(exceptionMessage)));
-                                            });
+    //                                        session.EnableProvider(ErrorEventSource.EventSourceName);
 
-                                            session.Source.Process();
-                                        }
-                                    })
-                                .Wait(TimeSpan.FromSeconds(30));
+    //                                        Task.Factory.StartNew(() =>
+    //                                        {
+    //                                            Task.Delay(TimeSpan.FromSeconds(3));
+    //                                            BigBrother.Write(new BbExceptionEvent(new Exception(exceptionMessage)));
+    //                                        });
 
-            completed.Should().BeTrue();
-        }
-    }
+    //                                        session.Source.Process();
+    //                                    }
+    //                                })
+    //                            .Wait(TimeSpan.FromSeconds(30));
+
+    //        completed.Should().BeTrue();
+    //    }
+    //}
 
     internal static void BlowUp(string message)
     {

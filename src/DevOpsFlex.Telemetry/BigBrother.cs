@@ -24,6 +24,10 @@
     /// </summary>
     public class BigBrother : IBigBrother, IDisposable
     {
+        /// <summary>
+        /// This exists to make the class testable and to allow control over the "Now" during a test.
+        /// </summary>
+        internal static Func<DateTime> Now = () => DateTime.Now;
 
         /// <summary>
         /// The internal telemetry stream, used by packages to report errors and usage to an internal AI account.
@@ -396,11 +400,11 @@
         /// <param name="_">[IGNORED] Timer state on callback.</param>
         internal void ReleaseCorrelationVectors(object _)
         {
-            var now = DateTime.Now; // Do DateTime.Now once per tick to speed up the release->collect pass.
+            var now = Now(); // Do DateTime.Now once per tick to speed up the release->collect pass.
 
-            foreach (var handle in CorrelationHandles.Where(h => h.Value.IsAlive(now)).ToList())
+            foreach (var handle in CorrelationHandles.Where(h => !h.Value.IsAlive(now)).ToList())
             {
-                CorrelationHandles.TryRemove(handle.Key, out CorrelationHandle _);
+                CorrelationHandles.TryRemove(handle.Key, out var __);
             }
         }
 

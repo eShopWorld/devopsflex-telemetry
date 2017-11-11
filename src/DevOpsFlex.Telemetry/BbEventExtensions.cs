@@ -12,6 +12,11 @@
     public static class BbEventExtensions
     {
         /// <summary>
+        /// This exists to make the class testable and to allow control over the "Now" during a test.
+        /// </summary>
+        internal static Func<DateTime> Now = () => DateTime.Now;
+
+        /// <summary>
         /// Converts this event into an Application Insights <see cref="EventTelemetry"/> event ready to be tracked by
         /// the AI client.
         /// </summary>
@@ -25,7 +30,7 @@
                 var tEvent = new EventTelemetry
                 {
                     Name = @event.GetType().Name,
-                    Timestamp = DateTime.Now
+                    Timestamp = Now()
                 };
 
                 tEvent.SetCorrelation(@event);
@@ -67,7 +72,7 @@
                 {
                     Message = @event.Exception.Message,
                     Exception = @event.Exception,
-                    Timestamp = DateTime.Now
+                    Timestamp = Now()
                 };
 
                 tEvent.SetCorrelation(@event);
@@ -103,7 +108,7 @@
                 var tEvent = new EventTelemetry
                 {
                     Name = @event.GetType().Name,
-                    Timestamp = DateTime.Now,
+                    Timestamp = Now()
                 };
 
                 tEvent.Metrics[nameof(BbTimedEvent.ProcessingTime)] = @event.ProcessingTime.TotalSeconds;
