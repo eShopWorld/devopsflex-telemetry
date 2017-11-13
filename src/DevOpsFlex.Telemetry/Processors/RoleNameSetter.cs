@@ -1,10 +1,10 @@
-﻿using System;
-using JetBrains.Annotations;
-using Microsoft.ApplicationInsights.Channel;
-using Microsoft.ApplicationInsights.Extensibility;
-
-namespace DevOpsFlex.Telemetry
+﻿namespace DevOpsFlex.Telemetry.Processors
 {
+    using System;
+    using JetBrains.Annotations;
+    using Microsoft.ApplicationInsights.Channel;
+    using Microsoft.ApplicationInsights.Extensibility;
+
     /// <summary>
     /// Sets the 'cloud_RoleName' role name attribute on a AI telemetry item
     /// </summary>
@@ -26,23 +26,26 @@ namespace DevOpsFlex.Telemetry
     /// </example>
     public class RoleNameSetter : ITelemetryProcessor
     {
-        public string RoleName { get; set; }
+        public static string RoleName { get; set; }
+
         private ITelemetryProcessor Next { get; }
 
         public RoleNameSetter([NotNull] ITelemetryProcessor next)
         {
-            this.Next = next ?? throw new ArgumentNullException(nameof(next));
+#if DEBUG
+            Next = next ?? throw new ArgumentNullException(nameof(next));
+#endif
             RoleName = System.Reflection.Assembly.GetEntryAssembly()?.FullName; // this will not resolve for an ASP.NET application.
         }
 
         public void Process(ITelemetry item)
         {
-            if (item != null)
+            if (item?.Context != null)
             {
-                if (string.IsNullOrWhiteSpace(item?.Context?.Cloud.RoleName)) item.Context.Cloud.RoleName = RoleName;
+                if (string.IsNullOrWhiteSpace(item.Context.Cloud.RoleName)) item.Context.Cloud.RoleName = RoleName;
             }
 
-            this.Next.Process(item);
+            Next.Process(item);
         }
     }
 }
