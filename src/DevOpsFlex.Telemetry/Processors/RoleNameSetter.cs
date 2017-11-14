@@ -35,7 +35,7 @@
 #if DEBUG
             Next = next ?? throw new ArgumentNullException(nameof(next));
 #endif
-            RoleName = System.Reflection.Assembly.GetEntryAssembly()?.FullName; // this will not resolve for an ASP.NET application.
+            RoleName = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name; // this will not resolve for an ASP.NET application.
         }
 
         public void Process(ITelemetry item)
