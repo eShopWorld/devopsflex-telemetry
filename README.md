@@ -165,7 +165,9 @@ Useful in scenarios where the out-if-the-box interceptors won't set this for you
 WebJobs. Here's an example on how to set it up:
 ```c#
 var builder = TelemetryConfiguration.Active.TelemetryProcessorChainBuilder;
-builder.Use((next) => new RoleNameSetter(next) { RoleName = "MyApplication" });
+// optional, will default to entry assembly name if not specified
+RoleNameSetter.RoleName = "myCustomAppName";
+builder.Use((next) => new RoleNameSetter(next));
 builder.Build();
 ```
 
