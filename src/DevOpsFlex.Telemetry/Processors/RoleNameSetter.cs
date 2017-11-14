@@ -44,9 +44,7 @@
 
         public RoleNameSetter([NotNull] ITelemetryProcessor next)
         {
-#if DEBUG
             Next = next ?? throw new ArgumentNullException(nameof(next));
-#endif
         }
 
         public void Process(ITelemetry item)

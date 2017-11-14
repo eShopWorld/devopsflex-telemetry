@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>True</IsPackable>
-    <PackageVersion>1.3.2</PackageVersion>
+    <PackageVersion>1.3.3</PackageVersion>
     <PackageId>DevOpsFlex.Telemetry</PackageId>
     <Title>DevOpsFlex.Telemetry</Title>
     <Authors>David Rodrigues, eshopworld</Authors>
