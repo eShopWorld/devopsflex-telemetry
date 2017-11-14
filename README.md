@@ -136,6 +136,38 @@ You can also get the correlation vector (as a string) created by `BigBrother` fo
 [CanBeNull] string GetCorrelationVector([NotNull] object handle)
 ```
 
+### EventSource and Trace sinks
+
+The package now supports trace and ETW sinks to all `BbExceptionEvents`. To set it up just use the fluent API:
+```c#
+var bb = new BigBrother("KEY", "INTERNAL KEY");
+bb.UseEventSourceSink().ForExceptions();
+bb.UseTraceSink().ForExceptions();
+```
+
+You can also sink to both `EventSource` and `Trace` before you reach the point where you can instanciate `BigBrother`
+by using the static method `Error`
+
+```c#
+BigBrother.PublishError(new Exception());
+```
+
+Internally the Exception will be placed inside a `BbExceptionEvent` and that will be written to an `EventSource`
+and a `Trace`. `BigBrother` will also replay anything sent through `PublishError` when it gets instanciated
+so that you'll publish to Application Insights events raised before getting to the point of instanciating
+`BigBrother`.
+
+### Telemetry processors in the package
+
+#### RoleNameSetter
+Sets the RoleName if not already set to be the entry point assembly full name.
+Useful in scenarios where the out-if-the-box interceptors won't set this for you, like
+WebJobs. Here's an example on how to set it up:
+```c#
+var builder = TelemetryConfiguration.Active.TelemetryProcessorChainBuilder;
+builder.Use((next) => new RoleNameSetter(next) { RoleName = "MyApplication" });
+builder.Build();
+```
 
 ### What can I also do with it?
 

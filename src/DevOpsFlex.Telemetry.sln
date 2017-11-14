@@ -1,11 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2006
+VisualStudioVersion = 15.0.27004.2008
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DevOpsFlex.Telemetry", "DevOpsFlex.Telemetry\DevOpsFlex.Telemetry.csproj", "{76B79D4C-812A-486B-B7C4-92E9E560720E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DevOpsFlex.Telemetry.Tests", "Tests\DevOpsFlex.Telemetry.Tests\DevOpsFlex.Telemetry.Tests.csproj", "{F1E293EF-A634-4DB6-9574-DDC4EC13C655}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2BD76580-1A5B-4B74-8E60-9493016BFDC5}"
+	ProjectSection(SolutionItems) = preProject
+		..\README.md = ..\README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
