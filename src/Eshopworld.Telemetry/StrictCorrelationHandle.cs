@@ -1,4 +1,4 @@
-﻿namespace DevOpsFlex.Telemetry
+﻿namespace Eshopworld.Telemetry
 {
     using System;
 

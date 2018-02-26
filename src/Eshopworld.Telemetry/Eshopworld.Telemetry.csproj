@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>True</IsPackable>
+    <PackageVersion>1.0.0</PackageVersion>
+    <PackageId>Eshopworld.Telemetry</PackageId>
+    <Title>Eshopworld.Telemetry</Title>
+    <Authors>David Rodrigues, eshopworld</Authors>
+    <Copyright>Copyright eShopWorld 2017</Copyright>
+    <Description>eShopWorld common telemetry application insights</Description>
+    <PackageLicenseUrl>https://github.com/eShopWorld/telemetry/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/eShopWorld/telemetry</PackageProjectUrl>
+    <PackageTags>Application Insights, Telemetry, Log</PackageTags>
+    <RepositoryUrl>https://github.com/eShopWorld/telemetry</RepositoryUrl>
+    <IncludeSource>True</IncludeSource>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="devopsflex.core" Version="1.0.6" />
+    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.4.0" />
+    <PackageReference Include="System.Reactive" Version="3.1.1" />
+  </ItemGroup>
+
+</Project>

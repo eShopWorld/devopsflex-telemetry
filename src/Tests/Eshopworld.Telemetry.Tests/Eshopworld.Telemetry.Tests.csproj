@@ -7,11 +7,12 @@
 
   <ItemGroup>
     <PackageReference Include="DevOpsFlex.Tests.Core" Version="1.1.2" />
+    <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="2.0.5" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\DevOpsFlex.Telemetry\DevOpsFlex.Telemetry.csproj" />
+    <ProjectReference Include="..\..\Eshopworld.Telemetry\Eshopworld.Telemetry.csproj" />
   </ItemGroup>
 
 </Project>
