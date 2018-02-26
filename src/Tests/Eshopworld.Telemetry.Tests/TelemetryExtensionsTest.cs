@@ -1,6 +1,6 @@
 ﻿using DevOpsFlex.Core;
-using DevOpsFlex.Tests.Core;
 using Eshopworld.Telemetry;
+using Eshopworld.Tests.Core;
 using FluentAssertions;
 using Microsoft.ApplicationInsights.DataContracts;
 using Xunit;

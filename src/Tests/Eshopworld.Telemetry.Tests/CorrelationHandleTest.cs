@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Text;
 using System.Threading.Tasks;
-using DevOpsFlex.Tests.Core;
 using Eshopworld.Telemetry;
+using Eshopworld.Tests.Core;
 using FluentAssertions;
 using Xunit;
 

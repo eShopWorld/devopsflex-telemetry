@@ -1,5 +1,5 @@
-﻿using DevOpsFlex.Tests.Core;
-using Eshopworld.Telemetry;
+﻿using Eshopworld.Telemetry;
+using Eshopworld.Tests.Core;
 using FluentAssertions;
 using Moq;
 using Xunit;
