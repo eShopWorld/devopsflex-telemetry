@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="devopsflex.core" Version="1.0.6" />
+    <PackageReference Include="Eshopworld.core" Version="1.0.0" />
     <PackageReference Include="Microsoft.ApplicationInsights" Version="2.4.0" />
     <PackageReference Include="System.Reactive" Version="3.1.1" />
   </ItemGroup>

@@ -2,7 +2,7 @@
 {
     using System;
     using System.Diagnostics;
-    using DevOpsFlex.Core;
+    using Core;
     using JetBrains.Annotations;
     using Microsoft.ApplicationInsights.DataContracts;
 

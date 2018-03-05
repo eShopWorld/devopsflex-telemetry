@@ -2,7 +2,7 @@
 {
     using System;
     using System.Diagnostics.Tracing;
-    using DevOpsFlex.Core;
+    using Core;
     using Newtonsoft.Json;
 
     /// <summary>

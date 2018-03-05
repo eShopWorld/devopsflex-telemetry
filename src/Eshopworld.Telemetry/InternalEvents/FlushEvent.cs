@@ -1,6 +1,6 @@
 ﻿namespace Eshopworld.Telemetry.InternalEvents
 {
-    using DevOpsFlex.Core;
+    using Core;
 
     /// <summary>
     /// Used internally to track calls to the <see cref="IBigBrother.Flush"/> method and find situations where it

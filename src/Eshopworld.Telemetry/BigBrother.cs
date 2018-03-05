@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Diagnostics.CodeAnalysis;
     using System.Diagnostics.Tracing;
@@ -10,7 +11,7 @@
     using System.Reactive.Linq;
     using System.Reactive.Subjects;
     using System.Threading;
-    using DevOpsFlex.Core;
+    using Core;
     using InternalEvents;
     using JetBrains.Annotations;
     using Microsoft.ApplicationInsights;

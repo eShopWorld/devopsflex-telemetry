@@ -1,4 +1,4 @@
-﻿using DevOpsFlex.Core;
+﻿using Eshopworld.Core;
 using Eshopworld.Telemetry;
 using Eshopworld.Tests.Core;
 using FluentAssertions;

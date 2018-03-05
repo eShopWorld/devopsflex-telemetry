@@ -2,7 +2,7 @@
 {
     using System;
     using System.Reactive.Linq;
-    using DevOpsFlex.Core;
+    using Core;
 
     /// <summary>
     /// Fluent API extensions for configuring <see cref="BigBrother"/>.
