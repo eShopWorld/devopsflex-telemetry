@@ -86,10 +86,9 @@
         internal static readonly TelemetryClient InternalClient;
 
         /// <summary>
-        /// The top level frame on the <see cref="StackTrace"/> when <see cref="BigBrother"/> was instanciated.
-        ///     This is used mostly for correlation logic.
+        /// The external telemetry client, used to publish events through <see cref="BigBrother"/>.
         /// </summary>
-        internal static string BirthPlace;
+        internal TelemetryClient TelemetryClient;
 
         /// <summary>
         /// Static initialization of static resources in <see cref="BigBrother"/> instances.
@@ -101,31 +100,6 @@
             ExceptionSubscriptions.AddSubscription(typeof(EventSource), ExceptionStream.Subscribe(SinkToEventSource));
             ExceptionSubscriptions.AddSubscription(typeof(Trace), ExceptionStream.Subscribe(SinkToTrace));
         }
-
-        /// <summary>
-        /// Contains a lookup reference for each lose correlation handle provided.
-        /// </summary>
-        internal readonly ConcurrentDictionary<object, CorrelationHandle> CorrelationHandles = new ConcurrentDictionary<object, CorrelationHandle>();
-
-        /// <summary>
-        /// Contains the timer used to clear old correlation handles from the lookup <see cref="Dictionary{TKey,TValue}"/>
-        /// </summary>
-        internal readonly Timer CorrelationReleaseTimer;
-
-        /// <summary>
-        /// The external telemetry client, used to publish events through <see cref="BigBrother"/>.
-        /// </summary>
-        internal TelemetryClient TelemetryClient;
-
-        /// <summary>
-        /// Default keep alive <see cref="TimeSpan"/> for lose correlation handles created by the consumer.
-        /// </summary>
-        internal TimeSpan DefaultCorrelationKeepAlive = TimeSpan.FromMinutes(10);
-
-        /// <summary>
-        /// The current strict correlation handle.
-        /// </summary>
-        internal StrictCorrelationHandle Handle;
 
         /// <summary>
         /// Just here for internal easy Mocking of the concrete class.
@@ -140,11 +114,6 @@
         /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
         public BigBrother([NotNull]string aiKey, [NotNull]string internalKey)
         {
-            CorrelationReleaseTimer = new Timer(ReleaseCorrelationVectors, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
-
-            var trace = new StackTrace();
-            BirthPlace = trace.GetFrame(trace.FrameCount - 1).GetMethod().DeclaringType?.FullName;
-
             SetupTelemetryClient(aiKey, internalKey);
             SetupSubscriptions();
         }
@@ -182,20 +151,19 @@
             ExceptionStream.OnNext(exEvent);
         }
 
-
-        /// <inheritdoc />
-        public void Publish(BbEvent bbEvent, object correlation = null)
+        public void Publish(BbEvent bbEvent, string calleremberName = "", string callerFilePath = "", int callerLineNumber = -1)
         {
             if (bbEvent is BbTimedEvent timedEvent)
             {
                 timedEvent.End();
             }
-            if (bbEvent is BbTelemetryEvent tEvent)
-            {
-                SetupCorrelation(tEvent, correlation);
-            }
 
             TelemetryStream.OnNext(bbEvent);
+        }
+
+        public void Publish(object @event, string eventName = null, string calleremberName = "", string callerFilePath = "", int callerLineNumber = -1)
+        {
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
@@ -211,42 +179,11 @@
         }
 
         /// <inheritdoc />
-        public IDisposable CreateCorrelation()
-        {
-            if (Handle == null) return new StrictCorrelationHandle(this);
-
-            var ex = new InvalidOperationException("You're trying to create a second correlation handle while one is active. Use lose correlation instead if you're trying to correlate work in parallel with different correlations.");
-#if DEBUG
-            if (Debugger.IsAttached)
-            {
-                Debugger.Break();
-                throw ex;
-            }
-#endif
-            PublishError(ex);
-            return Handle;
-        }
-
-        /// <inheritdoc />
-        public string GetCorrelationVector(object handle)
-        {
-            return CorrelationHandles.ContainsKey(handle)
-                ? CorrelationHandles[handle].Vector
-                : null;
-        }
-
-        /// <inheritdoc />
         public void Flush()
         {
             InternalStream.OnNext(new FlushEvent()); // You're not guaranteed to flush this event
             TelemetryClient.Flush();
             InternalClient.Flush();
-        }
-
-        /// <inheritdoc />
-        public void SetCorrelationKeepAlive(TimeSpan span)
-        {
-            DefaultCorrelationKeepAlive = span;
         }
 
         /// <summary>
@@ -395,54 +332,11 @@
         }
 
         /// <summary>
-        /// Does a periodic release of old correlation vector object references.
-        /// </summary>
-        /// <param name="_">[IGNORED] Timer state on callback.</param>
-        internal void ReleaseCorrelationVectors(object _)
-        {
-            var now = Now(); // Do DateTime.Now once per tick to speed up the release->collect pass.
-
-            foreach (var handle in CorrelationHandles.Where(h => !h.Value.IsAlive(now)).ToList())
-            {
-                CorrelationHandles.TryRemove(handle.Key, out var __);
-            }
-        }
-
-        /// <summary>
-        /// Deals with all the details of setting up the correlation vector inside the event object.
-        /// </summary>
-        /// <param name="event">The event that we want to correlate through.</param>
-        /// <param name="correlation">The correlation handle used to correlate.</param>
-        internal void SetupCorrelation(BbTelemetryEvent @event, object correlation)
-        {
-            if (correlation != null) // lose > strict, so we override strict if a lose is passed in
-            {
-                if (CorrelationHandles.ContainsKey(correlation))
-                {
-                    @event.CorrelationVector = CorrelationHandles[correlation].Vector;
-                    CorrelationHandles[correlation].Touch();
-                }
-                else
-                {
-                    var handle = new CorrelationHandle(DefaultCorrelationKeepAlive);
-                    CorrelationHandles.TryAdd(correlation, handle);
-                    @event.CorrelationVector = handle.Vector;
-                }
-            }
-            else if (Handle != null)
-            {
-                @event.CorrelationVector = Handle.Vector;
-            }
-        }
-
-        /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
         [ExcludeFromCodeCoverage]
         public void Dispose()
         {
-            CorrelationReleaseTimer?.Dispose();
-
             foreach (var key in TelemetrySubscriptions.Keys)
             {
                 TelemetrySubscriptions[key]?.Dispose();

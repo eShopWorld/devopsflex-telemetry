@@ -76,72 +76,6 @@ public class BigBrotherTest
         }
 
         [Fact, IsUnit]
-        public async Task Test_PublishUnderStrictCorrelation()
-        {
-            var bbMock = new Mock<BigBrother> { CallBase = true };
-
-            TestTelemetryEvent rEvent = null;
-            using (bbMock.Object.CreateCorrelation())
-            using (bbMock.Object.TelemetryStream.OfType<TestTelemetryEvent>().Subscribe(e => rEvent = e))
-            {
-                var tEvent = new TestTelemetryEvent();
-
-                bbMock.Object.Publish(tEvent);
-
-                await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription gets love
-
-                rEvent.Should().NotBeNull();
-                rEvent.Should().Be(tEvent);
-                bbMock.Object.Handle.Should().NotBeNull();
-                rEvent.CorrelationVector.Should().Be(bbMock.Object.Handle.Vector);
-            }
-        }
-
-        [Fact, IsUnit]
-        public async Task Test_PublishUnderLoseCorrelation()
-        {
-            var bbMock = new Mock<BigBrother> { CallBase = true };
-            var handle = new object();
-            var tEvent = new TestTelemetryEvent();
-
-            TestTelemetryEvent rEvent = null;
-            using (bbMock.Object.TelemetryStream.OfType<TestTelemetryEvent>()
-                         .Subscribe(e => rEvent = e))
-            {
-                bbMock.Object.Publish(tEvent, handle);
-
-                await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription gets love
-
-                rEvent.Should().NotBeNull();
-                rEvent.Should().Be(tEvent);
-                rEvent.CorrelationVector.Should().Be(bbMock.Object.CorrelationHandles[handle].Vector);
-            }
-        }
-
-        [Fact, IsUnit]
-        public async Task Ensure_LoseOverridesStrictCorrelation()
-        {
-            var bbMock = new Mock<BigBrother> { CallBase = true };
-            var handle = new object();
-            var tEvent = new TestTelemetryEvent();
-
-            TestTelemetryEvent rEvent = null;
-            using (bbMock.Object.CreateCorrelation())
-            using (bbMock.Object.TelemetryStream.OfType<TestTelemetryEvent>().Subscribe(e => rEvent = e))
-            {
-                bbMock.Object.Publish(tEvent, handle);
-
-                await Task.Delay(TimeSpan.FromSeconds(1)); // wait a bit to ensure the subscription gets love
-
-                rEvent.Should().NotBeNull();
-                rEvent.Should().Be(tEvent);
-                rEvent.CorrelationVector.Should().Be(bbMock.Object.CorrelationHandles[handle].Vector);
-
-                bbMock.Object.Handle.Should().NotBeNull();
-            }
-        }
-
-        [Fact, IsUnit]
         public async Task Test_Publish_EndsTimedEvents()
         {
             var bbMock = new Mock<BigBrother> { CallBase = true };
@@ -154,60 +88,6 @@ public class BigBrotherTest
             await Task.Delay(TimeSpan.FromSeconds(3));
 
             tEvent.ProcessingTime.Should().BeCloseTo(TimeSpan.FromSeconds(2), 1000); // can do a 1sec range here because we have a second 3 second delay
-        }
-    }
-
-    public class CreateCorrelation
-    {
-        [Fact, IsUnit]
-        public void Test_CreateWithoutOne()
-        {
-            var bbMock = new Mock<BigBrother> { CallBase = true };
-
-            var result = bbMock.Object.CreateCorrelation();
-
-            bbMock.Object.Handle.Should().Be(result);
-        }
-
-        /// <remarks>
-        /// You can't debug this test, because in debug this will throw instead of the normal behaviour flow.
-        /// </remarks>
-        [Fact, IsUnit]
-        public void Ensure_CreateWithtOneReturnsSame()
-        {
-            var bbMock = new Mock<BigBrother> { CallBase = true };
-
-            BbExceptionEvent errorEvent = null;
-
-            using (BigBrother.InternalStream.OfType<BbExceptionEvent>()
-                             .Subscribe(e => errorEvent = e))
-            {
-                var handle1 = bbMock.Object.CreateCorrelation();
-                var handle2 = bbMock.Object.CreateCorrelation();
-                handle2.Should().Be(handle1);
-
-                errorEvent.Should().NotBeNull();
-                errorEvent.Exception.Should().BeOfType<InvalidOperationException>();
-            }
-        }
-    }
-
-    public class ReleaseCorrelationVectors
-    {
-        [Fact, IsFakes]
-        public void Test_ReleaseHandleNotAlive()
-        {
-            var now = DateTime.Now.AddMinutes(15); // offset now by 15 minutes, this way we don't need to play around with the internal handle
-            var handle = new object();
-
-            BigBrother.Now = () => now;
-
-            var bb = new BigBrother();
-            bb.Publish(new TestTelemetryEvent(), handle); // no setup on the subscriptions, so nothing will get published
-
-            bb.ReleaseCorrelationVectors(null);
-
-            bb.CorrelationHandles.Should().BeEmpty();
         }
     }
 
