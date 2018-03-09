@@ -14,7 +14,7 @@
     [EventSource(Name = EventSourceName)]
     internal sealed class ErrorEventSource : EventSource
     {
-        internal const string EventSourceName = "DevOpsFlex-Telemetry-ErrorEvents";
+        internal const string EventSourceName = "Eshopworld-Telemetry-ErrorEvents";
 
         public class Keywords
         {
