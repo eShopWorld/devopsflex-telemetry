@@ -2,15 +2,13 @@
 {
     using System;
     using System.Collections.Concurrent;
-    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Diagnostics.CodeAnalysis;
     using System.Diagnostics.Tracing;
-    using System.Linq;
     using System.Reactive;
     using System.Reactive.Linq;
     using System.Reactive.Subjects;
-    using System.Threading;
+    using System.Runtime.CompilerServices;
     using Core;
     using InternalEvents;
     using JetBrains.Annotations;
@@ -151,7 +149,12 @@
             ExceptionStream.OnNext(exEvent);
         }
 
-        public void Publish(BbEvent bbEvent, string calleremberName = "", string callerFilePath = "", int callerLineNumber = -1)
+        /// <inheritdoc />
+        public void Publish(
+            BbEvent bbEvent,
+            [CallerMemberName] string calleremberName = "",
+            [CallerFilePath] string callerFilePath = "",
+            [CallerLineNumber] int callerLineNumber = -1)
         {
             if (bbEvent is BbTimedEvent timedEvent)
             {
@@ -161,7 +164,13 @@
             TelemetryStream.OnNext(bbEvent);
         }
 
-        public void Publish(object @event, string eventName = null, string calleremberName = "", string callerFilePath = "", int callerLineNumber = -1)
+        /// <inheritdoc />
+        public void Publish(
+            object @event,
+            string eventName = null,
+            [CallerMemberName] string calleremberName = "",
+            [CallerFilePath] string callerFilePath = "",
+            [CallerLineNumber] int callerLineNumber = -1)
         {
             throw new NotImplementedException();
         }
