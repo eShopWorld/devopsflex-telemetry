@@ -15,8 +15,7 @@ public class BbEventExtensionsTest
         [Fact, IsUnit]
         public void Test_Event_IsPopulated()
         {
-            const string correlation = "my correlation";
-            var tEvent = new TestTelemetryEvent { CorrelationVector = correlation };
+            var tEvent = new TestTelemetryEvent();
 
             var now = DateTime.Now;
             BbEventExtensions.Now = () => now;
@@ -24,8 +23,6 @@ public class BbEventExtensionsTest
             var result = tEvent.ToEventTelemetry();
 
             result.Should().NotBeNull();
-            (result?.Context.Operation.CorrelationVector).Should().Be(correlation);
-            (result?.Context.Operation.Id).Should().Be(correlation);
             (result?.Name).Should().Be(tEvent.GetType().Name);
             (result?.Timestamp).Should().Be(now);
             (result?.Properties[nameof(TestExceptionEvent.Id)]).Should().Be(tEvent.Id.ToString());
@@ -35,19 +32,15 @@ public class BbEventExtensionsTest
         [Fact, IsUnit]
         public void Test_Timed_IsPopulated()
         {
-            const string correlation = "my correlation";
-
             var now = DateTime.Now;
             BbEventExtensions.Now = () => now;
 
-            var tEvent = new TestTimedEvent { CorrelationVector = correlation };
+            var tEvent = new TestTimedEvent();
 
             tEvent.End();
             var result = tEvent.ToTimedTelemetry();
 
             result.Should().NotBeNull();
-            (result?.Context.Operation.CorrelationVector).Should().Be(correlation);
-            (result?.Context.Operation.Id).Should().Be(correlation);
             (result?.Name).Should().Be(tEvent.GetType().Name);
             (result?.Timestamp).Should().Be(now);
             (result?.Properties[nameof(TestExceptionEvent.Id)]).Should().Be(tEvent.Id.ToString());
@@ -59,10 +52,9 @@ public class BbEventExtensionsTest
         public void Test_Exception_IsPopulated()
         {
             const string message = "KABUM!!!";
-            const string correlation = "my correlation";
 
             var exception = new Exception(message);
-            var tEvent = new TestExceptionEvent(exception) { CorrelationVector = correlation };
+            var tEvent = new TestExceptionEvent(exception);
 
             var now = DateTime.Now;
             BbEventExtensions.Now = () => now;
@@ -70,8 +62,6 @@ public class BbEventExtensionsTest
             var result = tEvent.ToExceptionTelemetry();
 
             result.Should().NotBeNull();
-            (result?.Context.Operation.CorrelationVector).Should().Be(correlation);
-            (result?.Context.Operation.Id).Should().Be(correlation);
             (result?.Message).Should().Be(message);
             (result?.Exception).Should().Be(exception);
             (result?.Timestamp).Should().Be(now);

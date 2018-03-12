@@ -71,7 +71,6 @@ public class BigBrotherTest
 
                 rEvent.Should().NotBeNull();
                 rEvent.Should().Be(tEvent);
-                rEvent.CorrelationVector.Should().BeNull();
             }
         }
 

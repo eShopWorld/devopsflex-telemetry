@@ -167,7 +167,6 @@
         /// <inheritdoc />
         public void Publish(
             object @event,
-            string eventName = null,
             [CallerMemberName] string calleremberName = "",
             [CallerFilePath] string callerFilePath = "",
             [CallerLineNumber] int callerLineNumber = -1)

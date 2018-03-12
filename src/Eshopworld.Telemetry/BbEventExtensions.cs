@@ -33,7 +33,6 @@
                     Timestamp = Now()
                 };
 
-                tEvent.SetCorrelation(@event);
                 @event.CopyPropertiesInto(tEvent.Properties);
 
                 return tEvent;
@@ -75,7 +74,6 @@
                     Timestamp = Now()
                 };
 
-                tEvent.SetCorrelation(@event);
                 @event.CopyPropertiesInto(tEvent.Properties);
 
                 return tEvent;
@@ -113,7 +111,6 @@
 
                 tEvent.Metrics[nameof(BbTimedEvent.ProcessingTime)] = @event.ProcessingTime.TotalSeconds;
 
-                tEvent.SetCorrelation(@event);
                 @event.CopyPropertiesInto(tEvent.Properties);
 
                 return tEvent;
