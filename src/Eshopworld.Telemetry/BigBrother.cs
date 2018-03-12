@@ -117,6 +117,20 @@
         }
 
         /// <summary>
+        /// Initializes a new instance of <see cref="BigBrother"/>.
+        ///     Used to leverage an existing <see cref="TelemetryClient"/> to track correlation.
+        ///     This constructor does a bit of work, so if you're mocking this, mock the <see cref="IBigBrother"/> contract instead.
+        /// </summary>
+        /// <param name="client">The application's existing <see cref="TelemetryClient"/>.</param>
+        /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
+        public BigBrother(TelemetryClient client, [NotNull]string internalKey)
+        {
+            TelemetryClient = client;
+            SetupTelemetryClient(null, internalKey);
+            SetupSubscriptions();
+        }
+
+        /// <summary>
         /// Provides access to internal Rx resources for improved extensability and testability.
         /// </summary>
         /// <param name="telemetryObservable">The main event <see cref="IObservable{BbEvent}"/> that's exposed publicly.</param>
@@ -156,6 +170,12 @@
             [CallerFilePath] string callerFilePath = "",
             [CallerLineNumber] int callerLineNumber = -1)
         {
+            if (bbEvent is BbTelemetryEvent telemetryEvent)
+            {
+                telemetryEvent.CallerMemberName = calleremberName;
+                telemetryEvent.CallerFilePath = callerFilePath;
+                telemetryEvent.CallerLineNumber = callerLineNumber;
+            }
             if (bbEvent is BbTimedEvent timedEvent)
             {
                 timedEvent.End();
@@ -171,7 +191,13 @@
             [CallerFilePath] string callerFilePath = "",
             [CallerLineNumber] int callerLineNumber = -1)
         {
-            throw new NotImplementedException();
+            TelemetryStream.OnNext(
+                new BbAnonymousEvent(@event)
+                {
+                    CallerMemberName = calleremberName,
+                    CallerFilePath = callerFilePath,
+                    CallerLineNumber = callerLineNumber
+                });
         }
 
         /// <inheritdoc />
@@ -199,12 +225,15 @@
         /// </summary>
         /// <param name="aiKey">The application's Application Insights instrumentation key.</param>
         /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
-        internal void SetupTelemetryClient([NotNull]string aiKey, [NotNull]string internalKey)
+        internal void SetupTelemetryClient(string aiKey, [NotNull]string internalKey)
         {
-            TelemetryClient = new TelemetryClient
+            if (aiKey != null)
             {
-                InstrumentationKey = aiKey
-            };
+                TelemetryClient = new TelemetryClient
+                {
+                    InstrumentationKey = aiKey
+                };
+            }
 
             InternalClient.InstrumentationKey = internalKey;
         }

@@ -128,5 +128,40 @@
                 return null;
             }
         }
+
+        /// <summary>
+        /// Converts this event into an Application Insights <see cref="EventTelemetry"/> event ready to be tracked by
+        /// the AI client.
+        /// </summary>
+        /// <param name="event">The event we want to convert to an AI event.</param>
+        /// <returns>The converted <see cref="EventTelemetry"/> event.</returns>
+        [CanBeNull]
+        internal static EventTelemetry ToAnonymousTelemetry([NotNull]this BbAnonymousEvent @event)
+        {
+            try
+            {
+                var tEvent = new EventTelemetry
+                {
+                    Name = @event.GetType().Name,
+                    Timestamp = Now()
+                };
+
+                @event.CopyPropertiesInto(tEvent.Properties);
+
+                return tEvent;
+            }
+            catch (Exception ex)
+            {
+#if DEBUG
+                if (Debugger.IsAttached)
+                {
+                    Debugger.Break();
+                    throw;
+                }
+#endif
+                BigBrother.PublishError(ex);
+                return null;
+            }
+        }
     }
 }
