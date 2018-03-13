@@ -142,7 +142,7 @@
             {
                 var tEvent = new EventTelemetry
                 {
-                    Name = @event.GetType().Name,
+                    Name = @event.CallerMemberName,
                     Timestamp = Now()
                 };
 

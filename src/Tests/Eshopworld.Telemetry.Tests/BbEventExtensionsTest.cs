@@ -70,6 +70,31 @@ public class BbEventExtensionsTest
         }
 
         [Fact, IsUnit]
+        public void Foo()
+        {
+            const string caller = "just a caller!";
+
+            var payload = new
+            {
+                AName = "some name",
+                AValue = 123
+            };
+
+            var tEvent = new BbAnonymousEvent(payload) { CallerMemberName = caller };
+
+            var now = DateTime.Now;
+            BbEventExtensions.Now = () => now;
+
+            var result = tEvent.ToAnonymousTelemetry();
+
+            result.Should().NotBeNull();
+            (result?.Name).Should().Be(tEvent.CallerMemberName);
+            (result?.Timestamp).Should().Be(now);
+            (result?.Properties[nameof(payload.AName)]).Should().Be(payload.AName);
+            (result?.Properties[nameof(payload.AValue)]).Should().Be(payload.AValue.ToString());
+        }
+
+        [Fact, IsUnit]
         public async Task Test_Event_PublishesOnException()
         {
             var exceptionFired = false;
