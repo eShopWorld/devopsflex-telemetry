@@ -282,11 +282,7 @@
             }
             else
             {
-                using (var operation = TelemetryClient.StartOperation<RequestTelemetry>($"EVENT: {telemetry.Name}"))
-                {
-                    TelemetryClient.TrackEvent(telemetry);
-                    TelemetryClient.StopOperation(operation);
-                }
+                TelemetryClient.TrackEvent(telemetry);
             }
         }
 
@@ -304,11 +300,7 @@
             }
             else
             {
-                using (var operation = TelemetryClient.StartOperation<RequestTelemetry>($"EXCEPTION: {telemetry.ProblemId}"))
-                {
-                    TelemetryClient.TrackException(telemetry);
-                    TelemetryClient.StopOperation(operation);
-                }
+                TelemetryClient.TrackException(telemetry);
             }
         }
 
