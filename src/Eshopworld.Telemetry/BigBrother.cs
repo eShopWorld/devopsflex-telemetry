@@ -282,7 +282,7 @@
             }
             else
             {
-                using (var operation = TelemetryClient.StartOperation<RequestTelemetry>($"{telemetry.Name}_OP"))
+                using (var operation = TelemetryClient.StartOperation<RequestTelemetry>($"EVENT: {telemetry.Name}"))
                 {
                     TelemetryClient.TrackEvent(telemetry);
                     TelemetryClient.StopOperation(operation);
@@ -304,7 +304,7 @@
             }
             else
             {
-                using (var operation = TelemetryClient.StartOperation<RequestTelemetry>($"{telemetry.ProblemId}_OP"))
+                using (var operation = TelemetryClient.StartOperation<RequestTelemetry>($"EXCEPTION: {telemetry.ProblemId}"))
                 {
                     TelemetryClient.TrackException(telemetry);
                     TelemetryClient.StopOperation(operation);
