@@ -18,7 +18,7 @@
 
     /// <summary>
     /// Deals with everything that's public in telemetry.
-    /// This is the main entry point in the <see cref="N:DevOpsFlex.Telemetry" /> API.
+    /// This is the main entry point in the <see cref="N:Eshopworld.Telemetry"/> API.
     /// </summary>
     public class BigBrother : IBigBrother, IDisposable
     {
@@ -282,7 +282,11 @@
             }
             else
             {
-                TelemetryClient.TrackEvent(telemetry);
+                using (var operation = TelemetryClient.StartOperation<RequestTelemetry>($"{telemetry.Name}_OP"))
+                {
+                    TelemetryClient.TrackEvent(telemetry);
+                    TelemetryClient.StopOperation(operation);
+                }
             }
         }
 
@@ -300,12 +304,16 @@
             }
             else
             {
-                TelemetryClient.TrackException(telemetry);
+                using (var operation = TelemetryClient.StartOperation<RequestTelemetry>($"{telemetry.ProblemId}_OP"))
+                {
+                    TelemetryClient.TrackException(telemetry);
+                    TelemetryClient.StopOperation(operation);
+                }
             }
         }
 
         /// <summary>
-        /// Handles external events that are fired by <see cref="Publish"/>.
+        /// Handles external events that are fired by Publish.
         /// </summary>
         /// <param name="event">The event being handled.</param>
         internal virtual void HandleAiEvent(BbTelemetryEvent @event)
