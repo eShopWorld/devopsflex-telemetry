@@ -52,6 +52,20 @@ public class BigBrotherTest
             bb.Flush();
         }
 
+        [Fact, IsDev]
+        public void EntryPoint_PushAnonymous()
+        {
+            var bb = new BigBrother(DevKey, DevKey).DeveloperMode();
+
+            bb.Publish(new
+            {
+                SomeStuff = Lorem.GetSentence(),
+                SomeMoreStuff = Lorem.GetSentence(),
+                AndEvenMoreStuff = Lorem.GetSentence()
+            });
+
+            bb.Flush();
+        }
     }
 
     public class Publish

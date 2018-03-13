@@ -333,6 +333,10 @@
                     TrackEvent(telemetry.ToTimedTelemetry());
                     break;
 
+                case BbAnonymousEvent telemetry:
+                    TrackEvent(telemetry.ToAnonymousTelemetry());
+                    break;
+
                 default:
                     TrackEvent(@event.ToEventTelemetry());
                     break;
