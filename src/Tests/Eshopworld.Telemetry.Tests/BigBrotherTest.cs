@@ -5,6 +5,7 @@ using Eshopworld.Core;
 using Eshopworld.Telemetry;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
+using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Diagnostics.Tracing.Session;
 using Moq;
@@ -148,14 +149,14 @@ public class BigBrotherTest
         [Theory, IsUnit]
         [InlineData(true)]
         [InlineData(false)]
-        public void Test_With_MetricEvent(bool @internal)
+        public void Test_With_MetricEvent(bool isInternal)
         {
             var telemetry = new BbMetricEvent();
 
             var bbMock = new Mock<BigBrother> { CallBase = true };
-            bbMock.Setup(x => x.TrackEvent(It.IsAny<EventTelemetry>(), @internal)).Verifiable();
+            bbMock.Setup(x => x.TrackEvent(It.IsAny<EventTelemetry>(), isInternal)).Verifiable();
 
-            if (@internal)
+            if (isInternal)
                 bbMock.Object.HandleInternalEvent(telemetry);
             else
                 bbMock.Object.HandleAiEvent(telemetry);
@@ -166,14 +167,14 @@ public class BigBrotherTest
         [Theory, IsUnit]
         [InlineData(true)]
         [InlineData(false)]
-        public void Test_With_TimedEvent(bool @internal)
+        public void Test_With_TimedEvent(bool isInternal)
         {
             var telemetry = new BbTimedEvent();
 
             var bbMock = new Mock<BigBrother> { CallBase = true };
-            bbMock.Setup(x => x.TrackEvent(It.IsAny<EventTelemetry>(), @internal)).Verifiable();
+            bbMock.Setup(x => x.TrackEvent(It.IsAny<EventTelemetry>(), isInternal)).Verifiable();
 
-            if (@internal)
+            if (isInternal)
                 bbMock.Object.HandleInternalEvent(telemetry);
             else
                 bbMock.Object.HandleAiEvent(telemetry);
@@ -184,12 +185,12 @@ public class BigBrotherTest
         [Theory, IsUnit]
         [InlineData(true)]
         [InlineData(false)]
-        public void Test_With_ExceptionEvent(bool @internal)
+        public void Test_With_ExceptionEvent(bool isInternal)
         {
             var telemetry = new BbExceptionEvent(new Exception("KABUM"));
 
             var bbMock = new Mock<BigBrother> { CallBase = true };
-            bbMock.Setup(x => x.TrackException(It.IsAny<ExceptionTelemetry>(), @internal))
+            bbMock.Setup(x => x.TrackException(It.IsAny<ExceptionTelemetry>(), isInternal))
                   .Callback<ExceptionTelemetry, bool>(
                       (t, b) =>
                       {
@@ -197,7 +198,7 @@ public class BigBrotherTest
                       })
                   .Verifiable();
 
-            if (@internal)
+            if (isInternal)
                 bbMock.Object.HandleInternalEvent(telemetry);
             else
                 bbMock.Object.HandleAiEvent(telemetry);
