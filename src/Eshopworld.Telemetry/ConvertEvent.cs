@@ -52,7 +52,7 @@
         /// </summary>
         /// <returns>The converted <see cref="EventTelemetry"/> event.</returns>
         [CanBeNull]
-        internal TTo ToTelemetry()
+        public TTo ToTelemetry()
         {
             try
             {
@@ -62,37 +62,7 @@
                 };
 
                 // Specific event type handling
-                if (Event is BbTelemetryEvent bbTelemetryEvent && resultEvent is EventTelemetry telemetry)
-                {
-                    if(Event is BbAnonymousEvent anonymousEvent)
-                        telemetry.Name = anonymousEvent.CallerMemberName;
-                    else
-                        telemetry.Name = bbTelemetryEvent.GetType().Name;
-                }
-
-                switch (Event)
-                {
-                    case BbExceptionEvent bbEvent:
-                        if (resultEvent is ExceptionTelemetry exceptionTelemetry)
-                        {
-                            if (bbEvent.Exception == null)
-                            {
-                                throw new InvalidOperationException($"Attempt to publish an Exception Event without an exception for type {exceptionTelemetry.GetType().FullName}");
-                            }
-
-                            exceptionTelemetry.Message = bbEvent.Exception.Message;
-                            exceptionTelemetry.Exception = bbEvent.Exception;
-                        }
-
-                        break;
-                    case BbTimedEvent bbEvent:
-                        if (resultEvent is EventTelemetry timedTelemetry)
-                        {
-                            timedTelemetry.Metrics[$"{bbEvent.GetType().Name}.{nameof(BbTimedEvent.ProcessingTime)}"] = bbEvent.ProcessingTime.TotalSeconds;
-                        }
-
-                        break;
-                }
+                HandleEventTypes(resultEvent);
 
                 Event.CopyPropertiesInto(resultEvent.Properties);
 
@@ -109,6 +79,45 @@
 #endif
                 BigBrother.PublishError(ex);
                 return default;
+            }
+        }
+
+        /// <summary>
+        /// Handles specific event details relative to the To and From event types.
+        /// </summary>
+        /// <param name="resultEvent">The To event that needs to be populated with specific details.</param>
+        internal void HandleEventTypes(TTo resultEvent)
+        {
+            if (Event is BbTelemetryEvent bbTelemetryEvent && resultEvent is EventTelemetry telemetry)
+            {
+                if (Event is BbAnonymousEvent anonymousEvent)
+                    telemetry.Name = anonymousEvent.CallerMemberName;
+                else
+                    telemetry.Name = bbTelemetryEvent.GetType().Name;
+            }
+
+            switch (Event)
+            {
+                case BbExceptionEvent bbEvent:
+                    if (resultEvent is ExceptionTelemetry exceptionTelemetry)
+                    {
+                        if (bbEvent.Exception == null)
+                        {
+                            throw new InvalidOperationException($"Attempt to publish an Exception Event without an exception for type {exceptionTelemetry.GetType().FullName}");
+                        }
+
+                        exceptionTelemetry.Message = bbEvent.Exception.Message;
+                        exceptionTelemetry.Exception = bbEvent.Exception;
+                    }
+
+                    break;
+                case BbTimedEvent bbEvent:
+                    if (resultEvent is EventTelemetry timedTelemetry)
+                    {
+                        timedTelemetry.Metrics[$"{bbEvent.GetType().Name}.{nameof(BbTimedEvent.ProcessingTime)}"] = bbEvent.ProcessingTime.TotalSeconds;
+                    }
+
+                    break;
             }
         }
     }
