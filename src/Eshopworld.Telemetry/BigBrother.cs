@@ -54,11 +54,6 @@
         internal static readonly ConcurrentDictionary<Type, IDisposable> ExceptionSubscriptions = new ConcurrentDictionary<Type, IDisposable>();
 
         /// <summary>
-        /// This exists to make the class testable and to allow control over the "Now" during a test.
-        /// </summary>
-        internal Func<DateTime> Now = () => DateTime.Now;
-
-        /// <summary>
         /// Contains the exception stream typed dictionary of sink subscription.
         /// </summary>
         internal IDisposable EventSourceSinkSubscription;
@@ -376,11 +371,20 @@
             InternalStream.OnNext(ex.ToBbEvent());
         }
 
+        /// <inheritdoc />
+        [ExcludeFromCodeCoverage]
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
+        /// <param name="disposing">true if disposing through GC, false if through the finalizer.</param>
         [ExcludeFromCodeCoverage]
-        public void Dispose()
+        protected virtual void Dispose(bool disposing)
         {
             foreach (var key in TelemetrySubscriptions.Keys)
             {

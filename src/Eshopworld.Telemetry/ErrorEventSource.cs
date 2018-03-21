@@ -18,11 +18,13 @@
 
         public class Keywords
         {
+            protected Keywords() { }
             public const EventKeywords Exception = (EventKeywords) (1 << 0);
         }
 
         public class Tasks
         {
+            protected Tasks() { }
             public const EventTask BbExceptionEvent = (EventTask) (1 << 0);
             public const EventTask Exception =        (EventTask) (1 << 1);
         }

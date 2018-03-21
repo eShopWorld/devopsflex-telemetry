@@ -49,10 +49,8 @@
 
         public void Process(ITelemetry item)
         {
-            if (item?.Context != null)
-            {
-                if (string.IsNullOrWhiteSpace(item.Context.Cloud.RoleName)) item.Context.Cloud.RoleName = RoleName;
-            }
+            if (item?.Context != null && string.IsNullOrWhiteSpace(item.Context.Cloud.RoleName))
+                item.Context.Cloud.RoleName = RoleName;
 
             Next.Process(item);
         }
