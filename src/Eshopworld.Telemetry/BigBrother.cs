@@ -23,11 +23,6 @@
     public class BigBrother : IBigBrother, IDisposable
     {
         /// <summary>
-        /// This exists to make the class testable and to allow control over the "Now" during a test.
-        /// </summary>
-        internal static Func<DateTime> Now = () => DateTime.Now;
-
-        /// <summary>
         /// The internal telemetry stream, used by packages to report errors and usage to an internal AI account.
         /// </summary>
         internal static readonly ISubject<BbEvent> InternalStream = new Subject<BbEvent>();
@@ -273,10 +268,10 @@
         /// Create a separate <see cref="EventTelemetry" /> instance for each call to TrackEvent(EventTelemetry).
         /// </summary>
         /// <param name="telemetry">An event log item.</param>
-        /// <param name="internal">True if this is an internal event, false otherwise.</param>
-        internal virtual void TrackEvent(EventTelemetry telemetry, bool @internal = false)
+        /// <param name="isInternal">True if this is an internal event, false otherwise.</param>
+        internal virtual void TrackEvent(EventTelemetry telemetry, bool isInternal = false)
         {
-            if (@internal)
+            if (isInternal)
             {
                 InternalClient.TrackEvent(telemetry);
             }
@@ -291,10 +286,10 @@
         /// Create a separate <see cref="ExceptionTelemetry" /> instance for each call to TrackException(ExceptionTelemetry).
         /// </summary>
         /// <param name="telemetry">An event log item.</param>
-        /// <param name="internal">True if this is an internal event, false otherwise.</param>
-        internal virtual void TrackException(ExceptionTelemetry telemetry, bool @internal = false)
+        /// <param name="isInternal">True if this is an internal event, false otherwise.</param>
+        internal virtual void TrackException(ExceptionTelemetry telemetry, bool isInternal = false)
         {
-            if (@internal)
+            if (isInternal)
             {
                 InternalClient.TrackException(telemetry);
             }
@@ -313,7 +308,7 @@
             switch (@event)
             {
                 case BbExceptionEvent telemetry:
-                    var tEvent = telemetry.ToExceptionTelemetry();
+                    var tEvent = new ConvertEvent<BbExceptionEvent, ExceptionTelemetry>(telemetry).ToTelemetry();
                     if (tEvent == null) return;
 
                     tEvent.SeverityLevel = SeverityLevel.Error;
@@ -322,15 +317,15 @@
                     break;
 
                 case BbTimedEvent telemetry:
-                    TrackEvent(telemetry.ToTimedTelemetry());
+                    TrackEvent(new ConvertEvent<BbTimedEvent, EventTelemetry>(telemetry).ToTelemetry());
                     break;
 
                 case BbAnonymousEvent telemetry:
-                    TrackEvent(telemetry.ToAnonymousTelemetry());
+                    TrackEvent(new ConvertEvent<BbAnonymousEvent, EventTelemetry>(telemetry).ToTelemetry());
                     break;
 
                 default:
-                    TrackEvent(@event.ToEventTelemetry());
+                    TrackEvent(new ConvertEvent<BbTelemetryEvent, EventTelemetry>(@event).ToTelemetry());
                     break;
             }
         }
@@ -343,8 +338,8 @@
         {
             switch (@event)
             {
-                case BbExceptionEvent ex:
-                    var tEvent = ex.ToExceptionTelemetry();
+                case BbExceptionEvent telemetry:
+                    var tEvent = new ConvertEvent<BbExceptionEvent, ExceptionTelemetry>(telemetry).ToTelemetry();
                     if (tEvent == null) return;
 
                     tEvent.SeverityLevel = SeverityLevel.Error;
@@ -352,12 +347,16 @@
                     TrackException(tEvent, true);
                     break;
 
-                case BbTimedEvent te:
-                    TrackEvent(te.ToTimedTelemetry(), true);
+                case BbTimedEvent telemetry:
+                    TrackEvent(new ConvertEvent<BbTimedEvent, EventTelemetry>(telemetry).ToTelemetry(), true);
+                    break;
+
+                case BbAnonymousEvent telemetry:
+                    TrackEvent(new ConvertEvent<BbAnonymousEvent, EventTelemetry>(telemetry).ToTelemetry(), true);
                     break;
 
                 default:
-                    TrackEvent(@event.ToEventTelemetry(), true);
+                    TrackEvent(new ConvertEvent<BbTelemetryEvent, EventTelemetry>(@event).ToTelemetry(), true);
                     break;
             }
         }
@@ -372,11 +371,20 @@
             InternalStream.OnNext(ex.ToBbEvent());
         }
 
+        /// <inheritdoc />
+        [ExcludeFromCodeCoverage]
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
+        /// <param name="disposing">true if disposing through GC, false if through the finalizer.</param>
         [ExcludeFromCodeCoverage]
-        public void Dispose()
+        protected virtual void Dispose(bool disposing)
         {
             foreach (var key in TelemetrySubscriptions.Keys)
             {

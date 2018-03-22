@@ -18,6 +18,7 @@
     <IncludeSource>True</IncludeSource>
 
     <DebugType>Full</DebugType>
+    <LangVersion>latest</LangVersion>
 
   </PropertyGroup>
 

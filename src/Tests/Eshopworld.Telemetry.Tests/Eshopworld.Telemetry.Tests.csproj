@@ -1,10 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+
     <TargetFramework>net47</TargetFramework>
     <IsPackable>false</IsPackable>
-    <DebugType>Full</DebugType>
     <SonarQubeTestProject>true</SonarQubeTestProject>
+
+    <DebugType>Full</DebugType>
+    <LangVersion>latest</LangVersion>
+
   </PropertyGroup>
 
   <ItemGroup>

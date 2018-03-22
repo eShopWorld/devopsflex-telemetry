@@ -49,7 +49,17 @@
         }
 
         /// <inheritdoc />
-        public virtual void Dispose()
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        /// <param name="disposing">true if disposing through GC, false if through the finalizer.</param>
+        protected virtual void Dispose(bool disposing)
         {
             ReplayConnection?.Dispose();
             ReplaySubscription?.Dispose();

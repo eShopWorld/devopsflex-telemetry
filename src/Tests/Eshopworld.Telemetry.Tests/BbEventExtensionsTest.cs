@@ -5,6 +5,7 @@ using Eshopworld.Core;
 using Eshopworld.Telemetry;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
+using Microsoft.ApplicationInsights.DataContracts;
 using Xunit;
 
 // ReSharper disable once CheckNamespace
@@ -16,11 +17,9 @@ public class BbEventExtensionsTest
         public void Test_Event_IsPopulated()
         {
             var tEvent = new TestTelemetryEvent();
-
             var now = DateTime.Now;
-            BbEventExtensions.Now = () => now;
 
-            var result = tEvent.ToEventTelemetry();
+            var result = new ConvertEvent<BbTelemetryEvent, EventTelemetry>(tEvent) {Now = () => now}.ToTelemetry();
 
             result.Should().NotBeNull();
             (result?.Name).Should().Be(tEvent.GetType().Name);
@@ -33,19 +32,17 @@ public class BbEventExtensionsTest
         public void Test_Timed_IsPopulated()
         {
             var now = DateTime.Now;
-            BbEventExtensions.Now = () => now;
-
             var tEvent = new TestTimedEvent();
-
             tEvent.End();
-            var result = tEvent.ToTimedTelemetry();
+
+            var result = new ConvertEvent<BbTimedEvent, EventTelemetry>(tEvent) { Now = () => now }.ToTelemetry();
 
             result.Should().NotBeNull();
             (result?.Name).Should().Be(tEvent.GetType().Name);
             (result?.Timestamp).Should().Be(now);
             (result?.Properties[nameof(TestExceptionEvent.Id)]).Should().Be(tEvent.Id.ToString());
             (result?.Properties[nameof(TestExceptionEvent.Description)]).Should().Be(tEvent.Description);
-            (result?.Metrics[nameof(BbTimedEvent.ProcessingTime)]).Should().Be(tEvent.ProcessingTime.TotalSeconds);
+            (result?.Metrics[$"{tEvent.GetType().Name}.{nameof(BbTimedEvent.ProcessingTime)}"]).Should().Be(tEvent.ProcessingTime.TotalSeconds);
         }
 
         [Fact, IsUnit]
@@ -55,11 +52,9 @@ public class BbEventExtensionsTest
 
             var exception = new Exception(message);
             var tEvent = new TestExceptionEvent(exception);
-
             var now = DateTime.Now;
-            BbEventExtensions.Now = () => now;
 
-            var result = tEvent.ToExceptionTelemetry();
+            var result = new ConvertEvent<BbExceptionEvent, ExceptionTelemetry>(tEvent) { Now = () => now }.ToTelemetry();
 
             result.Should().NotBeNull();
             (result?.Message).Should().Be(message);
@@ -70,7 +65,7 @@ public class BbEventExtensionsTest
         }
 
         [Fact, IsUnit]
-        public void Foo()
+        public void Test_AnonymousPayload_IsPopulated()
         {
             const string caller = "just a caller!";
 
@@ -81,11 +76,9 @@ public class BbEventExtensionsTest
             };
 
             var tEvent = new BbAnonymousEvent(payload) { CallerMemberName = caller };
-
             var now = DateTime.Now;
-            BbEventExtensions.Now = () => now;
 
-            var result = tEvent.ToAnonymousTelemetry();
+            var result = new ConvertEvent<BbAnonymousEvent, EventTelemetry>(tEvent) { Now = () => now }.ToTelemetry();
 
             result.Should().NotBeNull();
             (result?.Name).Should().Be(tEvent.CallerMemberName);
@@ -107,7 +100,7 @@ public class BbEventExtensionsTest
                              }))
             {
                 // ReSharper disable once AssignNullToNotNullAttribute
-                var result = BbEventExtensions.ToEventTelemetry(null);
+                var result = new ConvertEvent<BbTelemetryEvent, EventTelemetry>(null).ToTelemetry();
                 result.Should().BeNull();
 
                 await Task.Delay(TimeSpan.FromSeconds(1));
@@ -129,7 +122,7 @@ public class BbEventExtensionsTest
                              }))
             {
                 // ReSharper disable once AssignNullToNotNullAttribute
-                var result = BbEventExtensions.ToExceptionTelemetry(null);
+                var result = new ConvertEvent<BbExceptionEvent, ExceptionTelemetry>(null).ToTelemetry();
                 result.Should().BeNull();
 
                 await Task.Delay(TimeSpan.FromSeconds(1));
@@ -151,7 +144,7 @@ public class BbEventExtensionsTest
                              }))
             {
                 // ReSharper disable once AssignNullToNotNullAttribute
-                var result = BbEventExtensions.ToTimedTelemetry(null);
+                var result = new ConvertEvent<BbTimedEvent, EventTelemetry>(null).ToTelemetry();
                 result.Should().BeNull();
 
                 await Task.Delay(TimeSpan.FromSeconds(1));
