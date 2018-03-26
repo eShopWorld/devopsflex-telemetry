@@ -118,7 +118,7 @@
         /// </summary>
         /// <param name="client">The application's existing <see cref="TelemetryClient"/>.</param>
         /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
-        public BigBrother(TelemetryClient client, [NotNull]string internalKey)
+        public BigBrother([NotNull]TelemetryClient client, [NotNull]string internalKey)
         {
             TelemetryClient = client;
             SetupTelemetryClient(null, internalKey);

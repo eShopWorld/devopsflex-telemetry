@@ -17,6 +17,8 @@ They inherit from any of the base event types, except `BbEvent`. Currently the f
 
 `BigDataEvent` isn't related to telemetry, it's purely here for showing the entire class structure. This special event type should only be used for events that aren't telemetry events but that should end up in the Data Lake store.
 
+`BbAnonymousEvent` is an internal event that is used when calling `Publish` using an anonymous class. Internally we create one `BbAnonymousEvent` and attach the anonymous payload to is before we stream it down the pipeline.
+
 **Here's a few examples:**
 ```c#
 public class MyExceptionEvent : BbExceptionEvent
@@ -55,6 +57,21 @@ bb.Publish(new PaymentEvent
 });
 ```
 
+Optionally, and especially useful during prototyping phases, you can publish anonymous classes:
+```c#
+IBigBrother bb = new BigBrother("[Application Insights Key]", "[Application Insights Key - For inner telemetry]");
+
+bb.Publish(
+    new 
+    {
+        ProcessedOn = DateTime.Now,
+        Ammount = 100,
+        Currency = "USD"
+    });
+```
+
+The event will be named from the method name where the Publish was called from.
+
 ### Timed Events
 
 Timed events, besides tracking the normal event custom dimensions will also measure a `ProcessingTime` metric and push it
@@ -78,62 +95,20 @@ bb.Publish(event); // Time frame stops here
 
 ### How do I correlate events?
 
-`BigBrother` supports two types of correlation: __Strict__ and __Lose__.
+`BigBrother` plugs into the application insights correlation pipeline, so custom events will have `operation_id` but won't have `id`, this will be blank.
 
-__Strict__ correlation is when you are doing syncronous processing and you only ever want
-one correlation handle over time, so you get an IDisposable back to facilitate using blocks:
-```C#
-IBigBrother bb = new BigBrother("[Application Insights Key]", "[Application Insights Key - For inner telemetry]");
-
-using (bb.CreateCorrelation())
+To facilitate even further and to plug into MVC better, we have a constructor that takes a `TelemetryClient` that in ASP.NET Core will be a singleton:
+```c#
+/// <summary>
+/// Initializes a new instance of <see cref="BigBrother"/>.
+///     Used to leverage an existing <see cref="TelemetryClient"/> to track correlation.
+///     This constructor does a bit of work, so if you're mocking this, mock the <see cref="IBigBrother"/> contract instead.
+/// </summary>
+/// <param name="client">The application's existing <see cref="TelemetryClient"/>.</param>
+/// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
+public BigBrother([NotNull]TelemetryClient client, [NotNull]string internalKey)
 {
-    bb.Publish(new PaymentEvent
-    {
-        ProcessedOn = DateTime.Now,
-        Ammount = 100,
-        Currency = "USD"
-    }); // These two events will have the same correlation ID
-
-    bb.Publish(new PaymentEvent
-    {
-        ProcessedOn = DateTime.Now,
-        Ammount = 200,
-        Currency = "EUR"
-    }); // These two events will have the same correlation ID
 }
-```
-If you try to create two strict correlation handles it will throw in DEBUG with the debugger attached,
-otherwise just record error and give you back the first handle.
-a
-__Lose__ correlation is when you are doing parallel processing and you want multiple correlation handles
-active at the same time. To support this you can use anything that inherits from `object` as a handle.
-```C#
-IBigBrother bb = new BigBrother("[Application Insights Key]", "[Application Insights Key - For inner telemetry]");
-var handle = new object();
-
-bb.Publish(new PaymentEvent
-{
-    ProcessedOn = DateTime.Now,
-    Ammount = 100,
-    Currency = "USD"
-}, handle); // These two events will have the same correlation ID
-
-bb.Publish(new PaymentEvent
-{
-    ProcessedOn = DateTime.Now,
-    Ammount = 200,
-    Currency = "USD"
-}, handle); // These two events will have the same correlation ID
-```
-By default correlation handles are kept for 10 minutes, but you can change this keep alive `TimeSpan` by calling
-```C#
-void SetCorrelationKeepAlive(TimeSpan span)
-```
-They will be released after this time and if you try to use the handle again you'll get a new correlation vector for it.
-
-You can also get the correlation vector (as a string) created by `BigBrother` for any handle with:
-```C#
-[CanBeNull] string GetCorrelationVector([NotNull] object handle)
 ```
 
 ### EventSource and Trace sinks
