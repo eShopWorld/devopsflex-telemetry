@@ -1,14 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
 
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <IsPackable>True</IsPackable>
 
     <PackageId>Eshopworld.Telemetry</PackageId>
     <Title>Eshopworld.Telemetry</Title>
-    <Authors>David Rodrigues, eshopworld</Authors>
+    <Authors>David Rodrigues, eshopworld, Oisin Haken</Authors>
     <Copyright>Copyright eShopWorld 2017</Copyright>
     <Description>eShopWorld common telemetry application insights</Description>
     <PackageLicenseUrl>https://github.com/eShopWorld/telemetry/blob/master/LICENSE</PackageLicenseUrl>
@@ -19,13 +19,14 @@
 
     <DebugType>Full</DebugType>
     <LangVersion>latest</LangVersion>
+    <PackageReleaseNotes>Rx dependency upgraded to 4</PackageReleaseNotes>
 
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Eshopworld.Core" Version="1.0.0" />
     <PackageReference Include="Microsoft.ApplicationInsights" Version="2.5.1" />
-    <PackageReference Include="System.Reactive" Version="3.1.1" />
+    <PackageReference Include="System.Reactive" Version="4.0.0" />
   </ItemGroup>
 
 </Project>
