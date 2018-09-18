@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Diagnostics.CodeAnalysis;
     using System.Diagnostics.Tracing;
@@ -52,6 +53,16 @@
         /// Contains an exception stream typed dictionary of all the subscriptions to different types of telemetry that instrument this package.
         /// </summary>
         internal static readonly ConcurrentDictionary<Type, IDisposable> ExceptionSubscriptions = new ConcurrentDictionary<Type, IDisposable>();
+
+        /// <summary>
+        /// Contains the list of domain types that we are sending to Topics.
+        /// </summary>
+        internal readonly HashSet<Type> PublishTypeSet = new HashSet<Type>();
+
+        /// <summary>
+        /// Contains the <see cref="IPublishEvents"/> instance used to publish to topics.
+        /// </summary>
+        internal IPublishEvents TopicPublisher;
 
         /// <summary>
         /// Contains the exception stream typed dictionary of sink subscription.
@@ -126,7 +137,7 @@
         }
 
         /// <summary>
-        /// Provides access to internal Rx resources for improved extensability and testability.
+        /// Provides access to internal Rx resources for improved extensibility and testability.
         /// </summary>
         /// <param name="telemetryObservable">The main event <see cref="IObservable{BbEvent}"/> that's exposed publicly.</param>
         /// <param name="telemetryObserver">The main event <see cref="IObserver{BbEvent}"/> that's used when Publishing.</param>
@@ -161,13 +172,18 @@
         /// <inheritdoc />
         public void Publish(
             BaseDomainEvent bbEvent,
-            [CallerMemberName] string calleremberName = "",
+            [CallerMemberName] string callerMemberName = "",
             [CallerFilePath] string callerFilePath = "",
             [CallerLineNumber] int callerLineNumber = -1)
         {
+            if (PublishTypeSet.Contains(bbEvent.GetType()))
+            {
+                TopicPublisher.Publish(bbEvent);
+            }
+
             if (bbEvent is DomainEvent telemetryEvent)
             {
-                telemetryEvent.CallerMemberName = calleremberName;
+                telemetryEvent.CallerMemberName = callerMemberName;
                 telemetryEvent.CallerFilePath = callerFilePath;
                 telemetryEvent.CallerLineNumber = callerLineNumber;
             }
@@ -182,14 +198,14 @@
         /// <inheritdoc />
         public void Publish(
             object @event,
-            [CallerMemberName] string calleremberName = "",
+            [CallerMemberName] string callerMemberName = "",
             [CallerFilePath] string callerFilePath = "",
             [CallerLineNumber] int callerLineNumber = -1)
         {
             TelemetryStream.OnNext(
                 new AnonymousDomainEvent(@event)
                 {
-                    CallerMemberName = calleremberName,
+                    CallerMemberName = callerMemberName,
                     CallerFilePath = callerFilePath,
                     CallerLineNumber = callerLineNumber
                 });
