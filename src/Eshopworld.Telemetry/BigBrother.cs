@@ -171,28 +171,28 @@
 
         /// <inheritdoc />
         public void Publish(
-            BaseDomainEvent bbEvent,
+            BaseDomainEvent baseDomainEvent,
             [CallerMemberName] string callerMemberName = "",
             [CallerFilePath] string callerFilePath = "",
             [CallerLineNumber] int callerLineNumber = -1)
         {
-            if (PublishTypeSet.Contains(bbEvent.GetType()))
+            if (PublishTypeSet.Contains(baseDomainEvent.GetType()))
             {
-                TopicPublisher.Publish(bbEvent);
+                TopicPublisher.Publish(baseDomainEvent);
             }
 
-            if (bbEvent is DomainEvent telemetryEvent)
+            if (baseDomainEvent is DomainEvent telemetryEvent)
             {
                 telemetryEvent.CallerMemberName = callerMemberName;
                 telemetryEvent.CallerFilePath = callerFilePath;
                 telemetryEvent.CallerLineNumber = callerLineNumber;
             }
-            if (bbEvent is TimedDomainEvent timedEvent)
+            if (baseDomainEvent is TimedDomainEvent timedEvent)
             {
                 timedEvent.End();
             }
 
-            TelemetryStream.OnNext(bbEvent);
+            TelemetryStream.OnNext(baseDomainEvent);
         }
 
         /// <inheritdoc />
