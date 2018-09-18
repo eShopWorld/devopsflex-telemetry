@@ -8,13 +8,13 @@
     using Microsoft.ApplicationInsights.DataContracts;
 
     /// <summary>
-    /// Handles conversion between <see cref="BbEvent"/> and <see cref="ITelemetry"/> Application Insights events.
+    /// Handles conversion between <see cref="BaseDomainEvent"/> and <see cref="ITelemetry"/> Application Insights events.
     /// </summary>
-    /// <typeparam name="TFrom">The type of the <see cref="BbEvent"/> we are converting from.</typeparam>
+    /// <typeparam name="TFrom">The type of the <see cref="BaseDomainEvent"/> we are converting from.</typeparam>
     /// <typeparam name="TTo">The type of the <see cref="ITelemetry"/> event we are converting to.</typeparam>
     public class ConvertEvent<TFrom, TTo>
         where TTo : ITelemetry, ISupportProperties, ISupportMetrics, new()
-        where TFrom : BbEvent
+        where TFrom : BaseDomainEvent
     {
         internal readonly TFrom Event;
 
@@ -25,23 +25,23 @@
         internal Func<DateTime> Now = () => DateTime.Now;
 
         /// <summary>
-        /// Initialilzes a new instance of <see cref="ConvertEvent{TFrom,TTo}"/>.
+        /// Initializes a new instance of <see cref="ConvertEvent{TFrom,TTo}"/>.
         /// </summary>
-        /// <param name="event">The <see cref="BbEvent"/> that we want to convert from.</param>
+        /// <param name="event">The <see cref="BaseDomainEvent"/> that we want to convert from.</param>
         public ConvertEvent([NotNull]TFrom @event)
         {
             // mapping checks, blow up on wrong usage
-            if(typeof(TFrom) == typeof(BbTelemetryEvent) && typeof(TTo) != typeof(EventTelemetry))
-                throw new InvalidOperationException($"You can only convert to {typeof(EventTelemetry).FullName} from {typeof(BbTelemetryEvent).FullName}");
+            if(typeof(TFrom) == typeof(DomainEvent) && typeof(TTo) != typeof(EventTelemetry))
+                throw new InvalidOperationException($"You can only convert to {typeof(EventTelemetry).FullName} from {typeof(DomainEvent).FullName}");
 
-            if (typeof(TFrom) == typeof(BbTimedEvent) && typeof(TTo) != typeof(EventTelemetry))
-                throw new InvalidOperationException($"You can only convert to {typeof(EventTelemetry).FullName} from {typeof(BbTimedEvent).FullName}");
+            if (typeof(TFrom) == typeof(TimedDomainEvent) && typeof(TTo) != typeof(EventTelemetry))
+                throw new InvalidOperationException($"You can only convert to {typeof(EventTelemetry).FullName} from {typeof(TimedDomainEvent).FullName}");
 
-            if (typeof(TFrom) == typeof(BbAnonymousEvent) && typeof(TTo) != typeof(EventTelemetry))
-                throw new InvalidOperationException($"You can only convert to {typeof(EventTelemetry).FullName} from {typeof(BbAnonymousEvent).FullName}");
+            if (typeof(TFrom) == typeof(AnonymousDomainEvent) && typeof(TTo) != typeof(EventTelemetry))
+                throw new InvalidOperationException($"You can only convert to {typeof(EventTelemetry).FullName} from {typeof(AnonymousDomainEvent).FullName}");
 
-            if (typeof(TFrom) == typeof(BbExceptionEvent) && typeof(TTo) != typeof(ExceptionTelemetry))
-                throw new InvalidOperationException($"You can only convert to {typeof(ExceptionTelemetry).FullName} from {typeof(BbExceptionEvent).FullName}");
+            if (typeof(TFrom) == typeof(ExceptionEvent) && typeof(TTo) != typeof(ExceptionTelemetry))
+                throw new InvalidOperationException($"You can only convert to {typeof(ExceptionTelemetry).FullName} from {typeof(ExceptionEvent).FullName}");
 
             Event = @event;
         }
@@ -88,9 +88,9 @@
         /// <param name="resultEvent">The To event that needs to be populated with specific details.</param>
         internal void HandleEventTypes(TTo resultEvent)
         {
-            if (Event is BbTelemetryEvent bbTelemetryEvent && resultEvent is EventTelemetry telemetry)
+            if (Event is DomainEvent bbTelemetryEvent && resultEvent is EventTelemetry telemetry)
             {
-                if (Event is BbAnonymousEvent anonymousEvent)
+                if (Event is AnonymousDomainEvent anonymousEvent)
                     telemetry.Name = anonymousEvent.CallerMemberName;
                 else
                     telemetry.Name = bbTelemetryEvent.GetType().Name;
@@ -98,7 +98,7 @@
 
             switch (Event)
             {
-                case BbExceptionEvent bbEvent:
+                case ExceptionEvent bbEvent:
                     if (resultEvent is ExceptionTelemetry exceptionTelemetry)
                     {
                         if (bbEvent.Exception == null)
@@ -111,10 +111,10 @@
                     }
 
                     break;
-                case BbTimedEvent bbEvent:
+                case TimedDomainEvent bbEvent:
                     if (resultEvent is EventTelemetry timedTelemetry)
                     {
-                        timedTelemetry.Metrics[$"{bbEvent.GetType().Name}.{nameof(BbTimedEvent.ProcessingTime)}"] = bbEvent.ProcessingTime.TotalSeconds;
+                        timedTelemetry.Metrics[$"{bbEvent.GetType().Name}.{nameof(TimedDomainEvent.ProcessingTime)}"] = bbEvent.ProcessingTime.TotalSeconds;
                     }
 
                     break;

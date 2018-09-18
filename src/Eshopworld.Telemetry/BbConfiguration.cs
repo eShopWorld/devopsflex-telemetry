@@ -31,7 +31,7 @@
         }
 
         /// <summary>
-        /// Sets up the previous sink to sink all <see cref="BbExceptionEvent"/> events.
+        /// Sets up the previous sink to sink all <see cref="ExceptionEvent"/> events.
         /// </summary>
         /// <param name="source">The previous configuration source.</param>
         public static void ForExceptions(this IConfigureSources source)
@@ -44,7 +44,7 @@
                     bb = eSink.Bb;
 
                     bb.EventSourceSinkSubscription?.Dispose();
-                    bb.EventSourceSinkSubscription = bb.TelemetryStream.OfType<BbExceptionEvent>().Subscribe(BigBrother.SinkToEventSource);
+                    bb.EventSourceSinkSubscription = bb.TelemetryStream.OfType<ExceptionEvent>().Subscribe(BigBrother.SinkToEventSource);
 
                     break;
 
@@ -52,7 +52,7 @@
                     bb = tSink.Bb;
 
                     bb.TraceSinkSubscription?.Dispose();
-                    bb.TraceSinkSubscription = bb.TelemetryStream.OfType<BbExceptionEvent>().Subscribe(BigBrother.SinkToTrace);
+                    bb.TraceSinkSubscription = bb.TelemetryStream.OfType<ExceptionEvent>().Subscribe(BigBrother.SinkToTrace);
 
                     break;
 

@@ -35,7 +35,7 @@
         public void Error(Exception ex) => ExceptionError(ex.Message, ex.StackTrace);
 
         [NonEvent]
-        public void Error(BbExceptionEvent exEvent) => BbEventError(exEvent.Exception.Message, exEvent.Exception.StackTrace, JsonConvert.SerializeObject(exEvent));
+        public void Error(ExceptionEvent exEvent) => BbEventError(exEvent.Exception.Message, exEvent.Exception.StackTrace, JsonConvert.SerializeObject(exEvent));
 
         [Event(
             1,
