@@ -92,7 +92,7 @@ public class BigBrotherTest
         public async Task Test_Publish_EndsTimedEvents()
         {
             var bbMock = new Mock<BigBrother> { CallBase = true };
-            var tEvent = new TimedDomainEvent();
+            var tEvent = new TimedTelemetryEvent();
 
             await Task.Delay(TimeSpan.FromSeconds(2));
 
@@ -111,7 +111,7 @@ public class BigBrotherTest
         {
             var e = new TestTelemetryEvent();
             var bbMock = new Mock<BigBrother> { CallBase = true };
-            bbMock.Setup(x => x.HandleAiEvent(It.IsAny<DomainEvent>())).Verifiable();
+            bbMock.Setup(x => x.HandleAiEvent(It.IsAny<TelemetryEvent>())).Verifiable();
 
             bbMock.Object.SetupSubscriptions();
             bbMock.Object.Publish(e);
@@ -129,7 +129,7 @@ public class BigBrotherTest
         {
             var e = new TestTelemetryEvent();
             var bbMock = new Mock<BigBrother> { CallBase = true };
-            bbMock.Setup(x => x.HandleInternalEvent(It.IsAny<DomainEvent>())).Verifiable();
+            bbMock.Setup(x => x.HandleInternalEvent(It.IsAny<TelemetryEvent>())).Verifiable();
 
             bbMock.Object.SetupSubscriptions();
             BigBrother.InternalStream.OnNext(e);
@@ -150,7 +150,7 @@ public class BigBrotherTest
         [InlineData(false)]
         public void Test_With_MetricEvent(bool isInternal)
         {
-            var telemetry = new MetricDomainEvent();
+            var telemetry = new MetricTelemetryEvent();
 
             var bbMock = new Mock<BigBrother> { CallBase = true };
             bbMock.Setup(x => x.TrackEvent(It.IsAny<EventTelemetry>(), isInternal)).Verifiable();
@@ -168,7 +168,7 @@ public class BigBrotherTest
         [InlineData(false)]
         public void Test_With_TimedEvent(bool isInternal)
         {
-            var telemetry = new TimedDomainEvent();
+            var telemetry = new TimedTelemetryEvent();
 
             var bbMock = new Mock<BigBrother> { CallBase = true };
             bbMock.Setup(x => x.TrackEvent(It.IsAny<EventTelemetry>(), isInternal)).Verifiable();
@@ -261,7 +261,7 @@ public class BigBrotherTest
     }
 }
 
-public class TestTelemetryEvent : DomainEvent
+public class TestTelemetryEvent : TelemetryEvent
 {
     public Guid Id { get; set; }
 
@@ -288,7 +288,7 @@ public class TestExceptionEvent : ExceptionEvent
     }
 }
 
-public class TestTimedEvent : TimedDomainEvent
+public class TestTimedEvent : TimedTelemetryEvent
 {
     public Guid Id { get; set; }
 

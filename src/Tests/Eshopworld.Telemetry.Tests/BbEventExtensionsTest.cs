@@ -19,7 +19,7 @@ public class BbEventExtensionsTest
             var tEvent = new TestTelemetryEvent();
             var now = DateTime.Now;
 
-            var result = new ConvertEvent<DomainEvent, EventTelemetry>(tEvent) {Now = () => now}.ToTelemetry();
+            var result = new ConvertEvent<TelemetryEvent, EventTelemetry>(tEvent) {Now = () => now}.ToTelemetry();
 
             result.Should().NotBeNull();
             (result?.Name).Should().Be(tEvent.GetType().Name);
@@ -35,14 +35,14 @@ public class BbEventExtensionsTest
             var tEvent = new TestTimedEvent();
             tEvent.End();
 
-            var result = new ConvertEvent<TimedDomainEvent, EventTelemetry>(tEvent) { Now = () => now }.ToTelemetry();
+            var result = new ConvertEvent<TimedTelemetryEvent, EventTelemetry>(tEvent) { Now = () => now }.ToTelemetry();
 
             result.Should().NotBeNull();
             (result?.Name).Should().Be(tEvent.GetType().Name);
             (result?.Timestamp).Should().Be(now);
             (result?.Properties[nameof(TestExceptionEvent.Id)]).Should().Be(tEvent.Id.ToString());
             (result?.Properties[nameof(TestExceptionEvent.Description)]).Should().Be(tEvent.Description);
-            (result?.Metrics[$"{tEvent.GetType().Name}.{nameof(TimedDomainEvent.ProcessingTime)}"]).Should().Be(tEvent.ProcessingTime.TotalSeconds);
+            (result?.Metrics[$"{tEvent.GetType().Name}.{nameof(TimedTelemetryEvent.ProcessingTime)}"]).Should().Be(tEvent.ProcessingTime.TotalSeconds);
         }
 
         [Fact, IsUnit]
@@ -75,10 +75,10 @@ public class BbEventExtensionsTest
                 AValue = 123
             };
 
-            var tEvent = new AnonymousDomainEvent(payload) { CallerMemberName = caller };
+            var tEvent = new AnonymousTelemetryEvent(payload) { CallerMemberName = caller };
             var now = DateTime.Now;
 
-            var result = new ConvertEvent<AnonymousDomainEvent, EventTelemetry>(tEvent) { Now = () => now }.ToTelemetry();
+            var result = new ConvertEvent<AnonymousTelemetryEvent, EventTelemetry>(tEvent) { Now = () => now }.ToTelemetry();
 
             result.Should().NotBeNull();
             (result?.Name).Should().Be(tEvent.CallerMemberName);
@@ -100,7 +100,7 @@ public class BbEventExtensionsTest
                              }))
             {
                 // ReSharper disable once AssignNullToNotNullAttribute
-                var result = new ConvertEvent<DomainEvent, EventTelemetry>(null).ToTelemetry();
+                var result = new ConvertEvent<TelemetryEvent, EventTelemetry>(null).ToTelemetry();
                 result.Should().BeNull();
 
                 await Task.Delay(TimeSpan.FromSeconds(1));
@@ -144,7 +144,7 @@ public class BbEventExtensionsTest
                              }))
             {
                 // ReSharper disable once AssignNullToNotNullAttribute
-                var result = new ConvertEvent<TimedDomainEvent, EventTelemetry>(null).ToTelemetry();
+                var result = new ConvertEvent<TimedTelemetryEvent, EventTelemetry>(null).ToTelemetry();
                 result.Should().BeNull();
 
                 await Task.Delay(TimeSpan.FromSeconds(1));

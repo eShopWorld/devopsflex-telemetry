@@ -26,7 +26,7 @@
         /// <summary>
         /// The internal telemetry stream, used by packages to report errors and usage to an internal AI account.
         /// </summary>
-        internal static readonly ISubject<DomainEvent> InternalStream = new Subject<DomainEvent>();
+        internal static readonly ISubject<TelemetryEvent> InternalStream = new Subject<TelemetryEvent>();
 
         /// <summary>
         /// The internal Exception stream, used to push direct exceptions to non-telemetry sinks.
@@ -42,7 +42,7 @@
         /// <summary>
         /// The main event stream that's exposed publicly (yea ... subjects are bad ... I'll redesign when and if time allows).
         /// </summary>
-        internal readonly Subject<BaseDomainEvent> TelemetryStream = new Subject<BaseDomainEvent>();
+        internal readonly Subject<BaseEvent> TelemetryStream = new Subject<BaseEvent>();
 
         /// <summary>
         /// Contains an internal stream typed dictionary of all the subscriptions to different types of telemetry that instrument this package.
@@ -142,7 +142,7 @@
         /// <param name="telemetryObservable">The main event <see cref="IObservable{BbEvent}"/> that's exposed publicly.</param>
         /// <param name="telemetryObserver">The main event <see cref="IObserver{BbEvent}"/> that's used when Publishing.</param>
         /// <param name="internalObservable">The internal <see cref="IObservable{BbEvent}"/>, used by packages to report errors and usage to an internal AI account.</param>
-        public void Deconstruct(out IObservable<BaseDomainEvent> telemetryObservable, out IObserver<BaseDomainEvent> telemetryObserver, out IObservable<BaseDomainEvent> internalObservable)
+        public void Deconstruct(out IObservable<BaseEvent> telemetryObservable, out IObserver<BaseEvent> telemetryObserver, out IObservable<BaseEvent> internalObservable)
         {
             telemetryObservable = TelemetryStream.AsObservable();
             telemetryObserver = TelemetryStream.AsObserver();
@@ -171,28 +171,28 @@
 
         /// <inheritdoc />
         public void Publish(
-            BaseDomainEvent baseDomainEvent,
+            TelemetryEvent @event,
             [CallerMemberName] string callerMemberName = "",
             [CallerFilePath] string callerFilePath = "",
             [CallerLineNumber] int callerLineNumber = -1)
         {
-            if (PublishTypeSet.Contains(baseDomainEvent.GetType()))
+            if (PublishTypeSet.Contains(@event.GetType()))
             {
-                TopicPublisher.Publish(baseDomainEvent);
+                TopicPublisher.Publish(@event);
             }
 
-            if (baseDomainEvent is DomainEvent telemetryEvent)
+            if (@event is TelemetryEvent telemetryEvent)
             {
                 telemetryEvent.CallerMemberName = callerMemberName;
                 telemetryEvent.CallerFilePath = callerFilePath;
                 telemetryEvent.CallerLineNumber = callerLineNumber;
             }
-            if (baseDomainEvent is TimedDomainEvent timedEvent)
+            if (@event is TimedTelemetryEvent timedEvent)
             {
                 timedEvent.End();
             }
 
-            TelemetryStream.OnNext(baseDomainEvent);
+            TelemetryStream.OnNext(@event);
         }
 
         /// <inheritdoc />
@@ -203,7 +203,7 @@
             [CallerLineNumber] int callerLineNumber = -1)
         {
             TelemetryStream.OnNext(
-                new AnonymousDomainEvent(@event)
+                new AnonymousTelemetryEvent(@event)
                 {
                     CallerMemberName = callerMemberName,
                     CallerFilePath = callerFilePath,
@@ -235,7 +235,7 @@
         /// Sets up the internal telemetry clients, both the one used to push normal events and the one used to push internal instrumentation.
         /// </summary>
         /// <param name="aiKey">The application's Application Insights instrumentation key.</param>
-        /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
+        /// <param name="internalKey">The DevOps internal telemetry Application Insights instrumentation key.</param>
         internal void SetupTelemetryClient(string aiKey, [NotNull]string internalKey)
         {
             if (aiKey != null)
@@ -256,8 +256,8 @@
         {
             ReplayCast.Subscribe(HandleAiEvent); // volatile subscription, don't need to keep it
 
-            TelemetrySubscriptions.AddSubscription(typeof(DomainEvent), TelemetryStream.OfType<DomainEvent>().Subscribe(HandleAiEvent));
-            InternalSubscriptions.AddSubscription(typeof(DomainEvent), InternalStream.OfType<DomainEvent>().Subscribe(HandleInternalEvent));
+            TelemetrySubscriptions.AddSubscription(typeof(TelemetryEvent), TelemetryStream.OfType<TelemetryEvent>().Subscribe(HandleAiEvent));
+            InternalSubscriptions.AddSubscription(typeof(TelemetryEvent), InternalStream.OfType<TelemetryEvent>().Subscribe(HandleInternalEvent));
             GlobalExceptionAiSubscription = ExceptionStream.Subscribe(HandleAiEvent);
         }
 
@@ -319,7 +319,7 @@
         /// Handles external events that are fired by Publish.
         /// </summary>
         /// <param name="event">The event being handled.</param>
-        internal virtual void HandleAiEvent(DomainEvent @event)
+        internal virtual void HandleAiEvent(TelemetryEvent @event)
         {
             switch (@event)
             {
@@ -332,16 +332,16 @@
                     TrackException(tEvent);
                     break;
 
-                case TimedDomainEvent telemetry:
-                    TrackEvent(new ConvertEvent<TimedDomainEvent, EventTelemetry>(telemetry).ToTelemetry());
+                case TimedTelemetryEvent telemetry:
+                    TrackEvent(new ConvertEvent<TimedTelemetryEvent, EventTelemetry>(telemetry).ToTelemetry());
                     break;
 
-                case AnonymousDomainEvent telemetry:
-                    TrackEvent(new ConvertEvent<AnonymousDomainEvent, EventTelemetry>(telemetry).ToTelemetry());
+                case AnonymousTelemetryEvent telemetry:
+                    TrackEvent(new ConvertEvent<AnonymousTelemetryEvent, EventTelemetry>(telemetry).ToTelemetry());
                     break;
 
                 default:
-                    TrackEvent(new ConvertEvent<DomainEvent, EventTelemetry>(@event).ToTelemetry());
+                    TrackEvent(new ConvertEvent<TelemetryEvent, EventTelemetry>(@event).ToTelemetry());
                     break;
             }
         }
@@ -350,7 +350,7 @@
         /// Handles external events that are fired by the <see cref="InternalStream"/>.
         /// </summary>
         /// <param name="event">The event being handled.</param>
-        internal virtual void HandleInternalEvent(DomainEvent @event)
+        internal virtual void HandleInternalEvent(TelemetryEvent @event)
         {
             switch (@event)
             {
@@ -363,16 +363,16 @@
                     TrackException(tEvent, true);
                     break;
 
-                case TimedDomainEvent telemetry:
-                    TrackEvent(new ConvertEvent<TimedDomainEvent, EventTelemetry>(telemetry).ToTelemetry(), true);
+                case TimedTelemetryEvent telemetry:
+                    TrackEvent(new ConvertEvent<TimedTelemetryEvent, EventTelemetry>(telemetry).ToTelemetry(), true);
                     break;
 
-                case AnonymousDomainEvent telemetry:
-                    TrackEvent(new ConvertEvent<AnonymousDomainEvent, EventTelemetry>(telemetry).ToTelemetry(), true);
+                case AnonymousTelemetryEvent telemetry:
+                    TrackEvent(new ConvertEvent<AnonymousTelemetryEvent, EventTelemetry>(telemetry).ToTelemetry(), true);
                     break;
 
                 default:
-                    TrackEvent(new ConvertEvent<DomainEvent, EventTelemetry>(@event).ToTelemetry(), true);
+                    TrackEvent(new ConvertEvent<TelemetryEvent, EventTelemetry>(@event).ToTelemetry(), true);
                     break;
             }
         }
