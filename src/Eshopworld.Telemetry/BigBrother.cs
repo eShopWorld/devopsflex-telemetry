@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Diagnostics.CodeAnalysis;
     using System.Diagnostics.Tracing;
@@ -25,23 +26,23 @@
         /// <summary>
         /// The internal telemetry stream, used by packages to report errors and usage to an internal AI account.
         /// </summary>
-        internal static readonly ISubject<BbEvent> InternalStream = new Subject<BbEvent>();
+        internal static readonly ISubject<TelemetryEvent> InternalStream = new Subject<TelemetryEvent>();
 
         /// <summary>
         /// The internal Exception stream, used to push direct exceptions to non-telemetry sinks.
         /// </summary>
-        internal static readonly ISubject<BbExceptionEvent> ExceptionStream = new Subject<BbExceptionEvent>();
+        internal static readonly ISubject<ExceptionEvent> ExceptionStream = new Subject<ExceptionEvent>();
 
         /// <summary>
         /// The one time replayable internal Exception stream, used to push direct exceptions to non-telemetry sinks.
         ///     We use this to replay direct exceptions published before <see cref="BigBrother"/> ctor, only once.
         /// </summary>
-        internal static readonly SingleReplayCast<BbExceptionEvent> ReplayCast = new SingleReplayCast<BbExceptionEvent>(ExceptionStream);
+        internal static readonly SingleReplayCast<ExceptionEvent> ReplayCast = new SingleReplayCast<ExceptionEvent>(ExceptionStream);
 
         /// <summary>
         /// The main event stream that's exposed publicly (yea ... subjects are bad ... I'll redesign when and if time allows).
         /// </summary>
-        internal readonly Subject<BbEvent> TelemetryStream = new Subject<BbEvent>();
+        internal readonly Subject<BaseEvent> TelemetryStream = new Subject<BaseEvent>();
 
         /// <summary>
         /// Contains an internal stream typed dictionary of all the subscriptions to different types of telemetry that instrument this package.
@@ -52,6 +53,11 @@
         /// Contains an exception stream typed dictionary of all the subscriptions to different types of telemetry that instrument this package.
         /// </summary>
         internal static readonly ConcurrentDictionary<Type, IDisposable> ExceptionSubscriptions = new ConcurrentDictionary<Type, IDisposable>();
+
+        /// <summary>
+        /// Contains the <see cref="IPublishEvents"/> instance used to publish to topics.
+        /// </summary>
+        internal IPublishEvents TopicPublisher;
 
         /// <summary>
         /// Contains the exception stream typed dictionary of sink subscription.
@@ -126,12 +132,12 @@
         }
 
         /// <summary>
-        /// Provides access to internal Rx resources for improved extensability and testability.
+        /// Provides access to internal Rx resources for improved extensibility and testability.
         /// </summary>
-        /// <param name="telemetryObservable">The main event <see cref="IObservable{BbEvent}"/> that's exposed publicly.</param>
-        /// <param name="telemetryObserver">The main event <see cref="IObserver{BbEvent}"/> that's used when Publishing.</param>
-        /// <param name="internalObservable">The internal <see cref="IObservable{BbEvent}"/>, used by packages to report errors and usage to an internal AI account.</param>
-        public void Deconstruct(out IObservable<BbEvent> telemetryObservable, out IObserver<BbEvent> telemetryObserver, out IObservable<BbEvent> internalObservable)
+        /// <param name="telemetryObservable">The main event <see cref="IObservable{BaseEvent}"/> that's exposed publicly.</param>
+        /// <param name="telemetryObserver">The main event <see cref="IObserver{BaseEvent}"/> that's used when Publishing.</param>
+        /// <param name="internalObservable">The internal <see cref="IObservable{BaseEvent}"/>, used by packages to report errors and usage to an internal AI account.</param>
+        public void Deconstruct(out IObservable<BaseEvent> telemetryObservable, out IObserver<BaseEvent> telemetryObserver, out IObservable<BaseEvent> internalObservable)
         {
             telemetryObservable = TelemetryStream.AsObservable();
             telemetryObserver = TelemetryStream.AsObserver();
@@ -145,51 +151,56 @@
         /// <param name="ex">The <see cref="Exception"/> we want to write.</param>
         public static void Write(Exception ex)
         {
-            ExceptionStream.OnNext(ex.ToBbEvent());
+            ExceptionStream.OnNext(ex.ToExceptionEvent());
         }
 
         /// <summary>
-        /// Writes a <see cref="BbExceptionEvent"/> directly to all available sinks outside Application Insights.
+        /// Writes a <see cref="ExceptionEvent"/> directly to all available sinks outside Application Insights.
         ///     This method will not publish the exception to Application Insights, it will just sink it.
         /// </summary>
-        /// <param name="exEvent">The <see cref="BbExceptionEvent"/> we want to write.</param>
-        public static void Write(BbExceptionEvent exEvent)
+        /// <param name="exEvent">The <see cref="ExceptionEvent"/> we want to write.</param>
+        public static void Write(ExceptionEvent exEvent)
         {
             ExceptionStream.OnNext(exEvent);
         }
 
         /// <inheritdoc />
         public void Publish(
-            BbEvent bbEvent,
-            [CallerMemberName] string calleremberName = "",
+            TelemetryEvent @event,
+            [CallerMemberName] string callerMemberName = "",
             [CallerFilePath] string callerFilePath = "",
             [CallerLineNumber] int callerLineNumber = -1)
         {
-            if (bbEvent is BbTelemetryEvent telemetryEvent)
+            if (TopicPublisher != null && @event is DomainEvent)
             {
-                telemetryEvent.CallerMemberName = calleremberName;
+                TopicPublisher.Publish(@event);
+            }
+
+            if (@event is TelemetryEvent telemetryEvent)
+            {
+                telemetryEvent.CallerMemberName = callerMemberName;
                 telemetryEvent.CallerFilePath = callerFilePath;
                 telemetryEvent.CallerLineNumber = callerLineNumber;
             }
-            if (bbEvent is BbTimedEvent timedEvent)
+            if (@event is TimedTelemetryEvent timedEvent)
             {
                 timedEvent.End();
             }
 
-            TelemetryStream.OnNext(bbEvent);
+            TelemetryStream.OnNext(@event);
         }
 
         /// <inheritdoc />
         public void Publish(
             object @event,
-            [CallerMemberName] string calleremberName = "",
+            [CallerMemberName] string callerMemberName = "",
             [CallerFilePath] string callerFilePath = "",
             [CallerLineNumber] int callerLineNumber = -1)
         {
             TelemetryStream.OnNext(
-                new BbAnonymousEvent(@event)
+                new AnonymousTelemetryEvent(@event)
                 {
-                    CallerMemberName = calleremberName,
+                    CallerMemberName = callerMemberName,
                     CallerFilePath = callerFilePath,
                     CallerLineNumber = callerLineNumber
                 });
@@ -219,7 +230,7 @@
         /// Sets up the internal telemetry clients, both the one used to push normal events and the one used to push internal instrumentation.
         /// </summary>
         /// <param name="aiKey">The application's Application Insights instrumentation key.</param>
-        /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
+        /// <param name="internalKey">The DevOps internal telemetry Application Insights instrumentation key.</param>
         internal void SetupTelemetryClient(string aiKey, [NotNull]string internalKey)
         {
             if (aiKey != null)
@@ -234,33 +245,33 @@
         }
 
         /// <summary>
-        /// Sets up internal subscriptions, this isolates subscriptioons from the actual constructor logic during tests.
+        /// Sets up internal subscriptions, this isolates subscriptions from the actual constructor logic during tests.
         /// </summary>
         internal void SetupSubscriptions()
         {
             ReplayCast.Subscribe(HandleAiEvent); // volatile subscription, don't need to keep it
 
-            TelemetrySubscriptions.AddSubscription(typeof(BbTelemetryEvent), TelemetryStream.OfType<BbTelemetryEvent>().Subscribe(HandleAiEvent));
-            InternalSubscriptions.AddSubscription(typeof(BbTelemetryEvent), InternalStream.OfType<BbTelemetryEvent>().Subscribe(HandleInternalEvent));
+            TelemetrySubscriptions.AddSubscription(typeof(TelemetryEvent), TelemetryStream.OfType<TelemetryEvent>().Subscribe(HandleAiEvent));
+            InternalSubscriptions.AddSubscription(typeof(TelemetryEvent), InternalStream.OfType<TelemetryEvent>().Subscribe(HandleInternalEvent));
             GlobalExceptionAiSubscription = ExceptionStream.Subscribe(HandleAiEvent);
         }
 
         /// <summary>
-        /// Handles <see cref="BbExceptionEvent"/> that is going to be sinked to an <see cref="EventSource"/>.
+        /// Handles <see cref="ExceptionEvent"/> that is going to be sinked to an <see cref="EventSource"/>.
         /// </summary>
         /// <param name="event">The event we want to sink to the <see cref="EventSource"/>.</param>
-        internal static void SinkToEventSource(BbExceptionEvent @event)
+        internal static void SinkToEventSource(ExceptionEvent @event)
         {
             ErrorEventSource.Log.Error(@event);
         }
 
         /// <summary>
-        /// Handles <see cref="BbExceptionEvent"/> that is going to be sinked to a <see cref="Trace"/>.
+        /// Handles <see cref="ExceptionEvent"/> that is going to be sinked to a <see cref="Trace"/>.
         /// </summary>
         /// <param name="event">The event we want to sink to the <see cref="Trace"/>.</param>
-        internal static void SinkToTrace(BbExceptionEvent @event)
+        internal static void SinkToTrace(ExceptionEvent @event)
         {
-            Trace.TraceError($"BbExceptionEvent: {@event.Exception.Message} | StackTrace: {@event.Exception.StackTrace}");
+            Trace.TraceError($"{nameof(ExceptionEvent)}: {@event.Exception.Message} | StackTrace: {@event.Exception.StackTrace}");
         }
 
         /// <summary>
@@ -303,12 +314,12 @@
         /// Handles external events that are fired by Publish.
         /// </summary>
         /// <param name="event">The event being handled.</param>
-        internal virtual void HandleAiEvent(BbTelemetryEvent @event)
+        internal virtual void HandleAiEvent(TelemetryEvent @event)
         {
             switch (@event)
             {
-                case BbExceptionEvent telemetry:
-                    var tEvent = new ConvertEvent<BbExceptionEvent, ExceptionTelemetry>(telemetry).ToTelemetry();
+                case ExceptionEvent telemetry:
+                    var tEvent = new ConvertEvent<ExceptionEvent, ExceptionTelemetry>(telemetry).ToTelemetry();
                     if (tEvent == null) return;
 
                     tEvent.SeverityLevel = SeverityLevel.Error;
@@ -316,16 +327,16 @@
                     TrackException(tEvent);
                     break;
 
-                case BbTimedEvent telemetry:
-                    TrackEvent(new ConvertEvent<BbTimedEvent, EventTelemetry>(telemetry).ToTelemetry());
+                case TimedTelemetryEvent telemetry:
+                    TrackEvent(new ConvertEvent<TimedTelemetryEvent, EventTelemetry>(telemetry).ToTelemetry());
                     break;
 
-                case BbAnonymousEvent telemetry:
-                    TrackEvent(new ConvertEvent<BbAnonymousEvent, EventTelemetry>(telemetry).ToTelemetry());
+                case AnonymousTelemetryEvent telemetry:
+                    TrackEvent(new ConvertEvent<AnonymousTelemetryEvent, EventTelemetry>(telemetry).ToTelemetry());
                     break;
 
                 default:
-                    TrackEvent(new ConvertEvent<BbTelemetryEvent, EventTelemetry>(@event).ToTelemetry());
+                    TrackEvent(new ConvertEvent<TelemetryEvent, EventTelemetry>(@event).ToTelemetry());
                     break;
             }
         }
@@ -334,12 +345,12 @@
         /// Handles external events that are fired by the <see cref="InternalStream"/>.
         /// </summary>
         /// <param name="event">The event being handled.</param>
-        internal virtual void HandleInternalEvent(BbTelemetryEvent @event)
+        internal virtual void HandleInternalEvent(TelemetryEvent @event)
         {
             switch (@event)
             {
-                case BbExceptionEvent telemetry:
-                    var tEvent = new ConvertEvent<BbExceptionEvent, ExceptionTelemetry>(telemetry).ToTelemetry();
+                case ExceptionEvent telemetry:
+                    var tEvent = new ConvertEvent<ExceptionEvent, ExceptionTelemetry>(telemetry).ToTelemetry();
                     if (tEvent == null) return;
 
                     tEvent.SeverityLevel = SeverityLevel.Error;
@@ -347,16 +358,16 @@
                     TrackException(tEvent, true);
                     break;
 
-                case BbTimedEvent telemetry:
-                    TrackEvent(new ConvertEvent<BbTimedEvent, EventTelemetry>(telemetry).ToTelemetry(), true);
+                case TimedTelemetryEvent telemetry:
+                    TrackEvent(new ConvertEvent<TimedTelemetryEvent, EventTelemetry>(telemetry).ToTelemetry(), true);
                     break;
 
-                case BbAnonymousEvent telemetry:
-                    TrackEvent(new ConvertEvent<BbAnonymousEvent, EventTelemetry>(telemetry).ToTelemetry(), true);
+                case AnonymousTelemetryEvent telemetry:
+                    TrackEvent(new ConvertEvent<AnonymousTelemetryEvent, EventTelemetry>(telemetry).ToTelemetry(), true);
                     break;
 
                 default:
-                    TrackEvent(new ConvertEvent<BbTelemetryEvent, EventTelemetry>(@event).ToTelemetry(), true);
+                    TrackEvent(new ConvertEvent<TelemetryEvent, EventTelemetry>(@event).ToTelemetry(), true);
                     break;
             }
         }
@@ -368,7 +379,7 @@
         /// <param name="ex">The <see cref="Exception"/> that we want to publish.</param>
         internal static void PublishError(Exception ex)
         {
-            InternalStream.OnNext(ex.ToBbEvent());
+            InternalStream.OnNext(ex.ToExceptionEvent());
         }
 
         /// <inheritdoc />

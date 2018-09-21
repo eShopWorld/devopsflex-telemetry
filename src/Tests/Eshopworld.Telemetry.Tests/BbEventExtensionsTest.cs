@@ -19,7 +19,7 @@ public class BbEventExtensionsTest
             var tEvent = new TestTelemetryEvent();
             var now = DateTime.Now;
 
-            var result = new ConvertEvent<BbTelemetryEvent, EventTelemetry>(tEvent) {Now = () => now}.ToTelemetry();
+            var result = new ConvertEvent<TelemetryEvent, EventTelemetry>(tEvent) {Now = () => now}.ToTelemetry();
 
             result.Should().NotBeNull();
             (result?.Name).Should().Be(tEvent.GetType().Name);
@@ -35,14 +35,14 @@ public class BbEventExtensionsTest
             var tEvent = new TestTimedEvent();
             tEvent.End();
 
-            var result = new ConvertEvent<BbTimedEvent, EventTelemetry>(tEvent) { Now = () => now }.ToTelemetry();
+            var result = new ConvertEvent<TimedTelemetryEvent, EventTelemetry>(tEvent) { Now = () => now }.ToTelemetry();
 
             result.Should().NotBeNull();
             (result?.Name).Should().Be(tEvent.GetType().Name);
             (result?.Timestamp).Should().Be(now);
             (result?.Properties[nameof(TestExceptionEvent.Id)]).Should().Be(tEvent.Id.ToString());
             (result?.Properties[nameof(TestExceptionEvent.Description)]).Should().Be(tEvent.Description);
-            (result?.Metrics[$"{tEvent.GetType().Name}.{nameof(BbTimedEvent.ProcessingTime)}"]).Should().Be(tEvent.ProcessingTime.TotalSeconds);
+            (result?.Metrics[$"{tEvent.GetType().Name}.{nameof(TimedTelemetryEvent.ProcessingTime)}"]).Should().Be(tEvent.ProcessingTime.TotalSeconds);
         }
 
         [Fact, IsUnit]
@@ -54,7 +54,7 @@ public class BbEventExtensionsTest
             var tEvent = new TestExceptionEvent(exception);
             var now = DateTime.Now;
 
-            var result = new ConvertEvent<BbExceptionEvent, ExceptionTelemetry>(tEvent) { Now = () => now }.ToTelemetry();
+            var result = new ConvertEvent<ExceptionEvent, ExceptionTelemetry>(tEvent) { Now = () => now }.ToTelemetry();
 
             result.Should().NotBeNull();
             (result?.Message).Should().Be(message);
@@ -75,10 +75,10 @@ public class BbEventExtensionsTest
                 AValue = 123
             };
 
-            var tEvent = new BbAnonymousEvent(payload) { CallerMemberName = caller };
+            var tEvent = new AnonymousTelemetryEvent(payload) { CallerMemberName = caller };
             var now = DateTime.Now;
 
-            var result = new ConvertEvent<BbAnonymousEvent, EventTelemetry>(tEvent) { Now = () => now }.ToTelemetry();
+            var result = new ConvertEvent<AnonymousTelemetryEvent, EventTelemetry>(tEvent) { Now = () => now }.ToTelemetry();
 
             result.Should().NotBeNull();
             (result?.Name).Should().Be(tEvent.CallerMemberName);
@@ -92,7 +92,7 @@ public class BbEventExtensionsTest
         {
             var exceptionFired = false;
 
-            using (BigBrother.InternalStream.OfType<BbExceptionEvent>()
+            using (BigBrother.InternalStream.OfType<ExceptionEvent>()
                              .Subscribe(e =>
                              {
                                  e.Exception.Should().NotBeNull();
@@ -100,7 +100,7 @@ public class BbEventExtensionsTest
                              }))
             {
                 // ReSharper disable once AssignNullToNotNullAttribute
-                var result = new ConvertEvent<BbTelemetryEvent, EventTelemetry>(null).ToTelemetry();
+                var result = new ConvertEvent<TelemetryEvent, EventTelemetry>(null).ToTelemetry();
                 result.Should().BeNull();
 
                 await Task.Delay(TimeSpan.FromSeconds(1));
@@ -114,7 +114,7 @@ public class BbEventExtensionsTest
         {
             var exceptionFired = false;
 
-            using (BigBrother.InternalStream.OfType<BbExceptionEvent>()
+            using (BigBrother.InternalStream.OfType<ExceptionEvent>()
                              .Subscribe(e =>
                              {
                                  e.Exception.Should().NotBeNull();
@@ -122,7 +122,7 @@ public class BbEventExtensionsTest
                              }))
             {
                 // ReSharper disable once AssignNullToNotNullAttribute
-                var result = new ConvertEvent<BbExceptionEvent, ExceptionTelemetry>(null).ToTelemetry();
+                var result = new ConvertEvent<ExceptionEvent, ExceptionTelemetry>(null).ToTelemetry();
                 result.Should().BeNull();
 
                 await Task.Delay(TimeSpan.FromSeconds(1));
@@ -136,7 +136,7 @@ public class BbEventExtensionsTest
         {
             var exceptionFired = false;
 
-            using (BigBrother.InternalStream.OfType<BbExceptionEvent>()
+            using (BigBrother.InternalStream.OfType<ExceptionEvent>()
                              .Subscribe(e =>
                              {
                                  e.Exception.Should().NotBeNull();
@@ -144,7 +144,7 @@ public class BbEventExtensionsTest
                              }))
             {
                 // ReSharper disable once AssignNullToNotNullAttribute
-                var result = new ConvertEvent<BbTimedEvent, EventTelemetry>(null).ToTelemetry();
+                var result = new ConvertEvent<TimedTelemetryEvent, EventTelemetry>(null).ToTelemetry();
                 result.Should().BeNull();
 
                 await Task.Delay(TimeSpan.FromSeconds(1));

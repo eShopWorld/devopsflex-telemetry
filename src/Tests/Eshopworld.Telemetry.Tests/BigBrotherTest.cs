@@ -5,7 +5,6 @@ using Eshopworld.Core;
 using Eshopworld.Telemetry;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
-using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Diagnostics.Tracing.Session;
 using Moq;
@@ -39,7 +38,7 @@ public class BigBrotherTest
             }
             catch (Exception ex)
             {
-                bb.Publish(ex.ToBbEvent());
+                bb.Publish(ex.ToExceptionEvent());
                 bb.Flush();
             }
         }
@@ -93,7 +92,7 @@ public class BigBrotherTest
         public async Task Test_Publish_EndsTimedEvents()
         {
             var bbMock = new Mock<BigBrother> { CallBase = true };
-            var tEvent = new BbTimedEvent();
+            var tEvent = new TimedTelemetryEvent();
 
             await Task.Delay(TimeSpan.FromSeconds(2));
 
@@ -112,7 +111,7 @@ public class BigBrotherTest
         {
             var e = new TestTelemetryEvent();
             var bbMock = new Mock<BigBrother> { CallBase = true };
-            bbMock.Setup(x => x.HandleAiEvent(It.IsAny<BbTelemetryEvent>())).Verifiable();
+            bbMock.Setup(x => x.HandleAiEvent(It.IsAny<TelemetryEvent>())).Verifiable();
 
             bbMock.Object.SetupSubscriptions();
             bbMock.Object.Publish(e);
@@ -130,7 +129,7 @@ public class BigBrotherTest
         {
             var e = new TestTelemetryEvent();
             var bbMock = new Mock<BigBrother> { CallBase = true };
-            bbMock.Setup(x => x.HandleInternalEvent(It.IsAny<BbTelemetryEvent>())).Verifiable();
+            bbMock.Setup(x => x.HandleInternalEvent(It.IsAny<TelemetryEvent>())).Verifiable();
 
             bbMock.Object.SetupSubscriptions();
             BigBrother.InternalStream.OnNext(e);
@@ -151,7 +150,7 @@ public class BigBrotherTest
         [InlineData(false)]
         public void Test_With_MetricEvent(bool isInternal)
         {
-            var telemetry = new BbMetricEvent();
+            var telemetry = new MetricTelemetryEvent();
 
             var bbMock = new Mock<BigBrother> { CallBase = true };
             bbMock.Setup(x => x.TrackEvent(It.IsAny<EventTelemetry>(), isInternal)).Verifiable();
@@ -169,7 +168,7 @@ public class BigBrotherTest
         [InlineData(false)]
         public void Test_With_TimedEvent(bool isInternal)
         {
-            var telemetry = new BbTimedEvent();
+            var telemetry = new TimedTelemetryEvent();
 
             var bbMock = new Mock<BigBrother> { CallBase = true };
             bbMock.Setup(x => x.TrackEvent(It.IsAny<EventTelemetry>(), isInternal)).Verifiable();
@@ -187,7 +186,7 @@ public class BigBrotherTest
         [InlineData(false)]
         public void Test_With_ExceptionEvent(bool isInternal)
         {
-            var telemetry = new BbExceptionEvent(new Exception("KABUM"));
+            var telemetry = new ExceptionEvent(new Exception("KABUM"));
 
             var bbMock = new Mock<BigBrother> { CallBase = true };
             bbMock.Setup(x => x.TrackException(It.IsAny<ExceptionTelemetry>(), isInternal))
@@ -220,7 +219,7 @@ public class BigBrotherTest
                                         {
                                             session.Source.Dynamic.AddCallbackForProviderEvent(
                                                 ErrorEventSource.EventSourceName,
-                                                nameof(ErrorEventSource.Tasks.BbExceptionEvent),
+                                                nameof(ErrorEventSource.Tasks.ExceptionEvent),
                                                 e =>
                                                 {
                                                     e.PayloadByName("message").Should().Be(exceptionMessage);
@@ -235,7 +234,7 @@ public class BigBrotherTest
                                             Task.Factory.StartNew(() =>
                                             {
                                                 Task.Delay(TimeSpan.FromSeconds(3));
-                                                BigBrother.Write(new BbExceptionEvent(new Exception(exceptionMessage)));
+                                                BigBrother.Write(new ExceptionEvent(new Exception(exceptionMessage)));
                                             });
 
                                             session.Source.Process();
@@ -253,7 +252,7 @@ public class BigBrotherTest
     }
 }
 
-public class TestTelemetryEvent : BbTelemetryEvent
+public class TestTelemetryEvent : TelemetryEvent
 {
     public Guid Id { get; set; }
 
@@ -266,7 +265,7 @@ public class TestTelemetryEvent : BbTelemetryEvent
     }
 }
 
-public class TestExceptionEvent : BbExceptionEvent
+public class TestExceptionEvent : ExceptionEvent
 {
     public Guid Id { get; set; }
 
@@ -280,7 +279,7 @@ public class TestExceptionEvent : BbExceptionEvent
     }
 }
 
-public class TestTimedEvent : BbTimedEvent
+public class TestTimedEvent : TimedTelemetryEvent
 {
     public Guid Id { get; set; }
 
