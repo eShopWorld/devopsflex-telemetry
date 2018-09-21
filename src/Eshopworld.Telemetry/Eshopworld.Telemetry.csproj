@@ -2,8 +2,10 @@
 
   <PropertyGroup>
 
-    <TargetFramework>netstandard2.0</TargetFramework>
     <Version>2.0.0</Version>
+    <PackageReleaseNotes>Introduced domain events and hooked into messaging.</PackageReleaseNotes>
+
+    <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>True</IsPackable>
 
     <PackageId>Eshopworld.Telemetry</PackageId>
@@ -19,7 +21,6 @@
 
     <DebugType>Full</DebugType>
     <LangVersion>latest</LangVersion>
-    <PackageReleaseNotes>Introduced domain events and hooked into messaging.</PackageReleaseNotes>
 
   </PropertyGroup>
 
