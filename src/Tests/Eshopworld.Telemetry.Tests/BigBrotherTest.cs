@@ -250,15 +250,6 @@ public class BigBrotherTest
     {
         throw new Exception(message);
     }
-
-    [Fact, IsDev]
-    public void Foo()
-    {
-        var bb = new BigBrother("", "");
-        bb.PublishEventsToTopics(null)
-          .For<object>()
-          .For<string>();
-    }
 }
 
 public class TestTelemetryEvent : TelemetryEvent

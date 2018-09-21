@@ -8,7 +8,7 @@
     /// Fluent API extensions for configuring <see cref="BigBrother"/>.
     /// By design the extension methods aren't against <see cref="IBigBrother"/>, because they are meant to be used once, during DI bootstrapping.
     /// </summary>
-    public static class BbTelemetryConfiguration
+    public static class TelemetryConfigurationExtensions
     {
         /// <summary>
         /// Sets up telemetry to use ETW (Event Tracing for Windows) <see cref="System.Diagnostics.Tracing.EventSource"/>.

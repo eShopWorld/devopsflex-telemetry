@@ -55,11 +55,6 @@
         internal static readonly ConcurrentDictionary<Type, IDisposable> ExceptionSubscriptions = new ConcurrentDictionary<Type, IDisposable>();
 
         /// <summary>
-        /// Contains the list of domain types that we are sending to Topics.
-        /// </summary>
-        internal readonly HashSet<Type> PublishTypeSet = new HashSet<Type>();
-
-        /// <summary>
         /// Contains the <see cref="IPublishEvents"/> instance used to publish to topics.
         /// </summary>
         internal IPublishEvents TopicPublisher;
@@ -176,7 +171,7 @@
             [CallerFilePath] string callerFilePath = "",
             [CallerLineNumber] int callerLineNumber = -1)
         {
-            if (PublishTypeSet.Contains(@event.GetType()))
+            if (TopicPublisher != null && @event is DomainEvent)
             {
                 TopicPublisher.Publish(@event);
             }
