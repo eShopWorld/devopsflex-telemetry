@@ -134,9 +134,9 @@
         /// <summary>
         /// Provides access to internal Rx resources for improved extensibility and testability.
         /// </summary>
-        /// <param name="telemetryObservable">The main event <see cref="IObservable{BbEvent}"/> that's exposed publicly.</param>
-        /// <param name="telemetryObserver">The main event <see cref="IObserver{BbEvent}"/> that's used when Publishing.</param>
-        /// <param name="internalObservable">The internal <see cref="IObservable{BbEvent}"/>, used by packages to report errors and usage to an internal AI account.</param>
+        /// <param name="telemetryObservable">The main event <see cref="IObservable{BaseEvent}"/> that's exposed publicly.</param>
+        /// <param name="telemetryObserver">The main event <see cref="IObserver{BaseEvent}"/> that's used when Publishing.</param>
+        /// <param name="internalObservable">The internal <see cref="IObservable{BaseEvent}"/>, used by packages to report errors and usage to an internal AI account.</param>
         public void Deconstruct(out IObservable<BaseEvent> telemetryObservable, out IObserver<BaseEvent> telemetryObserver, out IObservable<BaseEvent> internalObservable)
         {
             telemetryObservable = TelemetryStream.AsObservable();
@@ -271,7 +271,7 @@
         /// <param name="event">The event we want to sink to the <see cref="Trace"/>.</param>
         internal static void SinkToTrace(ExceptionEvent @event)
         {
-            Trace.TraceError($"BbExceptionEvent: {@event.Exception.Message} | StackTrace: {@event.Exception.StackTrace}");
+            Trace.TraceError($"{nameof(ExceptionEvent)}: {@event.Exception.Message} | StackTrace: {@event.Exception.StackTrace}");
         }
 
         /// <summary>

@@ -219,7 +219,7 @@ public class BigBrotherTest
                                         {
                                             session.Source.Dynamic.AddCallbackForProviderEvent(
                                                 ErrorEventSource.EventSourceName,
-                                                nameof(ErrorEventSource.Tasks.BbExceptionEvent),
+                                                nameof(ErrorEventSource.Tasks.ExceptionEvent),
                                                 e =>
                                                 {
                                                     e.PayloadByName("message").Should().Be(exceptionMessage);

@@ -88,33 +88,33 @@
         /// <param name="resultEvent">The To event that needs to be populated with specific details.</param>
         internal void HandleEventTypes(TTo resultEvent)
         {
-            if (Event is TelemetryEvent bbTelemetryEvent && resultEvent is EventTelemetry telemetry)
+            if (Event is TelemetryEvent telemetryEvent && resultEvent is EventTelemetry telemetry)
             {
                 if (Event is AnonymousTelemetryEvent anonymousEvent)
                     telemetry.Name = anonymousEvent.CallerMemberName;
                 else
-                    telemetry.Name = bbTelemetryEvent.GetType().Name;
+                    telemetry.Name = telemetryEvent.GetType().Name;
             }
 
             switch (Event)
             {
-                case ExceptionEvent bbEvent:
+                case ExceptionEvent exceptionEvent:
                     if (resultEvent is ExceptionTelemetry exceptionTelemetry)
                     {
-                        if (bbEvent.Exception == null)
+                        if (exceptionEvent.Exception == null)
                         {
                             throw new InvalidOperationException($"Attempt to publish an Exception Event without an exception for type {exceptionTelemetry.GetType().FullName}");
                         }
 
-                        exceptionTelemetry.Message = bbEvent.Exception.Message;
-                        exceptionTelemetry.Exception = bbEvent.Exception;
+                        exceptionTelemetry.Message = exceptionEvent.Exception.Message;
+                        exceptionTelemetry.Exception = exceptionEvent.Exception;
                     }
 
                     break;
-                case TimedTelemetryEvent bbEvent:
+                case TimedTelemetryEvent timedTelemetryEvent:
                     if (resultEvent is EventTelemetry timedTelemetry)
                     {
-                        timedTelemetry.Metrics[$"{bbEvent.GetType().Name}.{nameof(TimedTelemetryEvent.ProcessingTime)}"] = bbEvent.ProcessingTime.TotalSeconds;
+                        timedTelemetry.Metrics[$"{timedTelemetryEvent.GetType().Name}.{nameof(TimedTelemetryEvent.ProcessingTime)}"] = timedTelemetryEvent.ProcessingTime.TotalSeconds;
                     }
 
                     break;

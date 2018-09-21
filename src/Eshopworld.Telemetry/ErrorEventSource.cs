@@ -25,7 +25,7 @@
         public class Tasks
         {
             protected Tasks() { }
-            public const EventTask BbExceptionEvent = (EventTask) (1 << 0);
+            public const EventTask ExceptionEvent = (EventTask) (1 << 0);
             public const EventTask Exception =        (EventTask) (1 << 1);
         }
 
@@ -35,7 +35,7 @@
         public void Error(Exception ex) => ExceptionError(ex.Message, ex.StackTrace);
 
         [NonEvent]
-        public void Error(ExceptionEvent exEvent) => BbEventError(exEvent.Exception.Message, exEvent.Exception.StackTrace, JsonConvert.SerializeObject(exEvent));
+        public void Error(ExceptionEvent exEvent) => EventError(exEvent.Exception.Message, exEvent.Exception.StackTrace, JsonConvert.SerializeObject(exEvent));
 
         [Event(
             1,
@@ -48,11 +48,11 @@
 
         [Event(
             2,
-            Task = Tasks.BbExceptionEvent,
+            Task = Tasks.ExceptionEvent,
             Keywords = Keywords.Exception,
             Level = EventLevel.Error,
             Channel = EventChannel.Operational
         )]
-        public void BbEventError(string message, string stackTrace, string eventPayload) => WriteEvent(2,  message, stackTrace, eventPayload);
+        public void EventError(string message, string stackTrace, string eventPayload) => WriteEvent(2,  message, stackTrace, eventPayload);
     }
 }
