@@ -20,7 +20,7 @@ public class BigBrotherTest
         [Fact, IsDev]
         public void EntryPoint_PushEvent()
         {
-            var bb = new BigBrother(DevKey, DevKey).DeveloperMode();
+            IBigBrother bb = new BigBrother(DevKey, DevKey).DeveloperMode();
 
             bb.Publish(new TestTelemetryEvent());
             bb.Flush();
@@ -30,7 +30,7 @@ public class BigBrotherTest
         public void EntryPoint_PushException()
         {
             const string message = "KABOOM!!!";
-            var bb = new BigBrother(DevKey, DevKey).DeveloperMode();
+            IBigBrother bb = new BigBrother(DevKey, DevKey).DeveloperMode();
 
             try
             {
@@ -46,7 +46,7 @@ public class BigBrotherTest
         [Fact, IsDev]
         public void EntryPoint_PushTimed()
         {
-            var bb = new BigBrother(DevKey, DevKey).DeveloperMode();
+            IBigBrother bb = new BigBrother(DevKey, DevKey).DeveloperMode();
 
             bb.Publish(new TestTimedEvent());
             bb.Flush();
@@ -55,7 +55,7 @@ public class BigBrotherTest
         [Fact, IsDev]
         public void EntryPoint_PushAnonymous()
         {
-            var bb = new BigBrother(DevKey, DevKey).DeveloperMode();
+            IBigBrother bb = new BigBrother(DevKey, DevKey).DeveloperMode();
 
             bb.Publish(new
             {
