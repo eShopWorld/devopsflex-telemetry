@@ -2,8 +2,8 @@
 
   <PropertyGroup>
 
-    <Version>2.0.0</Version>
-    <PackageReleaseNotes>Introduced domain events and hooked into messaging</PackageReleaseNotes>
+    <Version>2.0.1</Version>
+    <PackageReleaseNotes>Fixed the contract for fluent configuration using the implementation instead of the contract.</PackageReleaseNotes>
 
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>True</IsPackable>
