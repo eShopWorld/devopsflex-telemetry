@@ -1,5 +1,6 @@
 ﻿namespace Eshopworld.Telemetry
 {
+    using System;
     using Core;
 
     public static class MessagingConfigurationExtensions
@@ -11,7 +12,8 @@
         /// <param name="publisher">The event publisher we are using to send events onto topics.</param>
         public static void PublishEventsToTopics(this IBigBrother bb, IPublishEvents publisher)
         {
-            ((BigBrother)bb).TopicPublisher = publisher;
+            var bbImpl = bb as BigBrother ?? throw new InvalidOperationException($"Couldn't cast this instance of {nameof(IBigBrother)} to a concrete implementation of {nameof(BigBrother)}"); ;
+            bbImpl.TopicPublisher = publisher;
         }
     }
 }

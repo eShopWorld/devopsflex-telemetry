@@ -1,8 +1,8 @@
 ﻿namespace Eshopworld.Telemetry
 {
+    using Core;
     using System;
     using System.Reactive.Linq;
-    using Core;
 
     /// <summary>
     /// Fluent API extensions for configuring <see cref="BigBrother"/>.
@@ -17,7 +17,8 @@
         /// <returns></returns>
         public static IConfigureSources UseEventSourceSink(this IBigBrother bb)
         {
-            return new EventSourceSink((BigBrother)bb);
+            var bbImpl = bb as BigBrother ?? throw new InvalidOperationException($"Couldn't cast this instance of {nameof(IBigBrother)} to a concrete implementation of {nameof(BigBrother)}"); ;
+            return new EventSourceSink(bbImpl);
         }
 
         /// <summary>
@@ -27,7 +28,8 @@
         /// <returns></returns>
         public static IConfigureSources UseTraceSink(this IBigBrother bb)
         {
-            return new TraceSink((BigBrother)bb);
+            var bbImpl = bb as BigBrother ?? throw new InvalidOperationException($"Couldn't cast this instance of {nameof(IBigBrother)} to a concrete implementation of {nameof(BigBrother)}"); ;
+            return new TraceSink(bbImpl);
         }
 
         /// <summary>
