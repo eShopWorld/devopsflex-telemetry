@@ -15,9 +15,9 @@
         /// </summary>
         /// <param name="bb">The <see cref="BigBrother"/> instance we are configuring.</param>
         /// <returns></returns>
-        public static IConfigureSources UseEventSourceSink(this BigBrother bb)
+        public static IConfigureSources UseEventSourceSink(this IBigBrother bb)
         {
-            return new EventSourceSink(bb);
+            return new EventSourceSink((BigBrother)bb);
         }
 
         /// <summary>
@@ -25,9 +25,9 @@
         /// </summary>
         /// <param name="bb">The <see cref="BigBrother"/> instance we are configuring.</param>
         /// <returns></returns>
-        public static IConfigureSources UseTraceSink(this BigBrother bb)
+        public static IConfigureSources UseTraceSink(this IBigBrother bb)
         {
-            return new TraceSink(bb);
+            return new TraceSink((BigBrother)bb);
         }
 
         /// <summary>
