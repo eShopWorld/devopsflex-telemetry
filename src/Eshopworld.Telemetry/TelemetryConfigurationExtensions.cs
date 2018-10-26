@@ -17,7 +17,7 @@
         /// <returns></returns>
         public static IConfigureSources UseEventSourceSink(this IBigBrother bb)
         {
-            var bbImpl = bb as BigBrother ?? throw new InvalidOperationException($"Couldn't cast this instance of {nameof(IBigBrother)} to a concrete implementation of {nameof(BigBrother)}"); ;
+            var bbImpl = bb as BigBrother ?? throw new InvalidOperationException($"Couldn't cast this instance of {nameof(IBigBrother)} to a concrete implementation of {nameof(BigBrother)}");
             return new EventSourceSink(bbImpl);
         }
 
@@ -28,7 +28,7 @@
         /// <returns></returns>
         public static IConfigureSources UseTraceSink(this IBigBrother bb)
         {
-            var bbImpl = bb as BigBrother ?? throw new InvalidOperationException($"Couldn't cast this instance of {nameof(IBigBrother)} to a concrete implementation of {nameof(BigBrother)}"); ;
+            var bbImpl = bb as BigBrother ?? throw new InvalidOperationException($"Couldn't cast this instance of {nameof(IBigBrother)} to a concrete implementation of {nameof(BigBrother)}");
             return new TraceSink(bbImpl);
         }
 
