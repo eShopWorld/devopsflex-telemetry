@@ -173,7 +173,7 @@
         {
             if (TopicPublisher != null && @event is DomainEvent)
             {
-                TopicPublisher.Publish(@event);
+                TopicPublisher.Publish(@event).Wait();
             }
 
             if (@event is TelemetryEvent telemetryEvent)
