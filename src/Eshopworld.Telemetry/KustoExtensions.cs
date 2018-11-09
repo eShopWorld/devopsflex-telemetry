@@ -10,7 +10,6 @@
         public static string GenerateTableFromType(this ICslAdminProvider client, Type type)
         {
             var tableName = type.Name;
-            var exists = true;
             var command = CslCommandGenerator.GenerateTableShowCommand(tableName);
 
             try
@@ -20,12 +19,10 @@
             catch (KustoBadRequestException ex)
             {
                 if (ex.ErrorMessage.Contains("'Table' was not found"))
-                    exists = false;
-                else
-                    throw;
-            }
+                    return tableName;
 
-            if (exists) return tableName;
+                throw;
+            }
 
             var columns = type.GetProperties().Select(property => new Tuple<string, string>(property.Name, property.PropertyType.FullName)).ToList();
             command = CslCommandGenerator.GenerateTableCreateCommand(tableName, columns);
@@ -38,7 +35,6 @@
         {
             var tableName = type.Name;
             var mappingName = $"{tableName}_mapping";
-            var exists = true;
             var command = CslCommandGenerator.GenerateTableJsonMappingShowCommand(tableName, mappingName);
 
             try
@@ -48,12 +44,10 @@
             catch (KustoBadRequestException ex)
             {
                 if (ex.ErrorMessage.Contains("'JsonMappingPersistent' was not found"))
-                    exists = false;
-                else
-                    throw;
-            }
+                    return mappingName;
 
-            if (exists) return mappingName;
+                throw;
+            }
 
             var mappings = type.GetProperties().Select(property => new JsonColumnMapping { ColumnName = property.Name, JsonPath = $"$.{property.Name}" }).ToList();
             command = CslCommandGenerator.GenerateTableJsonMappingCreateCommand(tableName, mappingName, mappings);
