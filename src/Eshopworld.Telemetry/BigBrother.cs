@@ -87,15 +87,13 @@
         /// <summary>
         /// The external telemetry client, used to publish events through <see cref="BigBrother"/>.
         /// </summary>
-        internal TelemetryClient TelemetryClient;
+        internal TelemetryClient TelemetryClient = new TelemetryClient();
 
         /// <summary>
         /// Static initialization of static resources in <see cref="BigBrother"/> instances.
         /// </summary>
         static BigBrother()
         {
-            InternalClient = new TelemetryClient();
-
             ExceptionSubscriptions.AddSubscription(typeof(EventSource), ExceptionStream.Subscribe(SinkToEventSource));
             ExceptionSubscriptions.AddSubscription(typeof(Trace), ExceptionStream.Subscribe(SinkToTrace));
         }
