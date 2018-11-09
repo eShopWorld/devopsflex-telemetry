@@ -261,7 +261,7 @@
                     ApplicationKey = appKey
                 });
 
-            TelemetrySubscriptions.AddSubscription(typeof(KustoMapping), TelemetryStream.OfType<TelemetryEvent>()
+            TelemetrySubscriptions.AddSubscription(typeof(KustoExtensions), TelemetryStream.OfType<TelemetryEvent>()
                                                                                       .Where(e => !(e is ExceptionEvent) &&
                                                                                                   !(e is MetricTelemetryEvent) &&
                                                                                                   !(e is TimedTelemetryEvent))
