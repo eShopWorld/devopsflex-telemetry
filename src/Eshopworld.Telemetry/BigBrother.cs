@@ -421,7 +421,7 @@
             var eventType = @event.GetType();
 
             KustoQueuedIngestionProperties ingestProps;
-            if (!KustoMappings.ContainsKey(eventType) && KustoMappings.TryAdd(eventType, new KustoQueuedIngestionProperties(KustoDbName, string.Empty)))
+            if (!KustoMappings.ContainsKey(eventType) && KustoMappings.TryAdd(eventType, new KustoQueuedIngestionProperties(KustoDbName, "Unknown")))
             {
                 ingestProps = KustoMappings[eventType];
 

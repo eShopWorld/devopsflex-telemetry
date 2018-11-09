@@ -1,9 +1,9 @@
 ﻿namespace Eshopworld.Telemetry
 {
-    using System;
-    using System.Linq;
     using Kusto.Data.Common;
     using Kusto.Data.Exceptions;
+    using System;
+    using System.Linq;
 
     public static class KustoExtensions
     {
@@ -15,13 +15,12 @@
             try
             {
                 client.ExecuteControlCommand(command);
+                return tableName;
             }
             catch (KustoBadRequestException ex)
             {
-                if (ex.ErrorMessage.Contains("'Table' was not found"))
-                    return tableName;
-
-                throw;
+                if (!ex.ErrorMessage.Contains("'Table' was not found"))
+                    throw;
             }
 
             var columns = type.GetProperties().Select(property => new Tuple<string, string>(property.Name, property.PropertyType.FullName)).ToList();
@@ -40,13 +39,12 @@
             try
             {
                 client.ExecuteControlCommand(command);
+                return mappingName;
             }
             catch (KustoBadRequestException ex)
             {
-                if (ex.ErrorMessage.Contains("'JsonMappingPersistent' was not found"))
-                    return mappingName;
-
-                throw;
+                if (!ex.ErrorMessage.Contains("'JsonMappingPersistent' was not found"))
+                    throw;
             }
 
             var mappings = type.GetProperties().Select(property => new JsonColumnMapping { ColumnName = property.Name, JsonPath = $"$.{property.Name}" }).ToList();
