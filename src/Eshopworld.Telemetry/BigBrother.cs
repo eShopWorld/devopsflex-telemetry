@@ -136,7 +136,8 @@
         /// <param name="client">The application's existing <see cref="TelemetryClient"/>.</param>
         /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
         public BigBrother([NotNull]TelemetryClient client, [NotNull]string internalKey)
-            : this(string.Empty, internalKey)
+            // ReSharper disable once AssignNullToNotNullAttribute
+            : this((string)null, internalKey)
         {
             TelemetryClient = client;
         }
@@ -276,7 +277,7 @@
         /// <param name="internalKey">The DevOps internal telemetry Application Insights instrumentation key.</param>
         internal void SetupTelemetryClient(string aiKey, [NotNull]string internalKey)
         {
-            if (!string.IsNullOrEmpty(aiKey))
+            if (aiKey != null)
             {
                 TelemetryClient = new TelemetryClient
                 {
