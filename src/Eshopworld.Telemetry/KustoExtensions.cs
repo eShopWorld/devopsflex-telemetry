@@ -63,5 +63,11 @@
         }
 
     }
-    public class KustoEvent { }
+
+    public class KustoMapping
+    {
+        public string TableName { get; set; }
+
+        public string MappingName { get; set; }
+    }
 }
