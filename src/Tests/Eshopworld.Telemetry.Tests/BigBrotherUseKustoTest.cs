@@ -1,6 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using Eshopworld.Core;
+﻿using Eshopworld.Core;
 using Eshopworld.Telemetry;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
@@ -9,6 +7,8 @@ using Kusto.Data.Common;
 using Kusto.Data.Net.Client;
 using Moq;
 using Polly;
+using System;
+using System.Threading.Tasks;
 using Xunit;
 
 // ReSharper disable once CheckNamespace
@@ -30,7 +30,9 @@ public class BigBrotherUseKustoTest
         KustoAppId = Environment.GetEnvironmentVariable("kusto_app_id", EnvironmentVariableTarget.Machine);
         KustoAppKey = Environment.GetEnvironmentVariable("kusto_app_key", EnvironmentVariableTarget.Machine);
 
-        KustoQueryClient = KustoClientFactory.CreateCslQueryProvider(
+        if (KustoUri != null && KustoDatabase != null && KustoTenantId != null && KustoAppId != null && KustoAppKey != null)
+        {
+            KustoQueryClient = KustoClientFactory.CreateCslQueryProvider(
             new KustoConnectionStringBuilder($"https://{KustoUri}.kusto.windows.net")
             {
                 FederatedSecurity = true,
@@ -39,16 +41,19 @@ public class BigBrotherUseKustoTest
                 ApplicationClientId = KustoAppId,
                 ApplicationKey = KustoAppKey
             });
+        }
 
     }
 
     [Fact, IsLayer1]
     public async Task Test_KustoTestEvent_StreamsToKusto()
     {
+        KustoQueryClient.Should().NotBeNull();
+
         var bb = new BigBrother("", "");
         bb.UseKusto(KustoUri, KustoDatabase, KustoTenantId, KustoAppId, KustoAppKey);
 
-        var evt =  new KustoTestEvent();
+        var evt = new KustoTestEvent();
         bb.Publish(evt);
 
         await Policy.Handle<Exception>()
