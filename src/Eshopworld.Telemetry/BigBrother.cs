@@ -271,12 +271,7 @@
                     ApplicationKey = appKey
                 });
 
-            TelemetrySubscriptions.AddSubscription(typeof(KustoExtensions), TelemetryStream.OfType<TelemetryEvent>()
-                                                                                      .Where(e => !(e is ExceptionEvent) &&
-                                                                                                  !(e is MetricTelemetryEvent) &&
-                                                                                                  !(e is TimedTelemetryEvent))
-                                                                                      .Subscribe(HandleKustoEvent));
-
+            SetupKustoSubscription();
             return this;
         }
 
@@ -308,6 +303,17 @@
             TelemetrySubscriptions.AddSubscription(typeof(TelemetryEvent), TelemetryStream.OfType<TelemetryEvent>().Subscribe(HandleAiEvent));
             InternalSubscriptions.AddSubscription(typeof(TelemetryEvent), InternalStream.OfType<TelemetryEvent>().Subscribe(HandleInternalEvent));
             GlobalExceptionAiSubscription = ExceptionStream.Subscribe(HandleAiEvent);
+        }
+
+        internal void SetupKustoSubscription()
+        {
+            TelemetrySubscriptions.AddSubscription(
+                typeof(KustoExtensions),
+                TelemetryStream.OfType<TelemetryEvent>()
+                               .Where(e => !(e is ExceptionEvent) &&
+                                           !(e is MetricTelemetryEvent) &&
+                                           !(e is TimedTelemetryEvent))
+                               .Subscribe(HandleKustoEvent));
         }
 
         /// <summary>
