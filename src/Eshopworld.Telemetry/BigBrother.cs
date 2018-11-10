@@ -96,10 +96,19 @@
         /// </summary>
         internal TelemetryClient TelemetryClient;
 
+        /// <summary>
+        /// The name of the Kusto database we are using.
+        /// </summary>
         internal string KustoDbName;
 
+        /// <summary>
+        /// The <see cref="ICslAdminProvider"/> Kusto Admin client we use to setup tables and table mappings.
+        /// </summary>
         internal ICslAdminProvider KustoAdminClient;
 
+        /// <summary>
+        /// The <see cref="IKustoQueuedIngestClient"/> used for Kusto data ingestion.
+        /// </summary>
         internal IKustoQueuedIngestClient KustoIngestClient;
 
         /// <summary>
@@ -237,6 +246,7 @@
             InternalClient.Flush();
         }
 
+        /// <inheritdoc />
         public IBigBrother UseKusto(string kustoNameLocationUri, string kustoDb, string tenantId, string appId, string appKey)
         {
             KustoDbName = kustoDb;
@@ -416,6 +426,10 @@
             }
         }
 
+        /// <summary>
+        /// Handles a <see cref="TelemetryEvent"/> that is being streamed to Kusto.
+        /// </summary>
+        /// <param name="event">The event being handled.</param>
         internal virtual void HandleKustoEvent(TelemetryEvent @event)
         {
             var eventType = @event.GetType();

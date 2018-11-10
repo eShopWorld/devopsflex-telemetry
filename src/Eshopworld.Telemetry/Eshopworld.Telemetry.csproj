@@ -2,8 +2,8 @@
 
   <PropertyGroup>
 
-    <Version>2.0.1</Version>
-    <PackageReleaseNotes>Fixed the contract for fluent configuration using the implementation instead of the contract.</PackageReleaseNotes>
+    <Version>2.1.0</Version>
+    <PackageReleaseNotes>Added Kusto integration for Telemetry Events.</PackageReleaseNotes>
 
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>True</IsPackable>
@@ -25,7 +25,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Eshopworld.Core" Version="2.0.0" />
+    <PackageReference Include="Eshopworld.Core" Version="2.0.1" />
     <PackageReference Include="Microsoft.ApplicationInsights" Version="2.8.1" />
     <PackageReference Include="Microsoft.Azure.Kusto.Ingest.NETStandard" Version="4.0.3" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />

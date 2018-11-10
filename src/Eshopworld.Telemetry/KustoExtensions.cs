@@ -5,8 +5,17 @@
     using System;
     using System.Linq;
 
+    /// <summary>
+    /// Contains extensions to clients in the Kusto SDK.
+    /// </summary>
     public static class KustoExtensions
     {
+        /// <summary>
+        /// Generates a Kusto table for a specific <see cref="Type"/>, by mapping it's properties to columns.
+        /// </summary>
+        /// <param name="client">The <see cref="ICslAdminProvider"/> that we are extending.</param>
+        /// <param name="type">The <see cref="Type"/> that we are generating a table for.</param>
+        /// <returns>The name of the table created.</returns>
         public static string GenerateTableFromType(this ICslAdminProvider client, Type type)
         {
             var tableName = type.Name;
@@ -30,6 +39,12 @@
             return tableName;
         }
 
+        /// <summary>
+        /// Generates a Kusto table mapping for a specific <see cref="Type"/>, by mapping it's properties to column mappings.
+        /// </summary>
+        /// <param name="client">The <see cref="ICslAdminProvider"/> client that we are extending.</param>
+        /// <param name="type">The <see cref="Type"/> that we are generating the JSON mapping for.</param>
+        /// <returns>The name of the mapping created.</returns>
         public static string GenerateTableJsonMappingFromType(this ICslAdminProvider client, Type type)
         {
             var tableName = type.Name;
