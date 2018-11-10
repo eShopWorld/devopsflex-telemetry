@@ -8,6 +8,7 @@ using Kusto.Data;
 using Kusto.Data.Common;
 using Kusto.Data.Net.Client;
 using Moq;
+using Polly;
 using Xunit;
 
 // ReSharper disable once CheckNamespace
@@ -50,11 +51,19 @@ public class BigBrotherUseKustoTest
         var evt =  new KustoTestEvent();
         bb.Publish(evt);
 
-        await Task.Delay(TimeSpan.FromSeconds(30));
-
-        var reader = await KustoQueryClient.ExecuteQueryAsync(KustoDatabase, $"{nameof(KustoTestEvent)} | where {nameof(KustoTestEvent.Id)} == \"{evt.Id}\" | summarize count()", ClientRequestProperties.FromJsonString("{}"));
-        reader.Read().Should().BeTrue();
-        reader.GetInt64(0).Should().Be(1);
+        await Policy.Handle<Exception>()
+            .WaitAndRetryAsync(new[]
+            {
+                TimeSpan.FromSeconds(3),
+                TimeSpan.FromSeconds(10),
+                TimeSpan.FromSeconds(30)
+            })
+            .ExecuteAsync(async () =>
+            {
+                var reader = await KustoQueryClient.ExecuteQueryAsync(KustoDatabase, $"{nameof(KustoTestEvent)} | where {nameof(KustoTestEvent.Id)} == \"{evt.Id}\" | summarize count()", ClientRequestProperties.FromJsonString("{}"));
+                reader.Read().Should().BeTrue();
+                reader.GetInt64(0).Should().Be(1);
+            });
     }
 
     [Fact, IsUnit]

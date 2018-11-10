@@ -26,10 +26,9 @@
                 client.ExecuteControlCommand(command);
                 return tableName;
             }
-            catch (KustoBadRequestException ex)
+            catch (KustoBadRequestException ex) when (ex.ErrorMessage.Contains("'Table' was not found"))
             {
-                if (!ex.ErrorMessage.Contains("'Table' was not found"))
-                    throw;
+                // soak
             }
 
             var columns = type.GetProperties().Select(property => new Tuple<string, string>(property.Name, property.PropertyType.FullName)).ToList();
@@ -56,10 +55,9 @@
                 client.ExecuteControlCommand(command);
                 return mappingName;
             }
-            catch (KustoBadRequestException ex)
+            catch (KustoBadRequestException ex) when (ex.ErrorMessage.Contains("'JsonMappingPersistent' was not found"))
             {
-                if (!ex.ErrorMessage.Contains("'JsonMappingPersistent' was not found"))
-                    throw;
+                // soak
             }
 
             var mappings = type.GetProperties().Select(property => new JsonColumnMapping { ColumnName = property.Name, JsonPath = $"$.{property.Name}" }).ToList();
