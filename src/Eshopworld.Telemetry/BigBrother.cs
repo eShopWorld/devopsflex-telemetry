@@ -21,6 +21,7 @@
     using System.Reactive.Linq;
     using System.Reactive.Subjects;
     using System.Runtime.CompilerServices;
+    using Microsoft.Azure.Services.AppAuthentication;
 
     /// <summary>
     /// Deals with everything that's public in telemetry.
@@ -247,28 +248,29 @@
         }
 
         /// <inheritdoc />
-        public IBigBrother UseKusto(string kustoNameLocationUri, string kustoDb, string tenantId, string appId, string appKey)
+        public IBigBrother UseKusto(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId)
         {
             KustoDbName = kustoDb;
+            var kustoUri = $"https://{kustoEngineName}.{kustoEngineLocation}.kusto.windows.net";
+            var kustoIngestUri = $"https://ingest-{kustoEngineName}.{kustoEngineLocation}.kusto.windows.net";
+            var token = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, string.Empty).Result;
 
             KustoAdminClient = KustoClientFactory.CreateCslAdminProvider(
-                new KustoConnectionStringBuilder($"https://{kustoNameLocationUri}.kusto.windows.net")
+                new KustoConnectionStringBuilder(kustoUri)
                 {
                     FederatedSecurity = true,
                     InitialCatalog = KustoDbName,
                     AuthorityId = tenantId,
-                    ApplicationClientId = appId,
-                    ApplicationKey = appKey
+                    ApplicationToken = token
                 });
 
             KustoIngestClient = KustoIngestFactory.CreateQueuedIngestClient(
-                new KustoConnectionStringBuilder($"https://ingest-{kustoNameLocationUri}.kusto.windows.net")
+                new KustoConnectionStringBuilder(kustoIngestUri)
                 {
                     FederatedSecurity = true,
                     InitialCatalog = KustoDbName,
                     AuthorityId = tenantId,
-                    ApplicationClientId = appId,
-                    ApplicationKey = appKey
+                    ApplicationToken = token
                 });
 
             SetupKustoSubscription();
