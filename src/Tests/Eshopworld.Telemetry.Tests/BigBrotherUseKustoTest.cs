@@ -29,11 +29,11 @@ public class BigBrotherUseKustoTest
         KustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
         KustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);
 
-        var kustoUri = $"https://{KustoName}.{KustoLocation}.kusto.windows.net";
-        var token = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, string.Empty).Result;
-
         if (KustoName != null && KustoLocation != null && KustoDatabase != null && KustoTenantId != null)
         {
+            var kustoUri = $"https://{KustoName}.{KustoLocation}.kusto.windows.net";
+            var token = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, string.Empty).Result;
+
             KustoQueryClient = KustoClientFactory.CreateCslQueryProvider(
             new KustoConnectionStringBuilder(kustoUri)
             {
