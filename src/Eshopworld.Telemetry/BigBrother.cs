@@ -1,21 +1,27 @@
 ﻿namespace Eshopworld.Telemetry
 {
+    using Core;
+    using InternalEvents;
+    using JetBrains.Annotations;
+    using Kusto.Data;
+    using Kusto.Data.Common;
+    using Kusto.Data.Net.Client;
+    using Kusto.Ingest;
+    using Microsoft.ApplicationInsights;
+    using Microsoft.ApplicationInsights.DataContracts;
+    using Microsoft.ApplicationInsights.Extensibility;
+    using Newtonsoft.Json;
     using System;
     using System.Collections.Concurrent;
-    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Diagnostics.CodeAnalysis;
     using System.Diagnostics.Tracing;
+    using System.IO;
     using System.Reactive;
     using System.Reactive.Linq;
     using System.Reactive.Subjects;
     using System.Runtime.CompilerServices;
-    using Core;
-    using InternalEvents;
-    using JetBrains.Annotations;
-    using Microsoft.ApplicationInsights;
-    using Microsoft.ApplicationInsights.DataContracts;
-    using Microsoft.ApplicationInsights.Extensibility;
+    using Microsoft.Azure.Services.AppAuthentication;
 
     /// <summary>
     /// Deals with everything that's public in telemetry.
@@ -55,6 +61,18 @@
         internal static readonly ConcurrentDictionary<Type, IDisposable> ExceptionSubscriptions = new ConcurrentDictionary<Type, IDisposable>();
 
         /// <summary>
+        /// The unique internal <see cref="Microsoft.ApplicationInsights.TelemetryClient"/> used to stream events to the AI account.
+        /// </summary>
+        internal static readonly TelemetryClient InternalClient = new TelemetryClient();
+
+        /// <summary>
+        /// Contains a typed dictionary of all the subscriptions to different types of telemetry.
+        /// </summary>
+        internal readonly ConcurrentDictionary<Type, IDisposable> TelemetrySubscriptions = new ConcurrentDictionary<Type, IDisposable>();
+
+        internal readonly ConcurrentDictionary<Type, KustoQueuedIngestionProperties> KustoMappings = new ConcurrentDictionary<Type, KustoQueuedIngestionProperties>();
+
+        /// <summary>
         /// Contains the <see cref="IPublishEvents"/> instance used to publish to topics.
         /// </summary>
         internal IPublishEvents TopicPublisher;
@@ -75,27 +93,30 @@
         internal IDisposable GlobalExceptionAiSubscription;
 
         /// <summary>
-        /// Contains a typed dictionary of all the subscriptions to different types of telemetry.
-        /// </summary>
-        internal ConcurrentDictionary<Type, IDisposable> TelemetrySubscriptions = new ConcurrentDictionary<Type, IDisposable>();
-
-        /// <summary>
-        /// The unique internal <see cref="Microsoft.ApplicationInsights.TelemetryClient"/> used to stream events to the AI account.
-        /// </summary>
-        internal static readonly TelemetryClient InternalClient;
-
-        /// <summary>
         /// The external telemetry client, used to publish events through <see cref="BigBrother"/>.
         /// </summary>
         internal TelemetryClient TelemetryClient;
+
+        /// <summary>
+        /// The name of the Kusto database we are using.
+        /// </summary>
+        internal string KustoDbName;
+
+        /// <summary>
+        /// The <see cref="ICslAdminProvider"/> Kusto Admin client we use to setup tables and table mappings.
+        /// </summary>
+        internal ICslAdminProvider KustoAdminClient;
+
+        /// <summary>
+        /// The <see cref="IKustoQueuedIngestClient"/> used for Kusto data ingestion.
+        /// </summary>
+        internal IKustoQueuedIngestClient KustoIngestClient;
 
         /// <summary>
         /// Static initialization of static resources in <see cref="BigBrother"/> instances.
         /// </summary>
         static BigBrother()
         {
-            InternalClient = new TelemetryClient();
-
             ExceptionSubscriptions.AddSubscription(typeof(EventSource), ExceptionStream.Subscribe(SinkToEventSource));
             ExceptionSubscriptions.AddSubscription(typeof(Trace), ExceptionStream.Subscribe(SinkToTrace));
         }
@@ -125,10 +146,10 @@
         /// <param name="client">The application's existing <see cref="TelemetryClient"/>.</param>
         /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
         public BigBrother([NotNull]TelemetryClient client, [NotNull]string internalKey)
+            // ReSharper disable once AssignNullToNotNullAttribute
+            : this((string)null, internalKey)
         {
             TelemetryClient = client;
-            SetupTelemetryClient(null, internalKey);
-            SetupSubscriptions();
         }
 
         /// <summary>
@@ -226,6 +247,36 @@
             InternalClient.Flush();
         }
 
+        /// <inheritdoc />
+        public IBigBrother UseKusto(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId)
+        {
+            KustoDbName = kustoDb;
+            var kustoUri = $"https://{kustoEngineName}.{kustoEngineLocation}.kusto.windows.net";
+            var kustoIngestUri = $"https://ingest-{kustoEngineName}.{kustoEngineLocation}.kusto.windows.net";
+            var token = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, string.Empty).Result;
+
+            KustoAdminClient = KustoClientFactory.CreateCslAdminProvider(
+                new KustoConnectionStringBuilder(kustoUri)
+                {
+                    FederatedSecurity = true,
+                    InitialCatalog = KustoDbName,
+                    AuthorityId = tenantId,
+                    ApplicationToken = token
+                });
+
+            KustoIngestClient = KustoIngestFactory.CreateQueuedIngestClient(
+                new KustoConnectionStringBuilder(kustoIngestUri)
+                {
+                    FederatedSecurity = true,
+                    InitialCatalog = KustoDbName,
+                    AuthorityId = tenantId,
+                    ApplicationToken = token
+                });
+
+            SetupKustoSubscription();
+            return this;
+        }
+
         /// <summary>
         /// Sets up the internal telemetry clients, both the one used to push normal events and the one used to push internal instrumentation.
         /// </summary>
@@ -254,6 +305,17 @@
             TelemetrySubscriptions.AddSubscription(typeof(TelemetryEvent), TelemetryStream.OfType<TelemetryEvent>().Subscribe(HandleAiEvent));
             InternalSubscriptions.AddSubscription(typeof(TelemetryEvent), InternalStream.OfType<TelemetryEvent>().Subscribe(HandleInternalEvent));
             GlobalExceptionAiSubscription = ExceptionStream.Subscribe(HandleAiEvent);
+        }
+
+        internal void SetupKustoSubscription()
+        {
+            TelemetrySubscriptions.AddSubscription(
+                typeof(KustoExtensions),
+                TelemetryStream.OfType<TelemetryEvent>()
+                               .Where(e => !(e is ExceptionEvent) &&
+                                           !(e is MetricTelemetryEvent) &&
+                                           !(e is TimedTelemetryEvent))
+                               .Subscribe(HandleKustoEvent));
         }
 
         /// <summary>
@@ -373,6 +435,42 @@
         }
 
         /// <summary>
+        /// Handles a <see cref="TelemetryEvent"/> that is being streamed to Kusto.
+        /// </summary>
+        /// <param name="event">The event being handled.</param>
+        internal virtual void HandleKustoEvent(TelemetryEvent @event)
+        {
+            var eventType = @event.GetType();
+
+            KustoQueuedIngestionProperties ingestProps;
+            if (!KustoMappings.ContainsKey(eventType) && KustoMappings.TryAdd(eventType, new KustoQueuedIngestionProperties(KustoDbName, "Unknown")))
+            {
+                ingestProps = KustoMappings[eventType];
+
+                ingestProps.TableName = KustoAdminClient.GenerateTableFromType(eventType);
+                ingestProps.JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(eventType);
+                ingestProps.ReportLevel = IngestionReportLevel.FailuresOnly;
+                ingestProps.ReportMethod = IngestionReportMethod.Queue;
+                ingestProps.FlushImmediately = true;
+                ingestProps.Format = DataSourceFormat.json;
+            }
+            else
+            {
+                ingestProps = KustoMappings[eventType];
+            }
+
+            using (var stream = new MemoryStream())
+            using (var writer = new StreamWriter(stream))
+            {
+                writer.WriteLine(JsonConvert.SerializeObject(@event));
+                writer.Flush();
+                stream.Seek(0, SeekOrigin.Begin);
+
+                KustoIngestClient.IngestFromStream(stream, ingestProps, leaveOpen: true);
+            }
+        }
+
+        /// <summary>
         /// Used internal by BigBrother to publish usage exceptions to a special
         ///     Application Insights account.
         /// </summary>
@@ -402,7 +500,6 @@
                 TelemetrySubscriptions[key]?.Dispose();
             }
             TelemetrySubscriptions.Clear();
-            TelemetrySubscriptions = null;
 
             foreach (var key in InternalSubscriptions.Keys)
             {

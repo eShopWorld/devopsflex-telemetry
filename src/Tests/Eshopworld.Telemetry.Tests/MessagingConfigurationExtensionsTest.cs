@@ -1,4 +1,5 @@
-﻿using Eshopworld.Core;
+﻿using System.Threading.Tasks;
+using Eshopworld.Core;
 using Eshopworld.Telemetry;
 using Eshopworld.Tests.Core;
 using Moq;
@@ -15,7 +16,7 @@ public class MessagingConfigurationExtensionsTest
         var dEvent = new TestDomainEvent();
 
         var mPublisher = new Mock<IPublishEvents>();
-        mPublisher.Setup(x => x.Publish(It.IsAny<TelemetryEvent>())).Verifiable();
+        mPublisher.Setup(x => x.Publish(It.IsAny<TelemetryEvent>())).Returns(Task.CompletedTask);
         bb.PublishEventsToTopics(mPublisher.Object);
 
         bb.Publish(dEvent);
