@@ -22,6 +22,18 @@
     using System.Reactive.Subjects;
     using System.Runtime.CompilerServices;
     using Microsoft.Azure.Services.AppAuthentication;
+    public interface IBigBrother
+    {
+        void Publish<T>(T @event, [CallerMemberName] string callerMemberName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumber = -1) where T : TelemetryEvent;
+
+        void Publish(object @event, [CallerMemberName] string callerMemberName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumber = -1);
+
+        IBigBrother DeveloperMode();
+
+        void Flush();
+
+        IBigBrother UseKusto(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId);
+    }
 
     /// <summary>
     /// Deals with everything that's public in telemetry.
@@ -186,11 +198,11 @@
         }
 
         /// <inheritdoc />
-        public void Publish(
-            TelemetryEvent @event,
+        public void Publish<T>(
+            T @event,
             [CallerMemberName] string callerMemberName = "",
             [CallerFilePath] string callerFilePath = "",
-            [CallerLineNumber] int callerLineNumber = -1)
+            [CallerLineNumber] int callerLineNumber = -1) where T : TelemetryEvent
         {
             if (TopicPublisher != null && @event is DomainEvent)
             {
@@ -203,6 +215,7 @@
                 telemetryEvent.CallerFilePath = callerFilePath;
                 telemetryEvent.CallerLineNumber = callerLineNumber;
             }
+
             if (@event is TimedTelemetryEvent timedEvent)
             {
                 timedEvent.End();
@@ -210,7 +223,7 @@
 
             TelemetryStream.OnNext(@event);
         }
-
+        
         /// <inheritdoc />
         public void Publish(
             object @event,
