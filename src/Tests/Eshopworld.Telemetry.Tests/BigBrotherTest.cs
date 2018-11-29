@@ -9,7 +9,6 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Diagnostics.Tracing.Session;
 using Moq;
 using Xunit;
-using IBigBrother = Eshopworld.Telemetry.IBigBrother;
 
 //ReSharper disable once CheckNamespace
 public class BigBrotherTest
