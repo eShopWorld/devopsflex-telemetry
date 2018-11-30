@@ -186,11 +186,11 @@
         }
 
         /// <inheritdoc />
-        public void Publish(
-            TelemetryEvent @event,
+        public void Publish<T>(
+            T @event,
             [CallerMemberName] string callerMemberName = "",
             [CallerFilePath] string callerFilePath = "",
-            [CallerLineNumber] int callerLineNumber = -1)
+            [CallerLineNumber] int callerLineNumber = -1) where T : TelemetryEvent
         {
             if (TopicPublisher != null && @event is DomainEvent)
             {
@@ -203,6 +203,7 @@
                 telemetryEvent.CallerFilePath = callerFilePath;
                 telemetryEvent.CallerLineNumber = callerLineNumber;
             }
+
             if (@event is TimedTelemetryEvent timedEvent)
             {
                 timedEvent.End();
@@ -210,7 +211,7 @@
 
             TelemetryStream.OnNext(@event);
         }
-
+        
         /// <inheritdoc />
         public void Publish(
             object @event,

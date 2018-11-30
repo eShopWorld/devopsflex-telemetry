@@ -2,7 +2,7 @@
 
   <PropertyGroup>
 
-    <Version>2.1.0</Version>
+    <Version>2.1.1</Version>
     <PackageReleaseNotes>Added Kusto integration for Telemetry Events.</PackageReleaseNotes>
 
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -10,7 +10,7 @@
 
     <PackageId>Eshopworld.Telemetry</PackageId>
     <Title>Eshopworld.Telemetry</Title>
-    <Authors>David Rodrigues, Oisin Haken</Authors>
+    <Authors>David Rodrigues, Oisin Haken, David Guerin</Authors>
     <Copyright>Copyright eShopWorld 2018</Copyright>
     <Description>eShopWorld common telemetry application insights</Description>
     <PackageLicenseUrl>https://github.com/eShopWorld/telemetry/blob/master/LICENSE</PackageLicenseUrl>
@@ -25,11 +25,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Eshopworld.Core" Version="2.0.2" />
+    <PackageReference Include="Eshopworld.Core" Version="2.0.3" />
     <PackageReference Include="Microsoft.ApplicationInsights" Version="2.8.1" />
     <PackageReference Include="Microsoft.Azure.Kusto.Ingest.NETStandard" Version="4.0.3" />
     <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.0.3" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
     <PackageReference Include="System.Reactive" Version="4.1.2" />
   </ItemGroup>
 
