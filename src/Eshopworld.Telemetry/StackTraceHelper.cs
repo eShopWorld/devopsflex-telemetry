@@ -23,7 +23,7 @@
                 var frame = stackTrace.GetFrame(i);
                 var mb = frame.GetMethod();
 
-                // Check whether the frame should be displyed (the first and the last are always displayed)
+                // Check whether the frame should be displayed (the first and the last are always displayed)
                 if (i > 0 && i < stackTrace.FrameCount - 1 && !ShowInStackTrace(mb))
                     continue;
 
