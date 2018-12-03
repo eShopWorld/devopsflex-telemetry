@@ -2,6 +2,7 @@
 {
     using System;
     using System.Diagnostics;
+    using System.Linq;
     using Core;
     using JetBrains.Annotations;
     using Microsoft.ApplicationInsights.Channel;
@@ -108,6 +109,12 @@
 
                         exceptionTelemetry.Message = exceptionEvent.Exception.Message;
                         exceptionTelemetry.Exception = exceptionEvent.Exception;
+
+                        if (exceptionEvent.SimplifyStackTrace)
+                        {
+                            var stackTrace = StackTraceHelper.SimplifyStackTrace(exceptionTelemetry.Exception);
+                            exceptionTelemetry.SetParsedStack(stackTrace.ToArray());
+                        }
                     }
 
                     break;
