@@ -32,7 +32,7 @@
         public ConvertEvent([NotNull]TFrom @event)
         {
             // mapping checks, blow up on wrong usage
-            if(typeof(TFrom) == typeof(TelemetryEvent) && typeof(TTo) != typeof(EventTelemetry))
+            if (typeof(TFrom) == typeof(TelemetryEvent) && typeof(TTo) != typeof(EventTelemetry))
                 throw new InvalidOperationException($"You can only convert to {typeof(EventTelemetry).FullName} from {typeof(TelemetryEvent).FullName}");
 
             if (typeof(TFrom) == typeof(TimedTelemetryEvent) && typeof(TTo) != typeof(EventTelemetry))
@@ -112,8 +112,16 @@
 
                         if (exceptionEvent.SimplifyStackTrace)
                         {
-                            var stackTrace = StackTraceHelper.SimplifyStackTrace(exceptionTelemetry.Exception);
-                            exceptionTelemetry.SetParsedStack(stackTrace.ToArray());
+                            try
+                            {
+                                var stackTrace = StackTraceHelper.SimplifyStackTrace(exceptionTelemetry.Exception);
+                                exceptionTelemetry.SetParsedStack(stackTrace.ToArray());
+                            }
+                            catch (Exception ex)
+                            {
+                                // Preserve the original stack trace and add some info about the problem
+                                exceptionTelemetry.Properties["SimplifyStackTraceFailed"] = ex.Message;
+                            }
                         }
                     }
 
