@@ -19,14 +19,14 @@
         public class Keywords
         {
             protected Keywords() { }
-            public const EventKeywords Exception = (EventKeywords) (1 << 0);
+            public const EventKeywords Exception = (EventKeywords)(1 << 0);
         }
 
         public class Tasks
         {
             protected Tasks() { }
-            public const EventTask ExceptionEvent = (EventTask) (1 << 0);
-            public const EventTask Exception =        (EventTask) (1 << 1);
+            public const EventTask ExceptionEvent = (EventTask)(1 << 0);
+            public const EventTask Exception = (EventTask)(1 << 1);
         }
 
         public static ErrorEventSource Log { get; } = new ErrorEventSource();
@@ -53,6 +53,6 @@
             Level = EventLevel.Error,
             Channel = EventChannel.Operational
         )]
-        public void EventError(string message, string stackTrace, string eventPayload) => WriteEvent(2,  message, stackTrace, eventPayload);
+        public void EventError(string message, string stackTrace, string eventPayload) => WriteEvent(2, message, stackTrace, eventPayload);
     }
 }

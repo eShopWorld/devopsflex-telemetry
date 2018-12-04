@@ -19,7 +19,7 @@ public class BbEventExtensionsTest
             var tEvent = new TestTelemetryEvent();
             var now = DateTime.Now;
 
-            var result = new ConvertEvent<TelemetryEvent, EventTelemetry>(tEvent) {Now = () => now}.ToTelemetry();
+            var result = new ConvertEvent<TelemetryEvent, EventTelemetry>(tEvent) { Now = () => now }.ToTelemetry();
 
             result.Should().NotBeNull();
             (result?.Name).Should().Be(tEvent.GetType().Name);

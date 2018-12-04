@@ -1,9 +1,9 @@
 ﻿namespace Eshopworld.Telemetry
 {
-    using Kusto.Data.Common;
-    using Kusto.Data.Exceptions;
     using System;
     using System.Linq;
+    using Kusto.Data.Common;
+    using Kusto.Data.Exceptions;
 
     /// <summary>
     /// Contains extensions to clients in the Kusto SDK.

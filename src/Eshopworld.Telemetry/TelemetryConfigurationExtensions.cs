@@ -1,8 +1,8 @@
 ﻿namespace Eshopworld.Telemetry
 {
-    using Core;
     using System;
     using System.Reactive.Linq;
+    using Core;
 
     /// <summary>
     /// Fluent API extensions for configuring <see cref="BigBrother"/>.
