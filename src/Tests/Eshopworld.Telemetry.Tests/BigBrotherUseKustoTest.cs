@@ -1,22 +1,22 @@
-﻿using Eshopworld.Core;
+﻿using System;
+using System.Threading.Tasks;
+using Eshopworld.Core;
 using Eshopworld.Telemetry;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
 using Kusto.Data;
 using Kusto.Data.Common;
 using Kusto.Data.Net.Client;
+using Microsoft.Azure.Services.AppAuthentication;
 using Moq;
 using Polly;
-using System;
-using System.Threading.Tasks;
-using Microsoft.Azure.Services.AppAuthentication;
 using Xunit;
 
 // ReSharper disable once CheckNamespace
 public class BigBrotherUseKustoTest
 {
-    private string KustoName;
-    private string KustoLocation;
+    private readonly string KustoName;
+    private readonly string KustoLocation;
     private string KustoDatabase;
     private string KustoTenantId;
 

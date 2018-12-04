@@ -1,16 +1,5 @@
 ﻿namespace Eshopworld.Telemetry
 {
-    using Core;
-    using InternalEvents;
-    using JetBrains.Annotations;
-    using Kusto.Data;
-    using Kusto.Data.Common;
-    using Kusto.Data.Net.Client;
-    using Kusto.Ingest;
-    using Microsoft.ApplicationInsights;
-    using Microsoft.ApplicationInsights.DataContracts;
-    using Microsoft.ApplicationInsights.Extensibility;
-    using Newtonsoft.Json;
     using System;
     using System.Collections.Concurrent;
     using System.Diagnostics;
@@ -21,7 +10,18 @@
     using System.Reactive.Linq;
     using System.Reactive.Subjects;
     using System.Runtime.CompilerServices;
+    using Core;
+    using InternalEvents;
+    using JetBrains.Annotations;
+    using Kusto.Data;
+    using Kusto.Data.Common;
+    using Kusto.Data.Net.Client;
+    using Kusto.Ingest;
+    using Microsoft.ApplicationInsights;
+    using Microsoft.ApplicationInsights.DataContracts;
+    using Microsoft.ApplicationInsights.Extensibility;
     using Microsoft.Azure.Services.AppAuthentication;
+    using Newtonsoft.Json;
 
     /// <summary>
     /// Deals with everything that's public in telemetry.
@@ -211,7 +211,7 @@
 
             TelemetryStream.OnNext(@event);
         }
-        
+
         /// <inheritdoc />
         public void Publish(
             object @event,
