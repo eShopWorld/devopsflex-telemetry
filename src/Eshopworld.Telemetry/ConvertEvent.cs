@@ -119,8 +119,9 @@
                             }
                             catch (Exception ex)
                             {
-                                // Preserve the original stack trace and add some info about the problem
+                                // Preserve the original stack trace append some info about the problem. Report the problem to the internal stream.
                                 exceptionTelemetry.Properties["SimplifyStackTraceFailed"] = ex.Message;
+                                BigBrother.InternalStream.OnNext(ex.ToExceptionEvent<SimplifiedExceptionEvent>());
                             }
                         }
                     }
@@ -134,6 +135,16 @@
 
                     break;
             }
+        }
+
+        internal class SimplifiedExceptionEvent : ExceptionEvent
+        {
+            public SimplifiedExceptionEvent(Exception exception)
+                : base(exception)
+            {
+            }
+
+            public override bool SimplifyStackTrace => false; // Simplification failed so do not use it to simplify this stack trace
         }
     }
 }
