@@ -507,6 +507,9 @@
                 InternalSubscriptions[key]?.Dispose();
             }
             InternalSubscriptions.Clear();
+
+            TelemetryClient.Flush();
+            InternalClient.Flush();
         }
     }
 }
