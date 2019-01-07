@@ -2,8 +2,8 @@
 
   <PropertyGroup>
 
-    <Version>2.1.2</Version>
-    <PackageReleaseNotes>Enabled simplification of stack traces.</PackageReleaseNotes>
+    <Version>2.1.3</Version>
+    <PackageReleaseNotes>Declaring friendship to the snkrs control tower.</PackageReleaseNotes>
 
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>True</IsPackable>
