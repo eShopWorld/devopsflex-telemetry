@@ -36,7 +36,6 @@ public class BigBrotherUseKustoLayerTest
             {
                 FederatedSecurity = true,
                 InitialCatalog = _kustoDatabase,
-                AuthorityId = _kustoTenantId,
                 ApplicationToken = token
             });
         }

@@ -1,4 +1,6 @@
-﻿namespace Eshopworld.Telemetry
+﻿using System.Threading.Tasks;
+
+namespace Eshopworld.Telemetry
 {
     using System;
     using System.Collections.Concurrent;
@@ -185,16 +187,25 @@
             ExceptionStream.OnNext(exEvent);
         }
 
-        /// <inheritdoc />
         public void Publish<T>(
             T @event,
             [CallerMemberName] string callerMemberName = "",
             [CallerFilePath] string callerFilePath = "",
             [CallerLineNumber] int callerLineNumber = -1) where T : TelemetryEvent
         {
+            Publish_(@event, callerMemberName, callerFilePath, callerLineNumber).Wait();
+        }
+
+        /// <inheritdoc />
+        public async Task Publish_<T>(
+        T @event,
+        [CallerMemberName] string callerMemberName = "",
+        [CallerFilePath] string callerFilePath = "",
+        [CallerLineNumber] int callerLineNumber = -1) where T : TelemetryEvent
+        {
             if (TopicPublisher != null && @event is DomainEvent)
             {
-                TopicPublisher.Publish(@event).Wait();
+                await TopicPublisher.Publish(@event);
             }
 
             if (@event is TelemetryEvent telemetryEvent)
@@ -248,12 +259,16 @@
             InternalClient.Flush();
         }
 
-        /// <inheritdoc />
+        // REMOVE AFTER INTERFACE CHANGE
         public IBigBrother UseKusto(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId)
         {
+            return this;
+        }
+
+        /// <inheritdoc />
+        public IBigBrother UseKusto(string kustoUri, string kustoIngestUri, string kustoDb)
+        {
             KustoDbName = kustoDb;
-            var kustoUri = $"https://{kustoEngineName}.{kustoEngineLocation}.kusto.windows.net";
-            var kustoIngestUri = $"https://ingest-{kustoEngineName}.{kustoEngineLocation}.kusto.windows.net";
             var token = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, string.Empty).Result;
 
             KustoAdminClient = KustoClientFactory.CreateCslAdminProvider(
@@ -261,7 +276,6 @@
                 {
                     FederatedSecurity = true,
                     InitialCatalog = KustoDbName,
-                    AuthorityId = tenantId,
                     ApplicationToken = token
                 });
 
@@ -270,7 +284,6 @@
                 {
                     FederatedSecurity = true,
                     InitialCatalog = KustoDbName,
-                    AuthorityId = tenantId,
                     ApplicationToken = token
                 });
 
