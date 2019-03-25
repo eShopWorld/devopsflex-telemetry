@@ -12,7 +12,6 @@ public class MessagingConfigurationExtensionsTest
     public void Test_Publish_UsesTopics_WhenSetup()
     {
         var bb = new BigBrother("", "");
-        bb.TelemetrySubscriptions.Clear(); // disable normal telemetry
         var dEvent = new TestDomainEvent();
 
         var mPublisher = new Mock<IPublishEvents>();
@@ -28,7 +27,6 @@ public class MessagingConfigurationExtensionsTest
     public void Test_Publish_NoTopics_WhenNotSetup()
     {
         var bb = new BigBrother("", "");
-        bb.TelemetrySubscriptions.Clear(); // disable normal telemetry
         var dEvent = new TestDomainEvent();
 
         var mPublisher = new Mock<IPublishEvents>();
@@ -42,7 +40,6 @@ public class MessagingConfigurationExtensionsTest
     public void Test_Publish_WontSendNonDomainEvents_ToTopics()
     {
         var bb = new BigBrother("", "");
-        bb.TelemetrySubscriptions.Clear(); // disable normal telemetry
         var dEvent = new TestTimedEvent();
 
         var mPublisher = new Mock<IPublishEvents>();

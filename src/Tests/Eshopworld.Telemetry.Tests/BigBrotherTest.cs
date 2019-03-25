@@ -119,9 +119,6 @@ public class BigBrotherTest
             await Task.Delay(TimeSpan.FromSeconds(1)); // give the subscription some love
 
             bbMock.Verify(x => x.HandleAiEvent(e), Times.Once);
-
-            // wipe all internal subscriptions
-            BigBrotherExtensions.WipeInternalSubscriptions();
         }
 
         [Fact, IsUnit]
@@ -137,9 +134,6 @@ public class BigBrotherTest
             await Task.Delay(TimeSpan.FromSeconds(1)); // give the subscription some love
 
             bbMock.Verify(x => x.HandleInternalEvent(e), Times.Once);
-
-            // wipe all internal subscriptions
-            BigBrotherExtensions.WipeInternalSubscriptions();
         }
     }
 
@@ -289,17 +283,5 @@ public class TestTimedEvent : TimedTelemetryEvent
     {
         Id = Guid.NewGuid();
         Description = Lorem.GetSentence();
-    }
-}
-
-public static class BigBrotherExtensions
-{
-    public static void WipeInternalSubscriptions()
-    {
-        foreach (var sub in BigBrother.InternalSubscriptions.Values)
-        {
-            sub.Dispose();
-        }
-        BigBrother.InternalSubscriptions.Clear();
     }
 }

@@ -53,24 +53,9 @@ namespace Eshopworld.Telemetry
         internal readonly Subject<BaseEvent> TelemetryStream = new Subject<BaseEvent>();
 
         /// <summary>
-        /// Contains an internal stream typed dictionary of all the subscriptions to different types of telemetry that instrument this package.
-        /// </summary>
-        internal static readonly ConcurrentDictionary<Type, IDisposable> InternalSubscriptions = new ConcurrentDictionary<Type, IDisposable>();
-
-        /// <summary>
-        /// Contains an exception stream typed dictionary of all the subscriptions to different types of telemetry that instrument this package.
-        /// </summary>
-        internal static readonly ConcurrentDictionary<Type, IDisposable> ExceptionSubscriptions = new ConcurrentDictionary<Type, IDisposable>();
-
-        /// <summary>
         /// The unique internal <see cref="Microsoft.ApplicationInsights.TelemetryClient"/> used to stream events to the AI account.
         /// </summary>
         internal static readonly TelemetryClient InternalClient = new TelemetryClient();
-
-        /// <summary>
-        /// Contains a typed dictionary of all the subscriptions to different types of telemetry.
-        /// </summary>
-        internal readonly ConcurrentDictionary<Type, IDisposable> TelemetrySubscriptions = new ConcurrentDictionary<Type, IDisposable>();
 
         internal readonly ConcurrentDictionary<Type, KustoQueuedIngestionProperties> KustoMappings = new ConcurrentDictionary<Type, KustoQueuedIngestionProperties>();
 
@@ -81,16 +66,19 @@ namespace Eshopworld.Telemetry
 
         /// <summary>
         /// Contains the exception stream typed dictionary of sink subscription.
+        ///     Here to avoid double subscriptions to the same sinks.
         /// </summary>
         internal IDisposable EventSourceSinkSubscription;
 
         /// <summary>
         /// Contains the exception stream typed dictionary of sink subscription.
+        ///     Here to avoid double subscriptions to the same sinks.
         /// </summary>
         internal IDisposable TraceSinkSubscription;
 
         /// <summary>
-        /// Constans the static ExceptionStream subscription from this client.
+        /// Contains the static ExceptionStream subscription from this client.
+        ///     Here to avoid double subscriptions to the same sinks.
         /// </summary>
         internal IDisposable GlobalExceptionAiSubscription;
 
@@ -119,8 +107,8 @@ namespace Eshopworld.Telemetry
         /// </summary>
         static BigBrother()
         {
-            ExceptionSubscriptions.AddSubscription(typeof(EventSource), ExceptionStream.Subscribe(SinkToEventSource));
-            ExceptionSubscriptions.AddSubscription(typeof(Trace), ExceptionStream.Subscribe(SinkToTrace));
+            ExceptionStream.Subscribe(SinkToEventSource);
+            ExceptionStream.Subscribe(SinkToTrace);
         }
 
         /// <summary>
@@ -316,20 +304,18 @@ namespace Eshopworld.Telemetry
         {
             ReplayCast.Subscribe(HandleAiEvent); // volatile subscription, don't need to keep it
 
-            TelemetrySubscriptions.AddSubscription(typeof(TelemetryEvent), TelemetryStream.OfType<TelemetryEvent>().Subscribe(HandleAiEvent));
-            InternalSubscriptions.AddSubscription(typeof(TelemetryEvent), InternalStream.OfType<TelemetryEvent>().Subscribe(HandleInternalEvent));
+            TelemetryStream.OfType<TelemetryEvent>().Subscribe(HandleAiEvent);
+            InternalStream.OfType<TelemetryEvent>().Subscribe(HandleInternalEvent);
             GlobalExceptionAiSubscription = ExceptionStream.Subscribe(HandleAiEvent);
         }
 
         internal void SetupKustoSubscription()
         {
-            TelemetrySubscriptions.AddSubscription(
-                typeof(KustoExtensions),
-                TelemetryStream.OfType<TelemetryEvent>()
-                               .Where(e => !(e is ExceptionEvent) &&
-                                           !(e is MetricTelemetryEvent) &&
-                                           !(e is TimedTelemetryEvent))
-                               .Subscribe(HandleKustoEvent));
+            TelemetryStream.OfType<TelemetryEvent>()
+                           .Where(e => !(e is ExceptionEvent) &&
+                                       !(e is MetricTelemetryEvent) &&
+                                       !(e is TimedTelemetryEvent))
+                           .Subscribe(HandleKustoEvent);
         }
 
         /// <summary>
@@ -509,17 +495,9 @@ namespace Eshopworld.Telemetry
         [ExcludeFromCodeCoverage]
         protected virtual void Dispose(bool disposing)
         {
-            foreach (var key in TelemetrySubscriptions.Keys)
-            {
-                TelemetrySubscriptions[key]?.Dispose();
-            }
-            TelemetrySubscriptions.Clear();
-
-            foreach (var key in InternalSubscriptions.Keys)
-            {
-                InternalSubscriptions[key]?.Dispose();
-            }
-            InternalSubscriptions.Clear();
+            EventSourceSinkSubscription?.Dispose();
+            TraceSinkSubscription?.Dispose();
+            GlobalExceptionAiSubscription?.Dispose();
 
             TelemetryClient.Flush();
             InternalClient.Flush();
