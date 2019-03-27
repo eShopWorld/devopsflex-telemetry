@@ -1,30 +1,31 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Tracing;
+using System.IO;
+using System.Reactive;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+using Castle.DynamicProxy;
+using Eshopworld.Core;
+using Eshopworld.Telemetry.InternalEvents;
+using JetBrains.Annotations;
+using Kusto.Data;
+using Kusto.Data.Common;
+using Kusto.Data.Net.Client;
+using Kusto.Ingest;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Azure.Services.AppAuthentication;
+using Newtonsoft.Json;
 
 namespace Eshopworld.Telemetry
 {
-    using System;
-    using System.Collections.Concurrent;
-    using System.Diagnostics;
-    using System.Diagnostics.CodeAnalysis;
-    using System.Diagnostics.Tracing;
-    using System.IO;
-    using System.Reactive;
-    using System.Reactive.Linq;
-    using System.Reactive.Subjects;
-    using System.Runtime.CompilerServices;
-    using Core;
-    using InternalEvents;
-    using JetBrains.Annotations;
-    using Kusto.Data;
-    using Kusto.Data.Common;
-    using Kusto.Data.Net.Client;
-    using Kusto.Ingest;
-    using Microsoft.ApplicationInsights;
-    using Microsoft.ApplicationInsights.DataContracts;
-    using Microsoft.ApplicationInsights.Extensibility;
-    using Microsoft.Azure.Services.AppAuthentication;
-    using Newtonsoft.Json;
-
     /// <summary>
     /// Deals with everything that's public in telemetry.
     /// This is the main entry point in the <see cref="N:Eshopworld.Telemetry"/> API.
@@ -56,6 +57,8 @@ namespace Eshopworld.Telemetry
         /// The unique internal <see cref="Microsoft.ApplicationInsights.TelemetryClient"/> used to stream events to the AI account.
         /// </summary>
         internal static readonly TelemetryClient InternalClient = new TelemetryClient();
+
+        internal readonly ProxyGenerator Generator = new ProxyGenerator();
 
         internal readonly ConcurrentDictionary<Type, KustoQueuedIngestionProperties> KustoMappings = new ConcurrentDictionary<Type, KustoQueuedIngestionProperties>();
 
@@ -225,6 +228,25 @@ namespace Eshopworld.Telemetry
                     CallerFilePath = callerFilePath,
                     CallerLineNumber = callerLineNumber
                 });
+        }
+
+        public T GetTrackedMetric<T>() where T : BaseMetric
+        {
+            return GetTrackedMetric<T>(null);
+        }
+
+        public T GetTrackedMetric<T>(params object[] parameters) where T : BaseMetric
+        {
+            var interceptor = new MetricInterceptor(TelemetryClient.GetMetric("MessageCount", "QueueName"));
+            var options = new ProxyGenerationOptions(new MetricProxyGenerationHook());
+
+            T proxy;
+            if (parameters == null)
+                proxy = (T)Generator.CreateClassProxy(typeof(T), options, interceptor);
+            else
+                proxy = (T)Generator.CreateClassProxy(typeof(T), options, parameters, interceptor);
+
+            return proxy;
         }
 
         /// <inheritdoc />
@@ -502,5 +524,51 @@ namespace Eshopworld.Telemetry
             TelemetryClient.Flush();
             InternalClient.Flush();
         }
+    }
+
+
+
+
+
+
+
+
+    public abstract class BaseMetric
+    {
+        internal BaseMetric()
+        { }
+
+        public abstract double Metric { set; }
+    }
+
+    public class MetricInterceptor : IInterceptor
+    {
+        private readonly Metric _metric;
+
+        public MetricInterceptor(Metric metric)
+        {
+            _metric = metric;
+        }
+
+        public void Intercept(IInvocation invocation)
+        {
+            //_metric.TrackValue(invocation.Arguments[0], target.Queue); // requires a lot more work here
+            invocation.Proceed();
+        }
+    }
+
+    public class MetricProxyGenerationHook : IProxyGenerationHook
+    {
+        public bool ShouldInterceptMethod(Type type, MethodInfo memberInfo)
+        {
+            if (!memberInfo.Name.Equals($"set_{nameof(BaseMetric.Metric)}")) return false;
+            if (memberInfo.IsVirtual) return true;
+
+            throw new InvalidOperationException($"The Metric property setter needs to be marked as virtual on type {memberInfo.DeclaringType?.FullName}");
+        }
+
+        public void NonProxyableMemberNotification(Type type, MemberInfo memberInfo) { }
+
+        public void MethodsInspected() { }
     }
 }

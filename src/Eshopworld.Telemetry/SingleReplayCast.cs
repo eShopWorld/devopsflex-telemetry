@@ -1,9 +1,9 @@
-﻿namespace Eshopworld.Telemetry
-{
-    using System;
-    using System.Reactive.Linq;
-    using System.Reactive.Subjects;
+﻿using System;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 
+namespace Eshopworld.Telemetry
+{
     /// <summary>
     /// Replays a single time from an original <see cref="IObservable{T}"/>.
     /// </summary>
