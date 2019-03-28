@@ -17,7 +17,7 @@
         {
             var stackTrace = new StackTrace(ex, true);
             var transformedStackTrace = new List<FilteredStackFrame>();
-            bool displayFilenames = true;
+            bool displayFileNames = true;
             for (int i = 0; i < stackTrace.FrameCount; i++)
             {
                 var frame = stackTrace.GetFrame(i);
@@ -31,7 +31,7 @@
                 var lineNumber = 0;
 
                 // source location printing (based on the code CLR Core)
-                if (displayFilenames && (frame.GetILOffset() != -1))
+                if (displayFileNames && (frame.GetILOffset() != -1))
                 {
                     try
                     {
@@ -39,7 +39,7 @@
                     }
                     catch (SecurityException)
                     {
-                        displayFilenames = false;
+                        displayFileNames = false;
                     }
 
                     if (fileName != null)
@@ -62,35 +62,35 @@
 
         private class FilteredStackFrame : StackFrame
         {
-            private readonly int lineNo;
-            private readonly string fileName;
-            private readonly MethodBase method;
+            private readonly int _lineNo;
+            private readonly string _fileName;
+            private readonly MethodBase _method;
 
             public FilteredStackFrame(string fileName, int lineNo, MethodBase method)
             {
-                this.lineNo = lineNo;
-                this.fileName = fileName;
-                this.method = method;
+                _lineNo = lineNo;
+                _fileName = fileName;
+                _method = method;
             }
 
             public override int GetFileLineNumber()
             {
-                return lineNo;
+                return _lineNo;
             }
 
             public override string GetFileName()
             {
-                return fileName;
+                return _fileName;
             }
 
             public override string ToString()
             {
-                return $"{method} {lineNo}";
+                return $"{_method} {_lineNo}";
             }
 
             public override MethodBase GetMethod()
             {
-                return method;
+                return _method;
             }
         }
     }

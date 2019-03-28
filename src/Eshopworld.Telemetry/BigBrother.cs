@@ -230,12 +230,12 @@ namespace Eshopworld.Telemetry
                 });
         }
 
-        public T GetTrackedMetric<T>() where T : BaseMetric
+        public T GetTrackedMetric<T>() where T : IBaseMetric
         {
             return GetTrackedMetric<T>(null);
         }
 
-        public T GetTrackedMetric<T>(params object[] parameters) where T : BaseMetric
+        public T GetTrackedMetric<T>(params object[] parameters) where T : IBaseMetric
         {
             var interceptor = new MetricInterceptor(TelemetryClient.GetMetric("MessageCount", "QueueName"));
             var options = new ProxyGenerationOptions(new MetricProxyGenerationHook());
@@ -533,12 +533,14 @@ namespace Eshopworld.Telemetry
 
 
 
-    public abstract class BaseMetric
+    public interface IBaseMetric
     {
-        internal BaseMetric()
-        { }
+        double Metric { set; }
+    }
 
-        public abstract double Metric { set; }
+    public class FooMetric : IBaseMetric
+    {
+        public virtual double Metric { get; set; }
     }
 
     public class MetricInterceptor : IInterceptor
@@ -561,7 +563,7 @@ namespace Eshopworld.Telemetry
     {
         public bool ShouldInterceptMethod(Type type, MethodInfo memberInfo)
         {
-            if (!memberInfo.Name.Equals($"set_{nameof(BaseMetric.Metric)}")) return false;
+            if (!memberInfo.Name.Equals($"set_{nameof(IBaseMetric.Metric)}")) return false;
             if (memberInfo.IsVirtual) return true;
 
             throw new InvalidOperationException($"The Metric property setter needs to be marked as virtual on type {memberInfo.DeclaringType?.FullName}");
