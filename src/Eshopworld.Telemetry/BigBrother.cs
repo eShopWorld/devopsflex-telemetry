@@ -4,10 +4,10 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Tracing;
 using System.IO;
+using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Castle.DynamicProxy;
@@ -23,6 +23,8 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Azure.Services.AppAuthentication;
 using Newtonsoft.Json;
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Eshopworld.Telemetry
 {
@@ -233,13 +235,47 @@ namespace Eshopworld.Telemetry
                 });
         }
 
+        /// <inheritdoc />
         public T GetTrackedMetric<T>() where T : ITrackedMetric
         {
             return GetTrackedMetric<T>(null);
         }
 
+        /// <inheritdoc />
         public T GetTrackedMetric<T>(params object[] parameters) where T : ITrackedMetric
         {
+            // BUILD GETMETRIC EXPRESSION TREE
+
+            // PROTO: var interceptor = new MetricInterceptor(TelemetryClient.GetMetric("MessageCount", "QueueName"));
+
+            var dimensions = typeof(T).GetProperties()
+                                      .Where(
+                                          p =>
+                                              p.Name != nameof(ITrackedMetric.Metric)
+                                              && p.GetMethod.IsPublic
+                                              && p.GetMethod.ReturnType == typeof(string)
+                                      ).ToList();
+
+            if (dimensions.Count > 4)
+                throw new InvalidOperationException($"Application Insights only supports 4 metric dimensions and the type {typeof(T).FullName} has {dimensions.Count}");
+
+            var getMetricMethod = typeof(TelemetryClient).GetMethods()
+                                                         .Single(
+                                                             m =>
+                                                                 m.Name == nameof(TelemetryClient.GetMetric)
+                                                                 && m.GetParameters().All(p => p.ParameterType == typeof(string))
+                                                                 && m.GetParameters().Count(p => p.ParameterType == typeof(string)) == dimensions.Count + 1
+                                                         );
+
+            var metricIdParam = Expression.Parameter(typeof(string), "metricId");
+            var telemetryClientParam = Expression.Parameter(typeof(TelemetryClient), "telemetryClient");
+            var outMetric = Expression.Parameter(typeof(Metric), "result");
+
+            var getMetricCall = Expression.Call(telemetryClientParam, getMetricMethod, dimensions.Select(p => Expression.Constant(p.Name)).ToArray<Expression>());
+
+
+            // PROTO: END!
+
             var interceptor = new MetricInterceptor(TelemetryClient.GetMetric("MessageCount", "QueueName"));
             var options = new ProxyGenerationOptions(new MetricProxyGenerationHook());
 
@@ -520,43 +556,5 @@ namespace Eshopworld.Telemetry
             TelemetryClient.Flush();
             InternalClient.Flush();
         }
-    }
-
-
-
-
-
-
-
-
-    public class MetricInterceptor : IInterceptor
-    {
-        private readonly Metric _metric;
-
-        public MetricInterceptor(Metric metric)
-        {
-            _metric = metric;
-        }
-
-        public void Intercept(IInvocation invocation)
-        {
-            //_metric.TrackValue(invocation.Arguments[0], target.Queue); // requires a lot more work here
-            invocation.Proceed();
-        }
-    }
-
-    public class MetricProxyGenerationHook : IProxyGenerationHook
-    {
-        public bool ShouldInterceptMethod(Type type, MethodInfo memberInfo)
-        {
-            if (!memberInfo.Name.Equals($"set_{nameof(ITrackedMetric.Metric)}")) return false;
-            if (memberInfo.IsVirtual) return true;
-
-            throw new InvalidOperationException($"The Metric property setter needs to be marked as virtual on type {memberInfo.DeclaringType?.FullName}");
-        }
-
-        public void NonProxyableMemberNotification(Type type, MemberInfo memberInfo) { }
-
-        public void MethodsInspected() { }
     }
 }
