@@ -142,24 +142,6 @@ public class BigBrotherTest
         [Theory, IsUnit]
         [InlineData(true)]
         [InlineData(false)]
-        public void Test_With_MetricEvent(bool isInternal)
-        {
-            var telemetry = new MetricTelemetryEvent();
-
-            var bbMock = new Mock<BigBrother> { CallBase = true };
-            bbMock.Setup(x => x.TrackEvent(It.IsAny<EventTelemetry>(), isInternal)).Verifiable();
-
-            if (isInternal)
-                bbMock.Object.HandleInternalEvent(telemetry);
-            else
-                bbMock.Object.HandleAiEvent(telemetry);
-
-            bbMock.Verify();
-        }
-
-        [Theory, IsUnit]
-        [InlineData(true)]
-        [InlineData(false)]
         public void Test_With_TimedEvent(bool isInternal)
         {
             var telemetry = new TimedTelemetryEvent();

@@ -178,21 +178,24 @@ namespace Eshopworld.Telemetry
             ExceptionStream.OnNext(exEvent);
         }
 
+        /// <inheritdoc />
         public void Publish<T>(
             T @event,
             [CallerMemberName] string callerMemberName = "",
             [CallerFilePath] string callerFilePath = "",
-            [CallerLineNumber] int callerLineNumber = -1) where T : TelemetryEvent
+            [CallerLineNumber] int callerLineNumber = -1)
+                where T : TelemetryEvent
         {
-            Publish_(@event, callerMemberName, callerFilePath, callerLineNumber).Wait();
+            PublishAsync(@event, callerMemberName, callerFilePath, callerLineNumber).Wait();
         }
 
         /// <inheritdoc />
-        public async Task Publish_<T>(
-        T @event,
-        [CallerMemberName] string callerMemberName = "",
-        [CallerFilePath] string callerFilePath = "",
-        [CallerLineNumber] int callerLineNumber = -1) where T : TelemetryEvent
+        public async Task PublishAsync<T>(
+            T @event,
+            [CallerMemberName] string callerMemberName = "",
+            [CallerFilePath] string callerFilePath = "",
+            [CallerLineNumber] int callerLineNumber = -1)
+                where T : TelemetryEvent
         {
             if (TopicPublisher != null && @event is DomainEvent)
             {
@@ -230,12 +233,12 @@ namespace Eshopworld.Telemetry
                 });
         }
 
-        public T GetTrackedMetric<T>() where T : IBaseMetric
+        public T GetTrackedMetric<T>() where T : ITrackedMetric
         {
             return GetTrackedMetric<T>(null);
         }
 
-        public T GetTrackedMetric<T>(params object[] parameters) where T : IBaseMetric
+        public T GetTrackedMetric<T>(params object[] parameters) where T : ITrackedMetric
         {
             var interceptor = new MetricInterceptor(TelemetryClient.GetMetric("MessageCount", "QueueName"));
             var options = new ProxyGenerationOptions(new MetricProxyGenerationHook());
@@ -267,12 +270,6 @@ namespace Eshopworld.Telemetry
             InternalStream.OnNext(new FlushEvent()); // You're not guaranteed to flush this event
             TelemetryClient.Flush();
             InternalClient.Flush();
-        }
-
-        // REMOVE AFTER INTERFACE CHANGE
-        public IBigBrother UseKusto(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId)
-        {
-            return this;
         }
 
         /// <inheritdoc />
@@ -335,7 +332,6 @@ namespace Eshopworld.Telemetry
         {
             TelemetryStream.OfType<TelemetryEvent>()
                            .Where(e => !(e is ExceptionEvent) &&
-                                       !(e is MetricTelemetryEvent) &&
                                        !(e is TimedTelemetryEvent))
                            .Subscribe(HandleKustoEvent);
         }
@@ -533,16 +529,6 @@ namespace Eshopworld.Telemetry
 
 
 
-    public interface IBaseMetric
-    {
-        double Metric { set; }
-    }
-
-    public class FooMetric : IBaseMetric
-    {
-        public virtual double Metric { get; set; }
-    }
-
     public class MetricInterceptor : IInterceptor
     {
         private readonly Metric _metric;
@@ -563,7 +549,7 @@ namespace Eshopworld.Telemetry
     {
         public bool ShouldInterceptMethod(Type type, MethodInfo memberInfo)
         {
-            if (!memberInfo.Name.Equals($"set_{nameof(IBaseMetric.Metric)}")) return false;
+            if (!memberInfo.Name.Equals($"set_{nameof(ITrackedMetric.Metric)}")) return false;
             if (memberInfo.IsVirtual) return true;
 
             throw new InvalidOperationException($"The Metric property setter needs to be marked as virtual on type {memberInfo.DeclaringType?.FullName}");

@@ -31,16 +31,4 @@ public class BigBrotherUseKustoTest
 
         bb.Verify(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>()), Times.Never);
     }
-
-    [Fact, IsUnit]
-    public void Test_MetricTelemetry_DoesntStream_ToKusto()
-    {
-        var bb = new Mock<BigBrother>();
-        bb.Setup(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>())).Verifiable();
-
-        bb.Object.SetupKustoSubscription();
-        bb.Object.Publish(new KustoTestMetricEvent());
-
-        bb.Verify(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>()), Times.Never);
-    }
 }

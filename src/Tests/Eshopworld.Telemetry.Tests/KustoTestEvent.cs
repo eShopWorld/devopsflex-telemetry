@@ -28,5 +28,3 @@ public class KustoTestEvent : DomainEvent
 }
 
 public class KustoTestTimedEvent : TimedTelemetryEvent { }
-
-public class KustoTestMetricEvent : MetricTelemetryEvent { }

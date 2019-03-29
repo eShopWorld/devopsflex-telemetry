@@ -13,31 +13,28 @@ using Xunit;
 // ReSharper disable once CheckNamespace
 public class BigBrotherUseKustoLayerTest
 {
-    private readonly string _kustoName;
-    private readonly string _kustoLocation;
+    private readonly string _kustoUri;
+    private readonly string _kustoIngestUri;
     private readonly string _kustoDatabase;
-    private readonly string _kustoTenantId;
     private readonly ICslQueryProvider _kustoQueryClient;
 
     public BigBrotherUseKustoLayerTest()
     {
-        _kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Machine);
-        _kustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.Machine);
+        _kustoUri = Environment.GetEnvironmentVariable("kusto_uri", EnvironmentVariableTarget.Machine);
+        _kustoIngestUri = Environment.GetEnvironmentVariable("kusto_ingest_uri", EnvironmentVariableTarget.Machine);
         _kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
-        _kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);
 
-        if (_kustoName != null && _kustoLocation != null && _kustoDatabase != null && _kustoTenantId != null)
+        if (_kustoUri != null && _kustoIngestUri != null && _kustoDatabase != null)
         {
-            var kustoUri = $"https://{_kustoName}.{_kustoLocation}.kusto.windows.net";
-            var token = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, string.Empty).Result;
+            var token = new AzureServiceTokenProvider().GetAccessTokenAsync(_kustoUri, string.Empty).Result;
 
             _kustoQueryClient = KustoClientFactory.CreateCslQueryProvider(
-            new KustoConnectionStringBuilder(kustoUri)
-            {
-                FederatedSecurity = true,
-                InitialCatalog = _kustoDatabase,
-                ApplicationToken = token
-            });
+                new KustoConnectionStringBuilder(_kustoUri)
+                {
+                    FederatedSecurity = true,
+                    InitialCatalog = _kustoDatabase,
+                    ApplicationToken = token
+                });
         }
     }
 
@@ -47,7 +44,7 @@ public class BigBrotherUseKustoLayerTest
         _kustoQueryClient.Should().NotBeNull();
 
         var bb = new BigBrother("", "");
-        bb.UseKusto(_kustoName, _kustoLocation, _kustoDatabase, _kustoTenantId);
+        bb.UseKusto(_kustoUri, _kustoIngestUri, _kustoDatabase);
 
         var evt = new KustoTestEvent();
         bb.Publish(evt);
