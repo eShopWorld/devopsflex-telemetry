@@ -188,7 +188,9 @@ namespace Eshopworld.Telemetry
             [CallerLineNumber] int callerLineNumber = -1)
                 where T : TelemetryEvent
         {
+            // ReSharper disable ExplicitCallerInfoArgument
             PublishAsync(@event, callerMemberName, callerFilePath, callerLineNumber).Wait();
+            // ReSharper restore ExplicitCallerInfoArgument
         }
 
         /// <inheritdoc />
@@ -200,9 +202,7 @@ namespace Eshopworld.Telemetry
                 where T : TelemetryEvent
         {
             if (TopicPublisher != null && @event is DomainEvent)
-            {
                 await TopicPublisher.Publish(@event);
-            }
 
             if (@event is TelemetryEvent telemetryEvent)
             {
@@ -212,9 +212,7 @@ namespace Eshopworld.Telemetry
             }
 
             if (@event is TimedTelemetryEvent timedEvent)
-            {
                 timedEvent.End();
-            }
 
             TelemetryStream.OnNext(@event);
         }
@@ -244,37 +242,11 @@ namespace Eshopworld.Telemetry
         /// <inheritdoc />
         public T GetTrackedMetric<T>(params object[] parameters) where T : ITrackedMetric
         {
-            // BUILD GETMETRIC EXPRESSION TREE
-
-            // PROTO: var interceptor = new MetricInterceptor(TelemetryClient.GetMetric("MessageCount", "QueueName"));
-
-            var dimensions = typeof(T).GetProperties()
-                                      .Where(
-                                          p =>
-                                              p.Name != nameof(ITrackedMetric.Metric)
-                                              && p.GetMethod.IsPublic
-                                              && p.GetMethod.ReturnType == typeof(string)
-                                      ).ToList();
-
-            if (dimensions.Count > 4)
-                throw new InvalidOperationException($"Application Insights only supports 4 metric dimensions and the type {typeof(T).FullName} has {dimensions.Count}");
-
-            var getMetricMethod = typeof(TelemetryClient).GetMethods()
-                                                         .Single(
-                                                             m =>
-                                                                 m.Name == nameof(TelemetryClient.GetMetric)
-                                                                 && m.GetParameters().All(p => p.ParameterType == typeof(string))
-                                                                 && m.GetParameters().Count(p => p.ParameterType == typeof(string)) == dimensions.Count + 1
-                                                         );
-
-            var metricIdParam = Expression.Parameter(typeof(string), "metricId");
-            var telemetryClientParam = Expression.Parameter(typeof(TelemetryClient), "telemetryClient");
-            var outMetric = Expression.Parameter(typeof(Metric), "result");
-
-            var getMetricCall = Expression.Call(telemetryClientParam, getMetricMethod, dimensions.Select(p => Expression.Constant(p.Name)).ToArray<Expression>());
+            var func = typeof(T).GenerateExpressionGetMetric();
+            var metric = func(TelemetryClient, typeof(T));
 
 
-            // PROTO: END!
+
 
             var interceptor = new MetricInterceptor(TelemetryClient.GetMetric("MessageCount", "QueueName"));
             var options = new ProxyGenerationOptions(new MetricProxyGenerationHook());
@@ -293,9 +265,7 @@ namespace Eshopworld.Telemetry
         {
 #if DEBUG
             if (TelemetryConfiguration.Active != null && TelemetryConfiguration.Active.TelemetryChannel != null)
-            {
                 TelemetryConfiguration.Active.TelemetryChannel.DeveloperMode = true;
-            }
 #endif
             return this;
         }
@@ -342,12 +312,7 @@ namespace Eshopworld.Telemetry
         internal void SetupTelemetryClient(string aiKey, [NotNull]string internalKey)
         {
             if (aiKey != null)
-            {
-                TelemetryClient = new TelemetryClient
-                {
-                    InstrumentationKey = aiKey
-                };
-            }
+                TelemetryClient = new TelemetryClient { InstrumentationKey = aiKey };
 
             InternalClient.InstrumentationKey = internalKey;
         }
@@ -399,13 +364,9 @@ namespace Eshopworld.Telemetry
         internal virtual void TrackEvent(EventTelemetry telemetry, bool isInternal = false)
         {
             if (isInternal)
-            {
                 InternalClient.TrackEvent(telemetry);
-            }
             else
-            {
                 TelemetryClient.TrackEvent(telemetry);
-            }
         }
 
         /// <summary>
@@ -417,13 +378,9 @@ namespace Eshopworld.Telemetry
         internal virtual void TrackException(ExceptionTelemetry telemetry, bool isInternal = false)
         {
             if (isInternal)
-            {
                 InternalClient.TrackException(telemetry);
-            }
             else
-            {
                 TelemetryClient.TrackException(telemetry);
-            }
         }
 
         /// <summary>
