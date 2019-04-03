@@ -41,8 +41,7 @@ namespace Eshopworld.Telemetry
                 getMetricMethod,
                 dimensions.Select(p => Expression.Constant(p.Name))
                           .Cast<Expression>()
-                          .Prepend(Expression.Constant(metricType.GetType().Name))
-                          .Prepend(Expression.Constant(metricType.GetType().Name))
+                          .Prepend(Expression.Constant(type.Name))
                           .ToArray());
 
             return Expression.Lambda<Func<TelemetryClient, Type, Metric>>(getMetricCall, telemetryClientParam, metricType).Compile();
