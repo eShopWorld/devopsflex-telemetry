@@ -57,9 +57,25 @@ namespace Eshopworld.Telemetry
         /// </summary>
         internal static readonly TelemetryClient InternalClient = new TelemetryClient();
 
+        /// <summary>
+        /// The dynamic proxies generator.
+        /// </summary>
         internal readonly ProxyGenerator Generator = new ProxyGenerator();
 
+        /// <summary>
+        /// The kusto mappings for the current types being streamed to kusto.
+        /// </summary>
         internal readonly ConcurrentDictionary<Type, KustoQueuedIngestionProperties> KustoMappings = new ConcurrentDictionary<Type, KustoQueuedIngestionProperties>();
+
+        /// <summary>
+        /// The mappings between metric <see cref="Type"/> and the <see cref="Metric"/> object itself.
+        /// </summary>
+        internal readonly ConcurrentDictionary<Type, Metric> MetricMappings = new ConcurrentDictionary<Type, Metric>();
+
+        /// <summary>
+        /// The mappings between metric <see cref="Type"/> and the delegate generated to call <see cref="Metric.TrackValue(double)"/>.
+        /// </summary>
+        internal readonly ConcurrentDictionary<Type, Func<Metric, ITrackedMetric, bool>> TrackValueMappings = new ConcurrentDictionary<Type, Func<Metric, ITrackedMetric, bool>>();
 
         /// <summary>
         /// Contains the <see cref="IPublishEvents"/> instance used to publish to topics.
@@ -239,13 +255,10 @@ namespace Eshopworld.Telemetry
         /// <inheritdoc />
         public T GetTrackedMetric<T>(params object[] parameters) where T : ITrackedMetric
         {
-            var func = typeof(T).GenerateExpressionGetMetric();
-            var metric = func(TelemetryClient, typeof(T));
+            var metric = MetricMappings.GetOrAdd(typeof(T), TelemetryClient.InvokeGetMetric<T>());
+            var trackFunc = TrackValueMappings.GetOrAdd(typeof(T), typeof(T).GenerateExpressionTrackValue());
 
-
-
-
-            var interceptor = new MetricInterceptor(TelemetryClient.GetMetric("MessageCount", "QueueName"));
+            var interceptor = new MetricInterceptor(metric, trackFunc);
             var options = new ProxyGenerationOptions(new MetricProxyGenerationHook());
 
             T proxy;
@@ -270,7 +283,7 @@ namespace Eshopworld.Telemetry
         /// <inheritdoc />
         public void Flush()
         {
-            InternalStream.OnNext(new FlushEvent()); // You're not guaranteed to flush this event
+            InternalStream.OnNext(new FlushEvent());
             TelemetryClient.Flush();
             InternalClient.Flush();
         }
@@ -450,22 +463,17 @@ namespace Eshopworld.Telemetry
         {
             var eventType = @event.GetType();
 
-            KustoQueuedIngestionProperties ingestProps;
-            if (!KustoMappings.ContainsKey(eventType) && KustoMappings.TryAdd(eventType, new KustoQueuedIngestionProperties(KustoDbName, "Unknown")))
-            {
-                ingestProps = KustoMappings[eventType];
-
-                ingestProps.TableName = KustoAdminClient.GenerateTableFromType(eventType);
-                ingestProps.JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(eventType);
-                ingestProps.ReportLevel = IngestionReportLevel.FailuresOnly;
-                ingestProps.ReportMethod = IngestionReportMethod.Queue;
-                ingestProps.FlushImmediately = true;
-                ingestProps.Format = DataSourceFormat.json;
-            }
-            else
-            {
-                ingestProps = KustoMappings[eventType];
-            }
+            var ingestProps = KustoMappings.GetOrAdd(
+                eventType,
+                new KustoQueuedIngestionProperties(KustoDbName, "Unknown")
+                {
+                    TableName = KustoAdminClient.GenerateTableFromType(eventType),
+                    JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(eventType),
+                    ReportLevel = IngestionReportLevel.FailuresOnly,
+                    ReportMethod = IngestionReportMethod.Queue,
+                    FlushImmediately = true,
+                    Format = DataSourceFormat.json
+                });
 
             using (var stream = new MemoryStream())
             using (var writer = new StreamWriter(stream))

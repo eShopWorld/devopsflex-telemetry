@@ -1,4 +1,6 @@
-﻿using Castle.DynamicProxy;
+﻿using System;
+using Castle.DynamicProxy;
+using Eshopworld.Core;
 using Microsoft.ApplicationInsights;
 
 namespace Eshopworld.Telemetry
@@ -6,15 +8,19 @@ namespace Eshopworld.Telemetry
     public class MetricInterceptor : IInterceptor
     {
         private readonly Metric _metric;
+        private readonly Func<Metric, ITrackedMetric, bool> _func;
 
-        public MetricInterceptor(Metric metric)
+        public MetricInterceptor(Metric metric, Func<Metric, ITrackedMetric, bool> func)
         {
             _metric = metric;
+            _func = func;
         }
 
         public void Intercept(IInvocation invocation)
         {
-            //_metric.TrackValue(invocation.Arguments[0], target.Queue); // requires a lot more work here
+            var target = (ITrackedMetric) invocation.InvocationTarget;
+
+            var result = _func(_metric, target);
             invocation.Proceed();
         }
     }

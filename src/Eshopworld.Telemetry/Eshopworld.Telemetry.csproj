@@ -31,7 +31,7 @@
 
   <ItemGroup>
     <PackageReference Include="Castle.Core" Version="4.3.1" />
-    <PackageReference Include="Eshopworld.Core" Version="3.0.0-beta1" />
+    <PackageReference Include="Eshopworld.Core" Version="3.0.0-beta2" />
     <PackageReference Include="Microsoft.ApplicationInsights" Version="2.9.1" />
     <PackageReference Include="Microsoft.Azure.Kusto.Ingest.NETStandard" Version="6.1.8" />
     <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.0.3" />
