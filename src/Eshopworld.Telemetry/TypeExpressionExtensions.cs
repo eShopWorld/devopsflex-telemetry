@@ -13,6 +13,11 @@ namespace Eshopworld.Telemetry
     /// </summary>
     public static class TypeExpressionExtensions
     {
+        /// <summary>
+        /// Gets all the valid properties for <see cref="Metric"/> dimensions that the <see cref="Type"/> contains
+        /// </summary>
+        /// <param name="type">The <see cref="Type"/> that we are getting the metric dimensions for.</param>
+        /// <returns>A list of all the properties that represent <see cref="Metric"/> dimensions.</returns>
         public static List<PropertyInfo> GetMetricDimensions(this Type type)
         {
             return type.GetProperties()
@@ -30,7 +35,7 @@ namespace Eshopworld.Telemetry
         /// <returns>The compiled expression tree.</returns>
         /// <typeparam name="T">The <see cref="ITrackedMetric"/> type that we are issuing the metric for.</typeparam>
         /// <param name="client">The <see cref="TelemetryClient"/> we're using to create the tracked Metric.</param>
-        /// <returns></returns>
+        /// <returns>The <see cref="Metric"/> that's the result of invoking <see cref="TelemetryClient.GetMetric(string)"/></returns>
         public static Metric InvokeGetMetric<T>(this TelemetryClient client) where T : ITrackedMetric
         {
             var type = typeof(T);
@@ -52,10 +57,11 @@ namespace Eshopworld.Telemetry
         }
 
         /// <summary>
-        /// 
+        /// Validate, generate and compile an expression tree to get all dimension properties and call the right target for (up to)
+        ///     <see cref="Metric.TrackValue(double, string, string, string, string)"/>
         /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
+        /// <param name="type">The real type of the TelemetryMetric object we want to track value for.</param>
+        /// <returns>The compiled expression tree.</returns>
         public static Func<Metric, ITrackedMetric, bool> GenerateExpressionTrackValue(this Type type)
         {
             var dimensions = type.GetMetricDimensions();
@@ -71,11 +77,13 @@ namespace Eshopworld.Telemetry
             var metric = Expression.Parameter(typeof(Metric), "metric");
             var trackedMetric = Expression.Parameter(typeof(ITrackedMetric), "trackedMetric");
 
+            var trackedMetricCast = Expression.Convert(trackedMetric, type);
+
             var getMetricCall = Expression.Call(
                 metric,
                 trackValueMethod,
-                dimensions.Select(p => Expression.Property(trackedMetric, p.GetMethod))
-                          .Prepend(Expression.Property(trackedMetric, valueProperty.GetMethod))
+                dimensions.Select(p => Expression.Property(trackedMetricCast, p.GetMethod))
+                          .Prepend(Expression.Property(trackedMetricCast, valueProperty.GetMethod))
                           .Cast<Expression>()
                           .ToArray());
 

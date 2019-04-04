@@ -4,6 +4,7 @@ using Eshopworld.Telemetry;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
 using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Metrics;
 using Xunit;
 
 // ReSharper disable once CheckNamespace
@@ -11,7 +12,7 @@ public class MetricTest
 {
     public class GetMetricDimensions
     {
-        [Fact, IsDev]
+        [Fact, IsUnit]
         public void Test_TestMetric_WithThreeDimensions()
         {
             var dimensions = typeof(TestMetric).GetMetricDimensions()
@@ -24,7 +25,7 @@ public class MetricTest
             dimensions.Should().Contain(nameof(TestMetric.DimensionThree));
         }
 
-        [Fact, IsDev]
+        [Fact, IsUnit]
         public void Test_TestMetric_WithZeroDimensions()
         {
             var dimensions = typeof(TestMetricZeroDimensions).GetMetricDimensions()
@@ -37,7 +38,7 @@ public class MetricTest
 
     public class InvokeGetMetric
     {
-        [Fact, IsDev]
+        [Fact, IsUnit]
         public void Test_GetTestMetric()
         {
             var client = new TelemetryClient();
@@ -52,7 +53,11 @@ public class MetricTest
 
     public class GenerateExpressionTrackValue
     {
-        [Fact, IsDev]
+        /// <summary>
+        /// Currently there's no way to assert that a <see cref="Metric"/> tracks events, so this test is only half-useful:
+        ///     It only validates the integrity of the expression tree, not it's behaviour.
+        /// </summary>
+        [Fact, IsUnit]
         public void Test_TrackValue_WithSingleValue()
         {
             var testMetric = new TestMetric(Lorem.GetWord(), Lorem.GetWord(), Lorem.GetWord());
