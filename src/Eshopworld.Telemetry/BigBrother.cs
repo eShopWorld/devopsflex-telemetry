@@ -48,6 +48,15 @@ namespace Eshopworld.Telemetry
         internal static readonly SingleReplayCast<ExceptionEvent> ReplayCast = new SingleReplayCast<ExceptionEvent>(ExceptionStream);
 
         /// <summary>
+        /// Holds a static reference to the <see cref="JsonSerializerSettings"/> used when serializing events to Kusto.
+        /// </summary>
+        internal static readonly JsonSerializerSettings KustoJsonSettings =
+            new JsonSerializerSettings
+            {
+                ContractResolver = new EventContractResolver(EventFilterTargets.Kusto)
+            };
+
+        /// <summary>
         /// The main event stream that's exposed publicly (yea ... subjects are bad ... I'll redesign when and if time allows).
         /// </summary>
         internal readonly Subject<BaseEvent> TelemetryStream = new Subject<BaseEvent>();
@@ -478,7 +487,7 @@ namespace Eshopworld.Telemetry
             using (var stream = new MemoryStream())
             using (var writer = new StreamWriter(stream))
             {
-                writer.WriteLine(JsonConvert.SerializeObject(@event));
+                writer.WriteLine(JsonConvert.SerializeObject(@event, KustoJsonSettings));
                 writer.Flush();
                 stream.Seek(0, SeekOrigin.Begin);
 
