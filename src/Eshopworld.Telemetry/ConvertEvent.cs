@@ -108,14 +108,26 @@ namespace Eshopworld.Telemetry
                             throw new InvalidOperationException($"Attempt to publish an Exception Event without an exception for type {exceptionTelemetry.GetType().FullName}");
                         }
 
-                        exceptionTelemetry.Message = exceptionEvent.Exception.Message;
-                        exceptionTelemetry.Exception = exceptionEvent.Exception;
+                        var eventException = exceptionEvent.Exception;
+                        if (exceptionEvent.UnwrapAggregate)
+                        {
+                            while (eventException is AggregateException aex)
+                            {
+                                if (aex.InnerExceptions.Any())
+                                    eventException = aex.InnerExceptions.First();
+                                else
+                                    break;
+                            }
+                        }
+
+                        exceptionTelemetry.Message = eventException.Message;
+                        exceptionTelemetry.Exception = eventException;
 
                         if (exceptionEvent.SimplifyStackTrace)
                         {
                             try
                             {
-                                var stackTrace = StackTraceHelper.SimplifyStackTrace(exceptionTelemetry.Exception);
+                                var stackTrace = StackTraceHelper.SimplifyStackTrace(eventException);
                                 exceptionTelemetry.SetParsedStack(stackTrace.ToArray());
                             }
                             catch (Exception ex)
