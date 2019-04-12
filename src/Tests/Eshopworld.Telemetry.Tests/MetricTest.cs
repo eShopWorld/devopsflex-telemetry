@@ -1,15 +1,19 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Eshopworld.Core;
 using Eshopworld.Telemetry;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
 using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.Metrics;
+using Microsoft.ApplicationInsights.Extensibility;
 using Xunit;
 
 // ReSharper disable once CheckNamespace
 public class MetricTest
 {
+    private static readonly string InstrumentationKey = Environment.GetEnvironmentVariable("devai") ?? "";
+
     public class GetMetricDimensions
     {
         [Fact, IsUnit]
@@ -41,13 +45,15 @@ public class MetricTest
         [Fact, IsUnit]
         public void Test_GetTestMetric()
         {
-            var client = new TelemetryClient();
+            var client = new TelemetryClient(new TelemetryConfiguration(InstrumentationKey));
             var expectedDimensions = typeof(TestMetric).GetMetricDimensions();
 
             var metric = client.InvokeGetMetric<TestMetric>();
 
             metric.Identifier.MetricId.Should().Be(nameof(TestMetric));
             metric.Identifier.GetDimensionNames().Should().BeEquivalentTo(expectedDimensions.Select(p => p.Name));
+
+            metric.TrackValue(999, "Dim1", "Dim2", "Dim3");
         }
     }
 
@@ -61,18 +67,42 @@ public class MetricTest
         public void Test_TrackValue_WithSingleValue()
         {
             var testMetric = new TestMetric(Lorem.GetWord(), Lorem.GetWord(), Lorem.GetWord());
-            var client = new TelemetryClient();
+            var client = new TelemetryClient(new TelemetryConfiguration(InstrumentationKey));
             var metric = client.InvokeGetMetric<TestMetric>();
 
             var func = typeof(TestMetric).GenerateExpressionTrackValue();
             testMetric.Metric = 999;
             func(metric, testMetric);
+
+            client.Flush();
         }
+    }
+
+    [Fact, IsDev]
+    public async Task Foo()
+    {
+        var rng = new Random();
+        var bb = new BigBrother(InstrumentationKey, InstrumentationKey);
+        var metric = bb.GetTrackedMetric<TestMetric>();
+        metric.DimensionOne = Lorem.GetWord();
+        metric.DimensionTwo = Lorem.GetWord();
+        metric.DimensionThree = Lorem.GetWord();
+
+        for (int i = 0; i < 10; i++)
+        {
+            metric.Metric = rng.Next(100);
+            await Task.Delay(TimeSpan.FromSeconds(2));
+        }
+
+        bb.Flush();
+        await Task.Delay(TimeSpan.FromSeconds(5));
     }
 }
 
 public class TestMetric : ITrackedMetric
 {
+    public TestMetric() { }
+
     public TestMetric(string dimensionOne, string dimensionTwo, string dimensionThree)
     {
         DimensionOne = dimensionOne;
@@ -88,7 +118,7 @@ public class TestMetric : ITrackedMetric
 
     public string DimensionThree { get; set; }
 
-    public int Crazy { get; set; }
+    public int Useless { get; set; }
 }
 
 public class TestMetricZeroDimensions : ITrackedMetric

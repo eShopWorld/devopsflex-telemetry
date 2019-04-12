@@ -20,6 +20,7 @@ using Kusto.Ingest;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.ApplicationInsights.Metrics.Extensibility;
 using Microsoft.Azure.Services.AppAuthentication;
 using Newtonsoft.Json;
 
@@ -331,7 +332,7 @@ namespace Eshopworld.Telemetry
         internal void SetupTelemetryClient(string aiKey, [NotNull]string internalKey)
         {
             if (aiKey != null)
-                TelemetryClient = new TelemetryClient { InstrumentationKey = aiKey };
+                TelemetryClient = new TelemetryClient(new TelemetryConfiguration(aiKey));
 
             InternalClient.InstrumentationKey = internalKey;
         }
