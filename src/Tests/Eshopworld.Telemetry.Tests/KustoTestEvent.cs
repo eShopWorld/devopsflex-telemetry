@@ -2,6 +2,7 @@
 using Eshopworld.Core;
 using Eshopworld.Tests.Core;
 
+// ReSharper disable once CheckNamespace
 public class KustoTestEvent : DomainEvent
 {
     public KustoTestEvent()

@@ -1,8 +1,8 @@
-﻿namespace Eshopworld.Telemetry
-{
-    using System;
-    using Core;
+﻿using System;
+using Eshopworld.Core;
 
+namespace Eshopworld.Telemetry
+{
     public static class MessagingConfigurationExtensions
     {
         /// <summary>

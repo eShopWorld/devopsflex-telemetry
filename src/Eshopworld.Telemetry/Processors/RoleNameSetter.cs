@@ -1,10 +1,10 @@
-﻿namespace Eshopworld.Telemetry.Processors
-{
-    using System;
-    using JetBrains.Annotations;
-    using Microsoft.ApplicationInsights.Channel;
-    using Microsoft.ApplicationInsights.Extensibility;
+﻿using System;
+using JetBrains.Annotations;
+using Microsoft.ApplicationInsights.Channel;
+using Microsoft.ApplicationInsights.Extensibility;
 
+namespace Eshopworld.Telemetry.Processors
+{
     /// <summary>
     /// Sets the 'cloud_RoleName' role name attribute on a AI telemetry item. 
     /// The RoleName will default to the <see cref="System.Reflection.Assembly.GetEntryAssembly()">EntryAssembly</see> name if possible. 

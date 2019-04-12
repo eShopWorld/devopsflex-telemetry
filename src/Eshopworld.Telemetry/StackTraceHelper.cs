@@ -1,11 +1,11 @@
-﻿namespace Eshopworld.Telemetry
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.Reflection;
-    using System.Security;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection;
+using System.Security;
 
+namespace Eshopworld.Telemetry
+{
     internal static class StackTraceHelper
     {
         /// <summary>

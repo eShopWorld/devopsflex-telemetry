@@ -1,13 +1,14 @@
-﻿namespace Eshopworld.Telemetry
-{
-    using System;
-    using System.Diagnostics;
-    using System.Linq;
-    using Core;
-    using JetBrains.Annotations;
-    using Microsoft.ApplicationInsights.Channel;
-    using Microsoft.ApplicationInsights.DataContracts;
+﻿using System;
+using System.Diagnostics;
+using System.Linq;
+using Eshopworld.Core;
+using Eshopworld.Telemetry.InternalEvents;
+using JetBrains.Annotations;
+using Microsoft.ApplicationInsights.Channel;
+using Microsoft.ApplicationInsights.DataContracts;
 
+namespace Eshopworld.Telemetry
+{
     /// <summary>
     /// Handles conversion between <see cref="BaseEvent"/> and <see cref="ITelemetry"/> Application Insights events.
     /// </summary>
@@ -135,16 +136,6 @@
 
                     break;
             }
-        }
-
-        internal class SimplifiedExceptionEvent : ExceptionEvent
-        {
-            public SimplifiedExceptionEvent(Exception exception)
-                : base(exception)
-            {
-            }
-
-            public override bool SimplifyStackTrace => false; // Simplification failed so do not use it to simplify this stack trace
         }
     }
 }

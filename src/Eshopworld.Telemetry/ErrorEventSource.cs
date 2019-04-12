@@ -1,10 +1,10 @@
-﻿namespace Eshopworld.Telemetry
-{
-    using System;
-    using System.Diagnostics.Tracing;
-    using Core;
-    using Newtonsoft.Json;
+﻿using System;
+using System.Diagnostics.Tracing;
+using Eshopworld.Core;
+using Newtonsoft.Json;
 
+namespace Eshopworld.Telemetry
+{
     /// <summary>
     /// Provides the ability to create exception events for event tracing for Windows (ETW).
     /// </summary>

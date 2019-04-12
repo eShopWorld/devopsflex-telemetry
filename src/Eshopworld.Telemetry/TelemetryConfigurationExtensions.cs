@@ -1,9 +1,9 @@
-﻿namespace Eshopworld.Telemetry
-{
-    using System;
-    using System.Reactive.Linq;
-    using Core;
+﻿using System;
+using System.Reactive.Linq;
+using Eshopworld.Core;
 
+namespace Eshopworld.Telemetry
+{
     /// <summary>
     /// Fluent API extensions for configuring <see cref="BigBrother"/>.
     /// By design the extension methods aren't against <see cref="IBigBrother"/>, because they are meant to be used once, during DI bootstrapping.
