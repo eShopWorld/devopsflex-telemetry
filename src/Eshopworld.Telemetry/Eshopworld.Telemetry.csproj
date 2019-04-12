@@ -5,6 +5,7 @@
     <Version>3.0.0</Version>
     <PackageReleaseNotes>
       - Added Metrics
+      - Added support for event filters
       - Async'ed the non-anonymous .Publish
       - Added an AggregateException unwrapper
       - Improved the overall integration with Kusto
@@ -18,7 +19,7 @@
     <Authors>David Rodrigues, Oisin Haken, David Guerin, Artur Zgodzinski</Authors>
     <Copyright>Copyright eShopWorld 2018</Copyright>
     <Description>eShopWorld common telemetry application insights</Description>
-    <PackageLicenseUrl>https://github.com/eShopWorld/telemetry/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/eShopWorld/telemetry</PackageProjectUrl>
     <PackageTags>Application Insights, Telemetry, Log</PackageTags>
     <RepositoryUrl>https://github.com/eShopWorld/telemetry</RepositoryUrl>

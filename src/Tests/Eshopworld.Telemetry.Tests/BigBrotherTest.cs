@@ -18,16 +18,18 @@ public class BigBrotherTest
     public class Dev
     {
         [Fact, IsDev]
-        public void EntryPoint_PushEvent()
+        public async Task EntryPoint_PushEvent()
         {
             IBigBrother bb = new BigBrother(DevKey, DevKey).DeveloperMode();
 
-            bb.Publish(new TestTelemetryEvent());
+            await bb.PublishAsync(new TestTelemetryEvent());
             bb.Flush();
+
+            throw new AggregateException();
         }
 
         [Fact, IsDev]
-        public void EntryPoint_PushException()
+        public async Task EntryPoint_PushException()
         {
             const string message = "KABOOM!!!";
             IBigBrother bb = new BigBrother(DevKey, DevKey).DeveloperMode();
@@ -38,17 +40,17 @@ public class BigBrotherTest
             }
             catch (Exception ex)
             {
-                bb.Publish(ex.ToExceptionEvent());
+                await bb.PublishAsync(ex.ToExceptionEvent());
                 bb.Flush();
             }
         }
 
         [Fact, IsDev]
-        public void EntryPoint_PushTimed()
+        public async Task EntryPoint_PushTimed()
         {
             IBigBrother bb = new BigBrother(DevKey, DevKey).DeveloperMode();
 
-            bb.Publish(new TestTimedEvent());
+            await bb.PublishAsync(new TestTimedEvent());
             bb.Flush();
         }
 

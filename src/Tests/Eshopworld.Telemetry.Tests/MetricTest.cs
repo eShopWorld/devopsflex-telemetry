@@ -79,7 +79,7 @@ public class MetricTest
     }
 
     [Fact, IsDev]
-    public async Task Foo()
+    public async Task Test_MetricPush_10Samples()
     {
         var rng = new Random();
         var bb = new BigBrother(InstrumentationKey, InstrumentationKey);

@@ -113,8 +113,8 @@ namespace Eshopworld.Telemetry
                         {
                             while (eventException is AggregateException aex)
                             {
-                                if (aex.InnerExceptions.Any())
-                                    eventException = aex.InnerExceptions.First();
+                                if (aex.InnerException != null)
+                                    eventException = aex.InnerException;
                                 else
                                     break;
                             }
