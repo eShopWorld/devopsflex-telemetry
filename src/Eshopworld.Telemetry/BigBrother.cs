@@ -272,7 +272,7 @@ namespace Eshopworld.Telemetry
             var metric = MetricMappings.GetOrAdd(typeof(T), TelemetryClient.InvokeGetMetric<T>());
             var trackFunc = TrackValueMappings.GetOrAdd(typeof(T), typeof(T).GenerateExpressionTrackValue());
 
-            var interceptor = new MetricInterceptor(metric, trackFunc);
+            var interceptor = new MetricInterceptor(metric, trackFunc, Observer.Create<TelemetryEvent>(_ => { }));
             var options = new ProxyGenerationOptions(new MetricProxyGenerationHook());
 
             T proxy;
