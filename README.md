@@ -116,11 +116,83 @@ public BigBrother([NotNull]TelemetryClient client, [NotNull]string internalKey)
 
 ### Using Application Insights Metrics
 
+BigBrother supports [Application Insights Metrics](https://docs.microsoft.com/en-us/azure/azure-monitor/app/api-custom-events-metrics#getmetric) with a similar usage as the one in the `TelemetryClient`, by doing:
+
+```c#
+bb.GetTrackedMetric<MyMetric>();
+```
+
+This will give you a `DynamicProxy` to your metric object that has an interceptor on the `Metric` property setter, everytime it's set, it will invoke a `TrackValue` call on the `Metric`.
+
+The design starts with your own custom Metric type, that implements `ItrackedMetric` where any property of type string is considered a `Metric` dimension:
+
+```c#
+public class MyMetric : ITrackedMetric
+{
+    public virtual double Metric { get; set; } // needs to be marked as virtual
+
+    public string DimensionOne { get; set; }
+
+    public string DimensionTwo { get; set; }
+
+    public string DimensionThree { get; set; }
+}
+```
+
+Note that the `Metric` property needs to be marked as virtual, otherwise a call to `GetTrackedMetric` will throw an `InvalidOperationException` because `DynamicProxy` won't be able to set the interceptor.
+
+The `Metric` dimensions are treated as keys, so each invididual set of dimension keys is aggregated on a different time series and pushed as a different metric to Application Insights. This is important because if a property is changed in the middle of metric values, that means the new values will be tracked on a new time series, here's an example:
+
+```c#
+var myMetric = bb.GetTrackedMetric<MyMetric>();
+myMetric.DimensionOne = "one";
+myMetric.DimensionTwo = "two";
+myMetric.DimensionThree = "three";
+
+myMetric.Metric = 1;
+myMetric.Metric = 2;
+myMetric.Metric = 3;
+
+myMetric.DimensionOne = "not one";
+
+myMetric.Metric = 4; // value 4 is now tracked on a different time series - dimensions have changed
+```
+
+To avoid this type of behaviour we advise developers to create a `Metric` object per set of metric keys and if possible, make the class immutable.
+
+### Event Filters
+
+TODO
+
+### Messaging integration
+
 TODO
 
 ### Kusto (Azure Data Explorer) integration
 
-TODO
+There is a one time schema support for publishing certain Telemetry events to [Azure Data Explorer](https://azure.microsoft.com/en-us/services/data-explorer/).
+
+We do not support schema changes in the current version, so if the event structure changes, the schema must be manually updated, or deleted before a new event can be sucessfully pushed.
+
+The integration with Kusto uses [Managed Identities](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview), so it will require proper access during development sessions.
+
+To use it just tell `BigBrother` to `.UseKusto`:
+
+```c#
+bb.UseKusto("ENGINE URI", "INGESTION URI", "DATABASE");
+```
+
+From this point forward all `TelemetryEvent` publishes that aren't an `ExceptionEvent` or a `TimedTelemetryEvent` will be streamed to the Kusto engine.
+
+```c#
+internal void SetupKustoSubscription()
+{
+    TelemetryStream.OfType<TelemetryEvent>()
+                   .Where(e => !(e is ExceptionEvent) &&
+                               !(e is TimedTelemetryEvent))
+                   .Subscribe(HandleKustoEvent);
+}
+```
 
 ### EventSource and Trace sinks
 
