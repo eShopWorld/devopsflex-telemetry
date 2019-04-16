@@ -247,6 +247,10 @@ namespace Eshopworld.Telemetry
             [CallerFilePath] string callerFilePath = "",
             [CallerLineNumber] int callerLineNumber = -1)
         {
+            if (@event is BaseEvent)
+                throw new InvalidOperationException(
+                    $"This method is designed for anonymous classes, and you're pushing a {@event.GetType().Name} event that inherits from BaseEvent. Try using PublishAsync instead.");
+
             TelemetryStream.OnNext(
                 new AnonymousTelemetryEvent(@event)
                 {
