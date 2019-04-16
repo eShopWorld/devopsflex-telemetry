@@ -489,7 +489,7 @@ namespace Eshopworld.Telemetry
                     Format = DataSourceFormat.json
                 });
 
-            using (var stream = new MemoryStream())
+            var stream = new MemoryStream();
             using (var writer = new StreamWriter(stream))
             {
                 writer.WriteLine(JsonConvert.SerializeObject(@event, KustoJsonSettings));

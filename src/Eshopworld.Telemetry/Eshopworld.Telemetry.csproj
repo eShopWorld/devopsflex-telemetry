@@ -27,6 +27,7 @@
 
     <DebugType>Full</DebugType>
     <LangVersion>latest</LangVersion>
+    <SonarQubeTestProject>False</SonarQubeTestProject>
 
   </PropertyGroup>
 
