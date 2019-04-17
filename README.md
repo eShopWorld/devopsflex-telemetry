@@ -163,7 +163,7 @@ To avoid this type of behaviour we advise developers to create a `Metric` object
 
 ### Event Filters
 
-BigBrother honours `EventFilter`, both when publishing to Application Insights and to Kusto. To use them just mark properties that you want to ignore:
+`BigBrother` honours `EventFilter`, both when publishing to Application Insights and to Kusto. To use them just mark properties that you want to ignore:
 
 ```c#
 public class PaymentEvent : TelemetryEvent
@@ -184,7 +184,13 @@ public class PaymentEvent : TelemetryEvent
 
 ### Messaging integration
 
-TODO
+BigBrother contains a routing mechanism to `Messenger`, so that `DomainEvent` can be published onto [Azure Service Bus](https://azure.microsoft.com/en-us/services/service-bus/) Topics. To use it, simply set it up with:
+
+```c#
+bb.PublishEventsToTopics(new Messenger("MY CONNECTION STRING", "MY SUBSCRIPTION ID"));
+```
+
+`BigBrother` has no knowledge of messaging principles, it just acts as a forwarder, for `DomainEvent` to an instance of `Messenger`.
 
 ### Kusto (Azure Data Explorer) integration
 
