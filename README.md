@@ -136,7 +136,8 @@ public class MyMetric : ITrackedMetric
     public string DimensionTwo { get; set; }
 
     public string DimensionThree { get; set; }
-}
+
+    public int NotADimension { get; set; }} // not considered a dimension - it's not of type string
 ```
 
 Note that the `Metric` property needs to be marked as virtual, otherwise a call to `GetTrackedMetric` will throw an `InvalidOperationException` because `DynamicProxy` won't be able to set the interceptor.
@@ -162,7 +163,24 @@ To avoid this type of behaviour we advise developers to create a `Metric` object
 
 ### Event Filters
 
-TODO
+BigBrother honours `EventFilter`, both when publishing to Application Insights and to Kusto. To use them just mark properties that you want to ignore:
+
+```c#
+public class PaymentEvent : TelemetryEvent
+{
+    public DateTime ProcessedOn { get; set; }
+
+    public float Ammount { get; set; }
+
+    public string Currency { get; set; }
+
+    [EventFilter(EventFilterTargets.ApplicationInsights | EventFilterTargets.Messaging)]
+    public string NotAKustoProperty { get; set; }
+
+    [EventFilter(EventFilterTargets.ApplicationInsights)]
+    public string JustForApplicationInsights { get; set; }
+}
+```
 
 ### Messaging integration
 
