@@ -2,7 +2,7 @@
 
   <PropertyGroup>
 
-    <Version>3.0.0-beta4</Version>
+    <Version>3.0.0-beta5</Version>
     <PackageReleaseNotes>
       - Added Metrics
       - Added support for event filters
