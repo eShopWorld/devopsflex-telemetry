@@ -24,8 +24,6 @@ public class BigBrotherTest
 
             await bb.PublishAsync(new TestTelemetryEvent());
             bb.Flush();
-
-            throw new AggregateException();
         }
 
         [Fact, IsDev]

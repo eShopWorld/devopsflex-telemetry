@@ -66,6 +66,16 @@ namespace Eshopworld.Telemetry
         {
             var dimensions = type.GetMetricDimensions();
 
+            // if we have 0 dimensions, there's no need to build and expression tree to get dimension values before calling TrackValue
+            if (dimensions.Count == 0)
+            {
+                return (m, tm) =>
+                {
+                    m.TrackValue(tm.Metric);
+                    return true;
+                };
+            }
+
             var valueProperty = type.GetProperty(nameof(ITrackedMetric.Metric));
             if (valueProperty == null)
                 throw new InvalidOperationException($"Couldn't find the {nameof(ITrackedMetric.Metric)} property that matches the required signature");

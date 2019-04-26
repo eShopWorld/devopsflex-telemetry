@@ -269,11 +269,13 @@ namespace Eshopworld.Telemetry
         /// <inheritdoc />
         public T GetTrackedMetric<T>(params object[] parameters) where T : ITrackedMetric
         {
+            // create the proxy first, because validation for class integrity is done here
+
             var metric = MetricMappings.GetOrAdd(typeof(T), TelemetryClient.InvokeGetMetric<T>());
             var trackFunc = TrackValueMappings.GetOrAdd(typeof(T), typeof(T).GenerateExpressionTrackValue());
 
-            var interceptor = new MetricInterceptor(metric, trackFunc, InternalStream.AsObserver());
             var options = new ProxyGenerationOptions(new MetricProxyGenerationHook());
+            var interceptor = new MetricInterceptor(metric, trackFunc, InternalStream.AsObserver());
 
             T proxy;
             if (parameters == null)

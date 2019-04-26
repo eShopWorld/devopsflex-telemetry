@@ -45,7 +45,7 @@ public class MetricTest
         [Fact, IsUnit]
         public void Test_GetTestMetric()
         {
-            var client = new TelemetryClient(new TelemetryConfiguration(InstrumentationKey));
+            var client = new TelemetryClient(new TelemetryConfiguration(""));
             var expectedDimensions = typeof(TestMetric).GetMetricDimensions();
 
             var metric = client.InvokeGetMetric<TestMetric>();
@@ -59,15 +59,15 @@ public class MetricTest
 
     public class GenerateExpressionTrackValue
     {
-        /// <summary>
+        /// <remarks>
         /// Currently there's no way to assert that a <see cref="Metric"/> tracks events, so this test is only half-useful:
         ///     It only validates the integrity of the expression tree, not it's behaviour.
-        /// </summary>
+        /// </remarks>
         [Fact, IsUnit]
         public void Test_TrackValue_WithSingleValue()
         {
             var testMetric = new TestMetric(Lorem.GetWord(), Lorem.GetWord(), Lorem.GetWord());
-            var client = new TelemetryClient(new TelemetryConfiguration(InstrumentationKey));
+            var client = new TelemetryClient(new TelemetryConfiguration(""));
             var metric = client.InvokeGetMetric<TestMetric>();
 
             var func = typeof(TestMetric).GenerateExpressionTrackValue();
@@ -76,6 +76,31 @@ public class MetricTest
 
             client.Flush();
         }
+
+        /// <remarks>
+        /// Currently there's no way to assert that a <see cref="Metric"/> tracks events, so this test is only half-useful:
+        ///     It only validates the integrity of the expression tree, not it's behaviour.
+        /// </remarks>
+        [Fact, IsUnit]
+        public void Test_TrackValue_WithZeroDimensions()
+        {
+            var testMetric = new TestMetricZeroDimensions();
+            var client = new TelemetryClient(new TelemetryConfiguration(""));
+            var metric = client.InvokeGetMetric<TestMetricZeroDimensions>();
+
+            var func = typeof(TestMetricZeroDimensions).GenerateExpressionTrackValue();
+            testMetric.Metric = 999;
+            func(metric, testMetric);
+        }
+    }
+
+    [Fact, IsUnit]
+    public void Test_Metric_NonVirtualOverride()
+    {
+        var bb = new BigBrother("", "");
+        var action = new Action(() => bb.GetTrackedMetric<TestMetricNonVirtual>());
+
+        action.Should().Throw<InvalidOperationException>();
     }
 
     [Fact, IsDev]
@@ -124,4 +149,9 @@ public class TestMetric : ITrackedMetric
 public class TestMetricZeroDimensions : ITrackedMetric
 {
     public virtual double Metric { get; set; }
+}
+
+public class TestMetricNonVirtual : ITrackedMetric
+{
+    public double Metric { get; set; }
 }
