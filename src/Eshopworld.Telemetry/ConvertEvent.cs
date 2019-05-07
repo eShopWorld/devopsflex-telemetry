@@ -123,7 +123,7 @@ namespace Eshopworld.Telemetry
                         exceptionTelemetry.Message = eventException.Message;
                         exceptionTelemetry.Exception = eventException;
 
-                        if (exceptionEvent.SimplifyStackTrace)
+                        if (exceptionEvent.SimplifyStackTrace && StackTraceHelper.IsStackSimplificationAvailable)
                         {
                             try
                             {

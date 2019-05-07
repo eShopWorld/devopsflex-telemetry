@@ -11,7 +11,12 @@ namespace Eshopworld.Telemetry
         /// <summary>
         /// The attribute which marks methods and classes which can be omitted from the stock trace of a logged exception.
         /// </summary>
+        /// <remarks>
+        /// It's not available in all .Net runtimes.
+        /// </remarks>
         private static readonly Type StackTraceHiddenAttributeType = typeof(Attribute).Assembly.GetType("System.Diagnostics.StackTraceHiddenAttribute");
+
+        public static bool IsStackSimplificationAvailable => StackTraceHiddenAttributeType != null;
 
         public static IEnumerable<StackFrame> SimplifyStackTrace(Exception ex)
         {
@@ -57,7 +62,9 @@ namespace Eshopworld.Telemetry
 
         private static bool ShowInStackTrace(MethodBase mb)
         {
-            return !(mb.IsDefined(StackTraceHiddenAttributeType) || (mb.DeclaringType?.IsDefined(StackTraceHiddenAttributeType) ?? false));
+            return StackTraceHiddenAttributeType == null
+                || !(mb.IsDefined(StackTraceHiddenAttributeType)
+                || (mb.DeclaringType?.IsDefined(StackTraceHiddenAttributeType) ?? false));
         }
 
         private class FilteredStackFrame : StackFrame
