@@ -110,7 +110,7 @@
                         exceptionTelemetry.Message = exceptionEvent.Exception.Message;
                         exceptionTelemetry.Exception = exceptionEvent.Exception;
 
-                        if (exceptionEvent.SimplifyStackTrace)
+                        if (exceptionEvent.SimplifyStackTrace && StackTraceHelper.IsStackSimplificationAvailable)
                         {
                             try
                             {
