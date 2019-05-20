@@ -20,9 +20,9 @@ using Kusto.Ingest;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.ApplicationInsights.Metrics.Extensibility;
 using Microsoft.Azure.Services.AppAuthentication;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Eshopworld.Telemetry
 {
@@ -54,7 +54,8 @@ namespace Eshopworld.Telemetry
         internal static readonly JsonSerializerSettings KustoJsonSettings =
             new JsonSerializerSettings
             {
-                ContractResolver = new EventContractResolver(EventFilterTargets.Kusto)
+                ContractResolver = new EventContractResolver(EventFilterTargets.Kusto),
+                Converters = new JsonConverter[] { new StringEnumConverter() }
             };
 
         /// <summary>
