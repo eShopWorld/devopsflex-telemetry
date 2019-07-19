@@ -198,6 +198,7 @@ bb.PublishEventsToTopics(new Messenger("MY CONNECTION STRING", "MY SUBSCRIPTION 
 There is a one time schema support for publishing certain Telemetry events to [Azure Data Explorer](https://azure.microsoft.com/en-us/services/data-explorer/).
 
 We do not support schema changes in the current version, so if the event structure changes, the schema must be manually updated, or deleted before a new event can be sucessfully pushed.
+For now, events pushed after a schema change will silently explode and not be pushed through the client.
 
 The integration with Kusto uses [Managed Identities](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview), so it will require proper access during development sessions.
 
