@@ -20,9 +20,9 @@ public class BigBrotherUseKustoLayerTest
 
     public BigBrotherUseKustoLayerTest()
     {
-        _kustoUri = Environment.GetEnvironmentVariable("kusto_uri", EnvironmentVariableTarget.Machine);
-        _kustoIngestUri = Environment.GetEnvironmentVariable("kusto_ingest_uri", EnvironmentVariableTarget.Machine);
-        _kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
+        _kustoUri = Environment.GetEnvironmentVariable("kusto_uri");
+        _kustoIngestUri = Environment.GetEnvironmentVariable("kusto_ingest_uri");
+        _kustoDatabase = Environment.GetEnvironmentVariable("kusto_database");
 
         if (_kustoUri != null && _kustoIngestUri != null && _kustoDatabase != null)
         {
