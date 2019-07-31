@@ -15,43 +15,43 @@ using Xunit;
 // ReSharper disable once CheckNamespace
 public class BigBrotherUseKustoTest
 {
-    private readonly string KustoName;
-    private readonly string KustoLocation;
-    private string KustoDatabase;
-    private string KustoTenantId;
+    private readonly string _kustoName;
+    private readonly string _kustoLocation;
+    private readonly string _kustoDatabase;
+    private readonly string _kustoTenantId;
 
-    private ICslQueryProvider KustoQueryClient;
+    private readonly ICslQueryProvider _kustoQueryClient;
 
     public BigBrotherUseKustoTest()
     {
-        KustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Machine);
-        KustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.Machine);
-        KustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
-        KustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);
+        _kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Machine);
+        _kustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.Machine);
+        _kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
+        _kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);
 
-        if (KustoName != null && KustoLocation != null && KustoDatabase != null && KustoTenantId != null)
+        if (_kustoName != null && _kustoLocation != null && _kustoDatabase != null && _kustoTenantId != null)
         {
-            var kustoUri = $"https://{KustoName}.{KustoLocation}.kusto.windows.net";
+            var kustoUri = $"https://{_kustoName}.{_kustoLocation}.kusto.windows.net";
             var token = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, string.Empty).Result;
 
-            KustoQueryClient = KustoClientFactory.CreateCslQueryProvider(
-            new KustoConnectionStringBuilder(kustoUri)
-            {
-                FederatedSecurity = true,
-                InitialCatalog = KustoDatabase,
-                AuthorityId = KustoTenantId,
-                ApplicationToken = token
-            });
+            _kustoQueryClient = KustoClientFactory.CreateCslQueryProvider(
+                new KustoConnectionStringBuilder(kustoUri)
+                {
+                    FederatedSecurity = true,
+                    InitialCatalog = _kustoDatabase,
+                    Authority = _kustoTenantId,
+                    ApplicationToken = token
+                });
         }
     }
 
     [Fact, IsLayer1]
     public async Task Test_KustoTestEvent_StreamsToKusto()
     {
-        KustoQueryClient.Should().NotBeNull();
+        _kustoQueryClient.Should().NotBeNull();
 
         var bb = new BigBrother("", "");
-        bb.UseKusto(KustoName, KustoLocation, KustoDatabase, KustoTenantId);
+        bb.UseKusto(_kustoName, _kustoLocation, _kustoDatabase, _kustoTenantId);
 
         var evt = new KustoTestEvent();
         bb.Publish(evt);
@@ -65,8 +65,8 @@ public class BigBrotherUseKustoTest
             })
             .ExecuteAsync(async () =>
             {
-                var reader = await KustoQueryClient.ExecuteQueryAsync(
-                    KustoDatabase,
+                var reader = await _kustoQueryClient.ExecuteQueryAsync(
+                    _kustoDatabase,
                     $"{nameof(KustoTestEvent)} | where {nameof(KustoTestEvent.Id)} == \"{evt.Id}\" | summarize count()",
                     ClientRequestProperties.FromJsonString("{}"));
 
