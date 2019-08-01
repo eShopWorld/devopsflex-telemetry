@@ -253,7 +253,6 @@
         {
             KustoDbName = kustoDb;
             var kustoUri = $"https://{kustoEngineName}.{kustoEngineLocation}.kusto.windows.net";
-            var kustoIngestUri = $"https://ingest-{kustoEngineName}.{kustoEngineLocation}.kusto.windows.net";
             var token = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, string.Empty).Result;
 
             KustoAdminClient = KustoClientFactory.CreateCslAdminProvider(
