@@ -110,7 +110,7 @@
         /// <summary>
         /// The <see cref="IKustoQueuedIngestClient"/> used for Kusto data ingestion.
         /// </summary>
-        internal IKustoQueuedIngestClient KustoIngestClient;
+        internal IKustoIngestClient KustoIngestClient;
 
         /// <summary>
         /// Static initialization of static resources in <see cref="BigBrother"/> instances.
@@ -253,7 +253,6 @@
         {
             KustoDbName = kustoDb;
             var kustoUri = $"https://{kustoEngineName}.{kustoEngineLocation}.kusto.windows.net";
-            var kustoIngestUri = $"https://ingest-{kustoEngineName}.{kustoEngineLocation}.kusto.windows.net";
             var token = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, string.Empty).Result;
 
             KustoAdminClient = KustoClientFactory.CreateCslAdminProvider(
@@ -261,17 +260,17 @@
                 {
                     FederatedSecurity = true,
                     InitialCatalog = KustoDbName,
-                    AuthorityId = tenantId,
+                    Authority = tenantId,
                     ApplicationToken = token
                 });
 
-            KustoIngestClient = KustoIngestFactory.CreateQueuedIngestClient(
-                new KustoConnectionStringBuilder(kustoIngestUri)
+            KustoIngestClient = KustoIngestFactory.CreateDirectIngestClient(
+                new KustoConnectionStringBuilder(kustoUri)
                 {
                     FederatedSecurity = true,
                     InitialCatalog = KustoDbName,
-                    AuthorityId = tenantId,
-                    ApplicationToken = token
+                    Authority = tenantId,
+                    ApplicationToken = token,
                 });
 
             SetupKustoSubscription();
