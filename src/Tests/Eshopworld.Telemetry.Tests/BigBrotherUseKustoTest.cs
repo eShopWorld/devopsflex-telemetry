@@ -52,7 +52,6 @@ public class BigBrotherUseKustoTest
     public async Task Test_KustoTestEvent_StreamsToKusto()
     {
         KustoQueryClient.Should().NotBeNull();
-        KustoAdminClient.Should().NotBeNull();
 
         var bb = new BigBrother("", "");
         bb.UseKusto(KustoName, KustoLocation, KustoDatabase, KustoTenantId);
@@ -76,11 +75,53 @@ public class BigBrotherUseKustoTest
 
                 reader.Read().Should().BeTrue();
                 reader.GetInt64(0).Should().Be(1);
+            });
+    }
 
-                await KustoAdminClient.ExecuteControlCommandAsync(
+    [Fact, IsLayer1]
+    public async Task Test_KustoTestEvent_Creates_Table()
+    {
+        KustoQueryClient.Should().NotBeNull();
+        KustoAdminClient.Should().NotBeNull();
+
+        var bb = new BigBrother("", "");
+        bb.UseKusto(KustoName, KustoLocation, KustoDatabase, KustoTenantId);
+
+        var dataReader = await KustoAdminClient.ExecuteControlCommandAsync(KustoDatabase, ".show tables");
+        var tableExists = false;
+
+        while (dataReader.Read())
+        {
+            var table = dataReader.GetString(0);
+            if (table.Equals(nameof(KustoTestEvent), StringComparison.OrdinalIgnoreCase))
+            {
+                tableExists = true;
+                break;
+            }
+        }
+
+        if (tableExists)
+            await KustoAdminClient.ExecuteControlCommandAsync(KustoDatabase, $".drop table {nameof(KustoTestEvent)}");
+        
+        var evt = new KustoTestEvent();
+        bb.Publish(evt);
+
+        await Policy.Handle<Exception>()
+            .WaitAndRetryAsync(new[]
+            {
+                TimeSpan.FromSeconds(3),
+                TimeSpan.FromSeconds(10),
+                TimeSpan.FromSeconds(30)
+            })
+            .ExecuteAsync(async () =>
+            {
+                var reader = await KustoQueryClient.ExecuteQueryAsync(
                     KustoDatabase,
-                    $".drop table {nameof(KustoTestEvent)}",
+                    $"{nameof(KustoTestEvent)} | where {nameof(KustoTestEvent.Id)} == \"{evt.Id}\" | summarize count()",
                     ClientRequestProperties.FromJsonString("{}"));
+
+                reader.Read().Should().BeTrue();
+                reader.GetInt64(0).Should().Be(1);
             });
     }
 
