@@ -55,7 +55,7 @@
                 client.ExecuteControlCommand(command);
                 return mappingName;
             }
-            catch (KustoBadRequestException ex) when (ex.ErrorMessage.Contains("'JsonMappingPersistent' was not found"))
+            catch (KustoBadRequestException ex) when (ex.ErrorMessage.Contains("MappingPersistent' was not found"))
             {
                 // soak
             }
