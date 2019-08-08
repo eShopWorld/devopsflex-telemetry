@@ -87,22 +87,21 @@ public class BigBrotherUseKustoTest
         var bb = new BigBrother("", "");
         bb.UseKusto(KustoName, KustoLocation, KustoDatabase, KustoTenantId);
 
-        var dataReader = await KustoAdminClient.ExecuteControlCommandAsync(KustoDatabase, ".show tables");
-        var tableExists = false;
-
-        while (dataReader.Read())
+        // delete the table if it exists
+        using (var dataReader = await KustoAdminClient.ExecuteControlCommandAsync(KustoDatabase, ".show tables"))
         {
-            var table = dataReader.GetString(0);
-            if (table.Equals(nameof(KustoTestEvent), StringComparison.OrdinalIgnoreCase))
+            while (dataReader.Read())
             {
-                tableExists = true;
-                break;
+                var table = dataReader.GetString(0);
+                if (table.Equals(nameof(KustoTestEvent), StringComparison.OrdinalIgnoreCase))
+                {
+                    await KustoAdminClient.ExecuteControlCommandAsync(KustoDatabase, $".drop table {nameof(KustoTestEvent)}");
+                    break;
+                }
             }
         }
 
-        if (tableExists)
-            await KustoAdminClient.ExecuteControlCommandAsync(KustoDatabase, $".drop table {nameof(KustoTestEvent)}");
-        
+        // this should create a table and publish the message
         var evt = new KustoTestEvent();
         bb.Publish(evt);
 
