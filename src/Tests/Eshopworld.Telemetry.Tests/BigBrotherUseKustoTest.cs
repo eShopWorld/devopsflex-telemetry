@@ -90,7 +90,7 @@ public class BigBrotherUseKustoTest
         var bb = new Mock<BigBrother>();
         bb.Setup(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>())).Verifiable();
 
-        bb.Object.SetupKustoSubscription();
+        bb.Object.SetupKustoSubscription(null);
         bb.Object.Publish(new Exception().ToExceptionEvent());
 
         bb.Verify(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>()), Times.Never);
@@ -102,7 +102,7 @@ public class BigBrotherUseKustoTest
         var bb = new Mock<BigBrother>();
         bb.Setup(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>())).Verifiable();
 
-        bb.Object.SetupKustoSubscription();
+        bb.Object.SetupKustoSubscription(null);
         bb.Object.Publish(new KustoTestTimedEvent());
 
         bb.Verify(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>()), Times.Never);
@@ -114,7 +114,7 @@ public class BigBrotherUseKustoTest
         var bb = new Mock<BigBrother>();
         bb.Setup(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>())).Verifiable();
 
-        bb.Object.SetupKustoSubscription();
+        bb.Object.SetupKustoSubscription(null);
         bb.Object.Publish(new KustoTestMetricEvent());
 
         bb.Verify(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>()), Times.Never);

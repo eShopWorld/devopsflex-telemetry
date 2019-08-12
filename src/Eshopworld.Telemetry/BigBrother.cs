@@ -7,6 +7,7 @@
     using System.Diagnostics.Tracing;
     using System.IO;
     using System.Reactive;
+    using System.Reactive.Concurrency;
     using System.Reactive.Linq;
     using System.Reactive.Subjects;
     using System.Runtime.CompilerServices;
@@ -251,6 +252,11 @@
         /// <inheritdoc />
         public IBigBrother UseKusto(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId)
         {
+            return UseKusto(kustoEngineName, kustoEngineLocation, kustoDb, tenantId, false, null);
+        }
+
+        public IBigBrother UseKusto(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId, bool useQueuedIngestion, IScheduler scheduler = null)
+        {
             KustoDbName = kustoDb;
             var kustoUri = $"https://{kustoEngineName}.{kustoEngineLocation}.kusto.windows.net";
             var token = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, string.Empty).Result;
@@ -264,16 +270,32 @@
                     ApplicationToken = token
                 });
 
-            KustoIngestClient = KustoIngestFactory.CreateDirectIngestClient(
-                new KustoConnectionStringBuilder(kustoUri)
-                {
-                    FederatedSecurity = true,
-                    InitialCatalog = KustoDbName,
-                    Authority = tenantId,
-                    ApplicationToken = token,
-                });
+            if (useQueuedIngestion)
+            {
+                var kustoIngestUri = $"https://ingest-{kustoEngineName}.{kustoEngineLocation}.kusto.windows.net";
 
-            SetupKustoSubscription();
+                KustoIngestClient = KustoIngestFactory.CreateQueuedIngestClient(
+                    new KustoConnectionStringBuilder(kustoIngestUri)
+                    {
+                        FederatedSecurity = true,
+                        InitialCatalog = KustoDbName,
+                        Authority = tenantId,
+                        ApplicationToken = token,
+                    });
+            }
+            else
+            {
+                KustoIngestClient = KustoIngestFactory.CreateDirectIngestClient(
+                    new KustoConnectionStringBuilder(kustoUri)
+                    {
+                        FederatedSecurity = true,
+                        InitialCatalog = KustoDbName,
+                        Authority = tenantId,
+                        ApplicationToken = token,
+                    });
+            }
+
+            SetupKustoSubscription(scheduler);
             return this;
         }
 
@@ -307,15 +329,24 @@
             GlobalExceptionAiSubscription = ExceptionStream.Subscribe(HandleAiEvent);
         }
 
-        internal void SetupKustoSubscription()
+        internal void SetupKustoSubscription(IScheduler scheduler)
         {
-            TelemetrySubscriptions.AddSubscription(
-                typeof(KustoExtensions),
-                TelemetryStream.OfType<TelemetryEvent>()
-                               .Where(e => !(e is ExceptionEvent) &&
-                                           !(e is MetricTelemetryEvent) &&
-                                           !(e is TimedTelemetryEvent))
-                               .Subscribe(HandleKustoEvent));
+            IDisposable subscription;
+            var filterObservable = TelemetryStream.OfType<TelemetryEvent>()
+                                        .Where(e => !(e is ExceptionEvent) &&
+                                                    !(e is MetricTelemetryEvent) &&
+                                                    !(e is TimedTelemetryEvent));
+
+            if (scheduler == null)
+            {
+                subscription = filterObservable.Subscribe(HandleKustoEvent);
+            }
+            else
+            {
+                subscription = filterObservable.SubscribeOn(scheduler).Subscribe(HandleKustoEvent);
+            }
+
+            TelemetrySubscriptions.AddSubscription(typeof(KustoExtensions), subscription);
         }
 
         /// <summary>
