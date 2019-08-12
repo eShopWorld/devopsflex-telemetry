@@ -1,7 +1,9 @@
 ﻿namespace Eshopworld.Telemetry
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
+    using Kusto.Cloud.Platform.Data;
     using Kusto.Data.Common;
     using Kusto.Data.Exceptions;
 
@@ -19,17 +21,17 @@
         public static string GenerateTableFromType(this ICslAdminProvider client, Type type)
         {
             var tableName = type.Name;
-            var command = CslCommandGenerator.GenerateTableShowCommand(tableName);
+            var tables = new List<string>();
+            var command = CslCommandGenerator.GenerateTablesShowCommand();
 
-            try
+            var reader = client.ExecuteControlCommand(command);
+
+            while (reader.Read())
             {
-                client.ExecuteControlCommand(command);
-                return tableName;
+                tables.Add(reader.GetString(0));
             }
-            catch (KustoBadRequestException ex) when (ex.ErrorMessage.Contains("'Table' was not found"))
-            {
-                // soak
-            }
+            
+            if (tables.Contains(tableName)) return tableName;
 
             var columns = type.GetProperties().Select(property => new Tuple<string, string>(property.Name, property.PropertyType.FullName)).ToList();
             command = CslCommandGenerator.GenerateTableCreateCommand(tableName, columns);
@@ -48,17 +50,17 @@
         {
             var tableName = type.Name;
             var mappingName = $"{tableName}_mapping";
-            var command = CslCommandGenerator.GenerateTableJsonMappingShowCommand(tableName, mappingName);
+            var tableMappings = new List<string>();
+            var command = CslCommandGenerator.GenerateTableJsonMappingsShowCommand(tableName);
 
-            try
+            var reader = client.ExecuteControlCommand(command);
+
+            while (reader.Read())
             {
-                client.ExecuteControlCommand(command);
-                return mappingName;
+                tableMappings.Add(reader.GetString(0));
             }
-            catch (KustoBadRequestException ex) when (ex.ErrorMessage.Contains("'JsonMappingPersistent' was not found"))
-            {
-                // soak
-            }
+
+            if (tableMappings.Contains(mappingName)) return mappingName;
 
             var mappings = type.GetProperties().Select(property => new JsonColumnMapping { ColumnName = property.Name, JsonPath = $"$.{property.Name}" }).ToList();
             command = CslCommandGenerator.GenerateTableJsonMappingCreateCommand(tableName, mappingName, mappings);

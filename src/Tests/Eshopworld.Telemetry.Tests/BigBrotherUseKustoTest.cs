@@ -21,6 +21,7 @@ public class BigBrotherUseKustoTest
     private readonly string _kustoTenantId;
 
     private readonly ICslQueryProvider _kustoQueryClient;
+    private readonly ICslAdminProvider _kustoAdminClient;
 
     public BigBrotherUseKustoTest()
     {
@@ -33,16 +34,24 @@ public class BigBrotherUseKustoTest
         {
             var kustoUri = $"https://{_kustoName}.{_kustoLocation}.kusto.windows.net";
             var token = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, string.Empty).Result;
-
-            _kustoQueryClient = KustoClientFactory.CreateCslQueryProvider(
+            var kustoConnectionString =
                 new KustoConnectionStringBuilder(kustoUri)
                 {
                     FederatedSecurity = true,
                     InitialCatalog = _kustoDatabase,
                     Authority = _kustoTenantId,
                     ApplicationToken = token
-                });
+                };
+
+            _kustoQueryClient = KustoClientFactory.CreateCslQueryProvider(kustoConnectionString);
+            _kustoAdminClient = KustoClientFactory.CreateCslAdminProvider(kustoConnectionString);
         }
+    }
+
+    [Fact, IsLayer1]
+    public void Foo()
+    {
+        _kustoAdminClient.GenerateTableJsonMappingFromType(typeof(KustoTestEvent));
     }
 
     [Fact, IsLayer1]
