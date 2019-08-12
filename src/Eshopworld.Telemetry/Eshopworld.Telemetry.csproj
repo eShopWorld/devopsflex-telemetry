@@ -1,13 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-
-    <Version>2.1.4</Version>
-    <PackageReleaseNotes>Fixed logging exceptions on .Net Framework.</PackageReleaseNotes>
-
+    <Version>2.1.5</Version>
+    <PackageReleaseNotes>Fixed logging custom properties on custom exceptions</PackageReleaseNotes>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>True</IsPackable>
-
     <PackageId>Eshopworld.Telemetry</PackageId>
     <Title>Eshopworld.Telemetry</Title>
     <Authors>David Rodrigues, Oisin Haken, David Guerin, Artur Zgodzinski</Authors>
@@ -18,19 +14,17 @@
     <PackageTags>Application Insights, Telemetry, Log</PackageTags>
     <RepositoryUrl>https://github.com/eShopWorld/telemetry</RepositoryUrl>
     <IncludeSource>True</IncludeSource>
-
     <DebugType>Full</DebugType>
     <LangVersion>latest</LangVersion>
-
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Eshopworld.Core" Version="2.0.5" />
-    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.8.1" />
+    <PackageReference Include="Eshopworld.Core" Version="2.1.2" />
+    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.10.0" />
     <PackageReference Include="Microsoft.Azure.Kusto.Ingest.NETStandard" Version="4.0.3" />
-    <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.0.3" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
-    <PackageReference Include="System.Reactive" Version="4.1.2" />
+    <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.3.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+    <PackageReference Include="System.Reactive" Version="4.1.6" />
   </ItemGroup>
 
 </Project>
