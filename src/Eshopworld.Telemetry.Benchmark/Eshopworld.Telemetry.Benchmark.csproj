@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="benchmarkdotnet" Version="0.11.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Eshopworld.Telemetry\Eshopworld.Telemetry.csproj" />
+  </ItemGroup>
+
+</Project>

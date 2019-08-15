@@ -30,6 +30,8 @@
     /// </summary>
     public class BigBrother : IBigBrother, IDisposable
     {
+        private object _gate = new object();
+
         /// <summary>
         /// The internal telemetry stream, used by packages to report errors and usage to an internal AI account.
         /// </summary>
@@ -472,22 +474,27 @@
         internal virtual void HandleKustoEvent(TelemetryEvent @event)
         {
             var eventType = @event.GetType();
-
             KustoQueuedIngestionProperties ingestProps;
-            if (!KustoMappings.ContainsKey(eventType) && KustoMappings.TryAdd(eventType, new KustoQueuedIngestionProperties(KustoDbName, "Unknown")))
-            {
-                ingestProps = KustoMappings[eventType];
 
-                ingestProps.TableName = KustoAdminClient.GenerateTableFromType(eventType);
-                ingestProps.JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(eventType);
-                ingestProps.ReportLevel = IngestionReportLevel.FailuresOnly;
-                ingestProps.ReportMethod = IngestionReportMethod.Queue;
-                ingestProps.FlushImmediately = true;
-                ingestProps.Format = DataSourceFormat.json;
-            }
-            else
+            lock (_gate)
             {
-                ingestProps = KustoMappings[eventType];
+                if (!KustoMappings.ContainsKey(eventType) && KustoMappings.TryAdd(eventType, new KustoQueuedIngestionProperties(KustoDbName, "Unknown")))
+                {
+                    ingestProps = KustoMappings[eventType];
+
+                    ingestProps.TableName = KustoAdminClient.GenerateTableFromType(eventType);
+                    ingestProps.JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(eventType);
+                    ingestProps.ReportLevel = IngestionReportLevel.FailuresOnly;
+                    ingestProps.ReportMethod = IngestionReportMethod.Queue;
+                    ingestProps.FlushImmediately = false;
+                    ingestProps.IgnoreSizeLimit = true;
+                    ingestProps.ValidationPolicy = null;
+                    ingestProps.Format = DataSourceFormat.json;
+                }
+                else
+                {
+                    ingestProps = KustoMappings[eventType];
+                }
             }
 
             using (var stream = new MemoryStream())
