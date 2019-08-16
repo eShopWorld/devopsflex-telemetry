@@ -1,11 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Net;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Eshopworld.Core;
 using Eshopworld.Telemetry;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Diagnostics.Tracing.Session;
 using Moq;
 using Xunit;
@@ -141,6 +146,19 @@ public class BigBrotherTest
             // wipe all internal subscriptions
             BigBrotherExtensions.WipeInternalSubscriptions();
         }
+
+        [Fact, IsDev]
+        public async Task Test_HighContention()
+        {
+            var tasks = new List<Task>();
+            for (var x = 0; x < 10; x++)
+            {
+                tasks.Add(Task.Run(()=> new BigBrother("blah", "blah")));
+            }
+
+            //this will blow up in V2
+            await Task.WhenAll(tasks.ToArray());
+        }
     }
 
     public class HandleEvent
@@ -244,12 +262,47 @@ public class BigBrotherTest
 
             completed.Should().BeTrue();
         }
+
+        [Fact, IsUnit]
+        public async Task Test_With_ExtendedExceptionEvent()
+        {
+            var telemetry = new ExtendedTestException(new Exception("blah")) { ErrorCode = HttpStatusCode.Accepted , ClientId = "clientId"};
+
+            var channel = new Mock<ITelemetryChannel>();
+
+            channel.Setup(c => c.Send(It.Is<ExceptionTelemetry>(i => 
+                i.Properties["ErrorCode"]=="202" && i.Properties["Timestamp"]!=null && i.Properties["ClientId"]=="clientId")))
+                .Verifiable();
+
+            var telClient = new TelemetryClient(new TelemetryConfiguration("blah", channel.Object));
+            
+            using (var bb = new BigBrother(telClient, "blah"))
+            {
+                bb.Publish(telemetry.ToExceptionEvent());
+                bb.Flush();
+
+                await Task.Delay(TimeSpan.FromSeconds(1));
+                channel.Verify();
+            }
+        }
     }
 
     internal static void BlowUp(string message)
     {
         throw new Exception(message);
     }
+}
+
+public class ExtendedTestException : Exception
+{
+    public ExtendedTestException(Exception e) : base("blah", e)
+    { }
+
+    public string ClientId { get; set; }
+
+    public HttpStatusCode ErrorCode { get; set; }
+
+    public DateTime Timestamp { get; set; }
 }
 
 public class TestTelemetryEvent : TelemetryEvent

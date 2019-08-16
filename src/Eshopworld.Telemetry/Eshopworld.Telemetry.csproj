@@ -2,8 +2,8 @@
 
   <PropertyGroup>
 
-    <Version>2.1.4</Version>
-    <PackageReleaseNotes>Fixed logging exceptions on .Net Framework.</PackageReleaseNotes>
+    <Version>2.1.5</Version>
+    <PackageReleaseNotes>core version bump -&gt; brings in change in exception event handling of custom exception properties and tracking them as custom dimensions</PackageReleaseNotes>
 
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>True</IsPackable>
@@ -25,7 +25,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Eshopworld.Core" Version="2.0.5" />
+    <PackageReference Include="Eshopworld.Core" Version="2.1.3" />
     <PackageReference Include="Microsoft.ApplicationInsights" Version="2.8.1" />
     <PackageReference Include="Microsoft.Azure.Kusto.Ingest.NETStandard" Version="4.0.3" />
     <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.0.3" />
