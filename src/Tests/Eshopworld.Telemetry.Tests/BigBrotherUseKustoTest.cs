@@ -49,17 +49,11 @@ public class BigBrotherUseKustoTest
     }
 
     [Fact, IsLayer1]
-    public void Foo()
-    {
-        _kustoAdminClient.GenerateTableJsonMappingFromType(typeof(KustoTestEvent));
-    }
-
-    [Fact, IsLayer1]
     public async Task Test_KustoTestEvent_StreamsToKusto()
     {
         _kustoQueryClient.Should().NotBeNull();
 
-        var bb = new BigBrother("", "");
+        var bb = new BigBrother("e7b35726-ec5f-4f95-8a00-628e7546de2a", "e7b35726-ec5f-4f95-8a00-628e7546de2a");
         bb.UseKusto(_kustoName, _kustoLocation, _kustoDatabase, _kustoTenantId);
 
         var evt = new KustoTestEvent();
@@ -90,7 +84,7 @@ public class BigBrotherUseKustoTest
         var bb = new Mock<BigBrother>();
         bb.Setup(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>())).Verifiable();
 
-        bb.Object.SetupKustoSubscription(null);
+        bb.Object.SetupKustoSubscription();
         bb.Object.Publish(new Exception().ToExceptionEvent());
 
         bb.Verify(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>()), Times.Never);
@@ -102,7 +96,7 @@ public class BigBrotherUseKustoTest
         var bb = new Mock<BigBrother>();
         bb.Setup(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>())).Verifiable();
 
-        bb.Object.SetupKustoSubscription(null);
+        bb.Object.SetupKustoSubscription();
         bb.Object.Publish(new KustoTestTimedEvent());
 
         bb.Verify(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>()), Times.Never);
@@ -114,7 +108,7 @@ public class BigBrotherUseKustoTest
         var bb = new Mock<BigBrother>();
         bb.Setup(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>())).Verifiable();
 
-        bb.Object.SetupKustoSubscription(null);
+        bb.Object.SetupKustoSubscription();
         bb.Object.Publish(new KustoTestMetricEvent());
 
         bb.Verify(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>()), Times.Never);

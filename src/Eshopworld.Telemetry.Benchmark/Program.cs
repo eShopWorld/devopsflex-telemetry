@@ -40,7 +40,7 @@
             [Benchmark]
             public void One_NoCheck_Direct()
             {
-                bb.HandleKustoEvent(new KustoTestEvent());
+                bb.HandleKustoEvent(new KustoBenchmarkEvent());
             }
 
             [Benchmark]
@@ -49,7 +49,7 @@
                 var tasks = new List<Task>();
                 for (int i = 0; i < 50; i++)
                 {
-                    tasks.Add(Task.Factory.StartNew(() => { bb.HandleKustoEvent(new KustoTestEvent()); }));
+                    tasks.Add(Task.Factory.StartNew(() => { bb.HandleKustoEvent(new KustoBenchmarkEvent()); }));
                 }
 
                 Task.WhenAll(tasks).ConfigureAwait(false).GetAwaiter().GetResult();
@@ -61,16 +61,16 @@
                 var tasks = new List<Task>();
                 for (int i = 0; i < 200; i++)
                 {
-                    tasks.Add(Task.Factory.StartNew(() => { bb.HandleKustoEvent(new KustoTestEvent()); }));
+                    tasks.Add(Task.Factory.StartNew(() => { bb.HandleKustoEvent(new KustoBenchmarkEvent()); }));
                 }
 
                 Task.WhenAll(tasks).ConfigureAwait(false).GetAwaiter().GetResult();
             }
         }
 
-        public class KustoTestEvent : DomainEvent
+        public class KustoBenchmarkEvent : DomainEvent
         {
-            public KustoTestEvent()
+            public KustoBenchmarkEvent()
             {
                 Id = Guid.NewGuid();
                 SomeInt = new Random().Next(100);
@@ -87,6 +87,8 @@
             public string SomeStringOne { get; set; }
 
             public string SomeStringTwo { get; set; }
+
+            public string BlaBla { set; get; }
 
             public DateTime SomeDateTime { get; set; }
 
