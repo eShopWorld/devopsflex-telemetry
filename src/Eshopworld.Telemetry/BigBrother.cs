@@ -261,6 +261,9 @@
             return UseKusto(kustoEngineName, kustoEngineLocation, kustoDb, tenantId, null);
         }
 
+        /// <remarks>
+        /// This will be documented later, because for now I'm not changing the interface for BigBrother to avoid breaking changes overlapping with v3.
+        /// </remarks>
         public IBigBrother UseKusto(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId, IKustoIngestClient client)
         {
             try
