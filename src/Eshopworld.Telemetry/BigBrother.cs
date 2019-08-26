@@ -495,8 +495,6 @@
                     {
                         ingestProps = new KustoQueuedIngestionProperties(KustoDbName, "Unknown");
 
-                        ingestProps = KustoMappings[eventType];
-
                         ingestProps.TableName = KustoAdminClient.GenerateTableFromType(eventType);
                         ingestProps.JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(eventType);
                         ingestProps.ReportLevel = IngestionReportLevel.FailuresOnly;

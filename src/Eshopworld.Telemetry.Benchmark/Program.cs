@@ -40,7 +40,7 @@
             [Benchmark]
             public void One_NoCheck_Direct()
             {
-                bb.HandleKustoEvent(new KustoBenchmarkEvent());
+                bb.HandleKustoEvent(new KustoBenchmarkEvent()).ConfigureAwait(false).GetAwaiter().GetResult();
             }
 
             [Benchmark]
@@ -49,7 +49,7 @@
                 var tasks = new List<Task>();
                 for (int i = 0; i < 50; i++)
                 {
-                    tasks.Add(Task.Factory.StartNew(() => { bb.HandleKustoEvent(new KustoBenchmarkEvent()); }));
+                    tasks.Add(bb.HandleKustoEvent(new KustoBenchmarkEvent()));
                 }
 
                 Task.WhenAll(tasks).ConfigureAwait(false).GetAwaiter().GetResult();
@@ -61,7 +61,7 @@
                 var tasks = new List<Task>();
                 for (int i = 0; i < 200; i++)
                 {
-                    tasks.Add(Task.Factory.StartNew(() => { bb.HandleKustoEvent(new KustoBenchmarkEvent()); }));
+                    tasks.Add(bb.HandleKustoEvent(new KustoBenchmarkEvent()));
                 }
 
                 Task.WhenAll(tasks).ConfigureAwait(false).GetAwaiter().GetResult();
