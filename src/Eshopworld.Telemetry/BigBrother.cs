@@ -8,7 +8,6 @@
     using System.Diagnostics.Tracing;
     using System.IO;
     using System.Reactive;
-    using System.Reactive.Concurrency;
     using System.Reactive.Linq;
     using System.Reactive.Subjects;
     using System.Runtime.CompilerServices;
@@ -33,7 +32,7 @@
     /// </summary>
     public class BigBrother : IBigBrother, IDisposable
     {
-        private object _gate = new object();
+        private readonly object _gate = new object();
 
         /// <summary>
         /// The internal telemetry stream, used by packages to report errors and usage to an internal AI account.
@@ -356,7 +355,7 @@
         }
 
         /// <summary>
-        /// Handles <see cref="ExceptionEvent"/> that is going to be sinked to an <see cref="EventSource"/>.
+        /// Handles <see cref="ExceptionEvent"/> that is going to be sunk to an <see cref="EventSource"/>.
         /// </summary>
         /// <param name="event">The event we want to sink to the <see cref="EventSource"/>.</param>
         internal static void SinkToEventSource(ExceptionEvent @event)
@@ -365,7 +364,7 @@
         }
 
         /// <summary>
-        /// Handles <see cref="ExceptionEvent"/> that is going to be sinked to a <see cref="Trace"/>.
+        /// Handles <see cref="ExceptionEvent"/> that is going to be sunk to a <see cref="Trace"/>.
         /// </summary>
         /// <param name="event">The event we want to sink to the <see cref="Trace"/>.</param>
         internal static void SinkToTrace(ExceptionEvent @event)
@@ -478,24 +477,25 @@
         internal virtual async Task HandleKustoEvent(TelemetryEvent @event)
         {
             var eventType = @event.GetType();
-            KustoQueuedIngestionProperties ingestProps;
 
             try
             {
+                KustoQueuedIngestionProperties ingestProps;
                 lock (_gate)
                 {
                     if (!KustoMappings.ContainsKey(eventType))
                     {
-                        ingestProps = new KustoQueuedIngestionProperties(KustoDbName, "Unknown");
-
-                        ingestProps.TableName = KustoAdminClient.GenerateTableFromType(eventType);
-                        ingestProps.JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(eventType);
-                        ingestProps.ReportLevel = IngestionReportLevel.FailuresOnly;
-                        ingestProps.ReportMethod = IngestionReportMethod.Queue;
-                        ingestProps.FlushImmediately = true;
-                        ingestProps.IgnoreSizeLimit = true;
-                        ingestProps.ValidationPolicy = null;
-                        ingestProps.Format = DataSourceFormat.json;
+                        ingestProps = new KustoQueuedIngestionProperties(KustoDbName, "Unknown")
+                        {
+                            TableName = KustoAdminClient.GenerateTableFromType(eventType),
+                            JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(eventType),
+                            ReportLevel = IngestionReportLevel.FailuresOnly,
+                            ReportMethod = IngestionReportMethod.Queue,
+                            FlushImmediately = true,
+                            IgnoreSizeLimit = true,
+                            ValidationPolicy = null,
+                            Format = DataSourceFormat.json
+                        };
 
                         KustoMappings.Add(eventType, ingestProps);
                     }
