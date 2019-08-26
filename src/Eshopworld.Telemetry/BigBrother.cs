@@ -297,14 +297,7 @@
                 }
                 else
                 {
-                    KustoIngestClient = KustoIngestFactory.CreateDirectIngestClient(
-                        new KustoConnectionStringBuilder(kustoUri)
-                        {
-                            FederatedSecurity = true,
-                            InitialCatalog = KustoDbName,
-                            Authority = tenantId,
-                            ApplicationToken = token,
-                        });
+                    KustoIngestClient = client;
                 }
 
                 SetupKustoSubscription();

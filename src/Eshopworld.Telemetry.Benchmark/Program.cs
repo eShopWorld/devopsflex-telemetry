@@ -5,9 +5,7 @@
     using System.Threading.Tasks;
     using BenchmarkDotNet.Attributes;
     using BenchmarkDotNet.Configs;
-    using BenchmarkDotNet.Jobs;
     using BenchmarkDotNet.Running;
-    using BenchmarkDotNet.Validators;
     using Eshopworld.Core;
 
     public class Program
