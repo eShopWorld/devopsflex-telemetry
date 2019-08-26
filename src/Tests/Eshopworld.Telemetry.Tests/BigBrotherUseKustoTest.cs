@@ -53,7 +53,7 @@ public class BigBrotherUseKustoTest
     {
         _kustoQueryClient.Should().NotBeNull();
 
-        var bb = new BigBrother("e7b35726-ec5f-4f95-8a00-628e7546de2a", "e7b35726-ec5f-4f95-8a00-628e7546de2a");
+        var bb = new BigBrother("", "");
         bb.UseKusto(_kustoName, _kustoLocation, _kustoDatabase, _kustoTenantId);
 
         var evt = new KustoTestEvent();
