@@ -33,7 +33,7 @@
             
             if (tables.Contains(tableName)) return tableName;
 
-            var columns = type.GetProperties().Select(property => new Tuple<string, string>(property.Name, property.PropertyType.FullName)).ToList();
+            var columns = type.GetProperties().Select(property => Tuple.Create(property.Name, property.PropertyType.FullName)).ToList();
             command = CslCommandGenerator.GenerateTableCreateCommand(tableName, columns);
             client.ExecuteControlCommand(command);
 

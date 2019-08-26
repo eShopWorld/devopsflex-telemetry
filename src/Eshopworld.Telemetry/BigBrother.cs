@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Diagnostics.CodeAnalysis;
     using System.Diagnostics.Tracing;
@@ -75,7 +76,7 @@
         /// </summary>
         internal readonly ConcurrentDictionary<Type, IDisposable> TelemetrySubscriptions = new ConcurrentDictionary<Type, IDisposable>();
 
-        internal readonly ConcurrentDictionary<Type, KustoQueuedIngestionProperties> KustoMappings = new ConcurrentDictionary<Type, KustoQueuedIngestionProperties>();
+        internal readonly Dictionary<Type, KustoQueuedIngestionProperties> KustoMappings = new Dictionary<Type, KustoQueuedIngestionProperties>();
 
         /// <summary>
         /// Contains the <see cref="IPublishEvents"/> instance used to publish to topics.
@@ -490,8 +491,10 @@
             {
                 lock (_gate)
                 {
-                    if (!KustoMappings.ContainsKey(eventType) && KustoMappings.TryAdd(eventType, new KustoQueuedIngestionProperties(KustoDbName, "Unknown")))
+                    if (!KustoMappings.ContainsKey(eventType))
                     {
+                        ingestProps = new KustoQueuedIngestionProperties(KustoDbName, "Unknown");
+
                         ingestProps = KustoMappings[eventType];
 
                         ingestProps.TableName = KustoAdminClient.GenerateTableFromType(eventType);
@@ -502,6 +505,8 @@
                         ingestProps.IgnoreSizeLimit = true;
                         ingestProps.ValidationPolicy = null;
                         ingestProps.Format = DataSourceFormat.json;
+
+                        KustoMappings.Add(eventType, ingestProps);
                     }
                     else
                     {
