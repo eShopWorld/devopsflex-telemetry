@@ -521,11 +521,11 @@
                     writer.Flush();
                     stream.Seek(0, SeekOrigin.Begin);
 
-                    var startTime = DateTime.Now;
+                    var startTime = DateTime.UtcNow;
 
                     await KustoIngestClient.IngestFromStreamAsync(stream, ingestProps, true);
 
-                    KustoIngestionTimeMetric.TrackValue(DateTime.Now.Subtract(startTime).TotalMilliseconds);
+                    KustoIngestionTimeMetric.TrackValue(DateTime.UtcNow.Subtract(startTime).TotalMilliseconds);
                 }
             }
             catch (Exception e)
