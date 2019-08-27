@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2036
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29201.188
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2BD76580-1A5B-4B74-8E60-9493016BFDC5}"
 	ProjectSection(SolutionItems) = preProject
@@ -13,6 +13,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eshopworld.Telemetry", "Eshopworld.Telemetry\Eshopworld.Telemetry.csproj", "{365A1306-F9A5-45F2-A490-E0706A7D5C93}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eshopworld.Telemetry.Tests", "Tests\Eshopworld.Telemetry.Tests\Eshopworld.Telemetry.Tests.csproj", "{FC8A017C-51CF-44F4-9B8F-663162263031}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eshopworld.Telemetry.Benchmark", "Eshopworld.Telemetry.Benchmark\Eshopworld.Telemetry.Benchmark.csproj", "{F0CFBC86-AC83-4269-9EB7-B63305356292}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -28,6 +30,10 @@ Global
 		{FC8A017C-51CF-44F4-9B8F-663162263031}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FC8A017C-51CF-44F4-9B8F-663162263031}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FC8A017C-51CF-44F4-9B8F-663162263031}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F0CFBC86-AC83-4269-9EB7-B63305356292}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F0CFBC86-AC83-4269-9EB7-B63305356292}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F0CFBC86-AC83-4269-9EB7-B63305356292}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F0CFBC86-AC83-4269-9EB7-B63305356292}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
