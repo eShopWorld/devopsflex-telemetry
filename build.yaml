@@ -1,0 +1,117 @@
+pool:
+  name: Tooling
+  demands:
+  - DotNetFramework
+  - msbuild
+  - visualstudio
+  - vstest
+  - java
+
+variables:
+  BuildPlatform: 'any cpu'
+  solution: 'src/Eshopworld.Telemetry.sln'
+  package_project: 'src/Eshopworld.Telemetry/Eshopworld.Telemetry.csproj'
+
+steps:
+- task: NuGetToolInstaller@1
+  displayName: 'use nuget 4.X'
+  inputs:
+    versionSpec: 4.X
+    checkLatest: true
+
+- task: NuGetCommand@2
+  displayName: 'NuGet restore'
+  inputs:
+    restoreSolution: '$(solution)'
+    feedsToUse: config
+
+- powershell: |
+   $env:BUILD_REPOSITORY_NAME -match "[^a-zA-Z]([\w-]*)$" > $null
+   Write-Host "##vso[task.setvariable variable=sonarkey]$($Matches[1])"
+  displayName: 'prepare variables'
+
+- task: SonarSource.sonarcloud.14d9cde6-c1da-4d55-aa01-2965cd301255.SonarCloudPrepare@1
+  displayName: 'Prepare analysis on SonarCloud'
+  inputs:
+    SonarCloud: 'SonarCloud - eShopWorld'
+    organization: eshopworld
+    projectKey: 'esw.$(sonarkey)'
+    projectName: '$(sonarkey)'
+    extraProperties: |
+     # Additional properties that will be passed to the scanner
+     sonar.exclusions=**/*.bin,**/*Test.cs
+     sonar.msbuild.testProjectPattern=\.Tests
+     sonar.cs.vscoveragexml.reportsPaths="**\*.coveragexml"
+
+- task: VSBuild@1
+  displayName: 'build debug'
+  inputs:
+    solution: '$(solution)'
+    platform: '$(BuildPlatform)'
+    configuration: debug
+
+- task: VSTest@2
+  displayName: 'run unit tests'
+  inputs:
+    testAssemblyVer2: |
+     **/*Tests.dll
+     !**/obj/**
+    searchFolder: '$(System.DefaultWorkingDirectory)/src/Tests'
+    testFiltercriteria: 'Category=Unit'
+    runTestsInIsolation: false
+    codeCoverageEnabled: true
+    diagnosticsEnabled: True
+
+- task: SonarSource.sonarcloud.ce096e50-6155-4de8-8800-4221aaeed4a1.SonarCloudAnalyze@1
+  displayName: 'Run Code Analysis'
+
+- task: SonarSource.sonarcloud.38b27399-a642-40af-bb7d-9971f69712e8.SonarCloudPublish@1
+  displayName: 'Publish Analysis Result'
+
+- task: VSBuild@1
+  displayName: 'pack debug'
+  inputs:
+    solution: '$(package_project)'
+    msbuildArgs: '/t:pack'
+    platform: '$(BuildPlatform)'
+    configuration: debug
+
+- task: VSBuild@1
+  displayName: 'pack release'
+  inputs:
+    solution: '$(package_project)'
+    msbuildArgs: '/t:pack'
+    platform: '$(BuildPlatform)'
+    configuration: release
+
+- task: CopyFiles@2
+  displayName: 'copy debug pkg to artifacts'
+  inputs:
+    SourceFolder: '$(Build.SourcesDirectory)/src'
+    Contents: '**\Debug\*.nupkg'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/debug'
+    CleanTargetFolder: true
+    flattenFolders: true
+
+- task: CopyFiles@2
+  displayName: 'copy release pkg to artifacts'
+  inputs:
+    SourceFolder: '$(Build.SourcesDirectory)/src'
+    Contents: |
+     **\Release\*.nupkg
+     !**\Release\*.symbols.nupkg
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/release'
+    CleanTargetFolder: true
+    flattenFolders: true
+
+- task: PublishBuildArtifacts@1
+  displayName: 'publish debug pkg'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/debug'
+    ArtifactName: debug
+
+- task: PublishBuildArtifacts@1
+  displayName: 'publish release pkg'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/release'
+    ArtifactName: release
