@@ -1,30 +1,33 @@
-﻿namespace Eshopworld.Telemetry
+﻿using Kusto.Data;
+using Kusto.Data.Common;
+using Kusto.Data.Net.Client;
+using Kusto.Ingest;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Tracing;
+using System.IO;
+using System.Reactive;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+using Eshopworld.Core;
+using Eshopworld.Telemetry.InternalEvents;
+using Eshopworld.Telemetry.Kusto;
+using JetBrains.Annotations;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.ApplicationInsights.Metrics;
+using Microsoft.Azure.Services.AppAuthentication;
+using Newtonsoft.Json;
+
+namespace Eshopworld.Telemetry
 {
-    using System;
-    using System.Collections.Concurrent;
-    using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.Diagnostics.CodeAnalysis;
-    using System.Diagnostics.Tracing;
-    using System.IO;
-    using System.Reactive;
-    using System.Reactive.Linq;
-    using System.Reactive.Subjects;
-    using System.Runtime.CompilerServices;
-    using System.Threading.Tasks;
-    using Core;
-    using InternalEvents;
-    using JetBrains.Annotations;
-    using Kusto.Data;
-    using Kusto.Data.Common;
-    using Kusto.Data.Net.Client;
-    using Kusto.Ingest;
-    using Microsoft.ApplicationInsights;
-    using Microsoft.ApplicationInsights.DataContracts;
-    using Microsoft.ApplicationInsights.Extensibility;
-    using Microsoft.ApplicationInsights.Metrics;
-    using Microsoft.Azure.Services.AppAuthentication;
-    using Newtonsoft.Json;
+    
 
     /// <summary>
     /// Deals with everything that's public in telemetry.
@@ -266,6 +269,20 @@
         /// </remarks>
         public IBigBrother UseKusto(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId, IKustoIngestClient client)
         {
+            var dispatcher = new KustoDispatcher(
+                new List<IIngestionStrategy>
+                {
+                    new QueuedIngestionStrategy()
+                },
+                new KustoDbDetails { });
+
+            dispatcher.Subscribe<TelemetryEvent, QueuedIngestionStrategy>(
+                TelemetryStream, 
+                KustoIngestionTimeMetric, 
+                InternalStream);
+
+            return this;
+
             try
             {
                 KustoDbName = kustoDb;

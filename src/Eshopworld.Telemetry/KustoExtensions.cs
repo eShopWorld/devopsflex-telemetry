@@ -1,11 +1,10 @@
-﻿namespace Eshopworld.Telemetry
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Kusto.Data.Common;
+
+namespace Eshopworld.Telemetry
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using Kusto.Cloud.Platform.Data;
-    using Kusto.Data.Common;
-    using Kusto.Data.Exceptions;
 
     /// <summary>
     /// Contains extensions to clients in the Kusto SDK.
