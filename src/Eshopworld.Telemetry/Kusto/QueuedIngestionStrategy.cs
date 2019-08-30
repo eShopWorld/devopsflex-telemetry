@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -19,15 +20,32 @@ namespace Eshopworld.Telemetry.Kusto
     {
         internal readonly Dictionary<Type, KustoQueuedIngestionProperties> KustoMappings = new Dictionary<Type, KustoQueuedIngestionProperties>();
 
-        private readonly object _gate = new object();
-
         private KustoDbDetails _dbDetails;
         private ICslAdminProvider _adminProvider;
         private IKustoQueuedIngestClient _ingestClient;
-        private Timer _timer;
+
         private bool _inProgress = false;
+        private DateTime _lastIngestion;
+        private readonly CancellationToken _cancellationToken;
+        private readonly int _timerInterval;
+        private readonly int _maxItemCount;
+        private readonly bool _flushImmediately;
 
         private readonly Dictionary<Type, BufferBlock<TelemetryEvent>> _eventBuffer = new Dictionary<Type, BufferBlock<TelemetryEvent>>();
+
+        /// <summary>
+        /// Ingestion strategy that uses local message buffer and Kusto Data Management Cluster for buffering and aggregation
+        /// </summary>
+        /// <param name="timerInterval">Local buffer flush interval</param>
+        /// <param name="maxItemCount">Max messages in local buffer, flush immediately when reached</param>
+        /// <param name="flushImmediately">Aggregate/buffer in Kusto Data Management Cluster or flush immediately to Kusto Engine</param>
+        public QueuedIngestionStrategy(CancellationToken cancellationToken, int timerInterval = 1000, int maxItemCount = 100, bool flushImmediately = true)
+        {
+            _cancellationToken = cancellationToken;
+            _timerInterval = timerInterval;
+            _maxItemCount = maxItemCount;
+            _flushImmediately = flushImmediately;
+        }
 
         /// <inheritdoc />
         public void Setup(KustoDbDetails dbDetails, ICslAdminProvider adminProvider)
@@ -45,7 +63,11 @@ namespace Eshopworld.Telemetry.Kusto
                 ApplicationToken = dbDetails.AuthToken
             });
 
-            _timer = new Timer(OnTick, null, 2000, 2000);
+            _lastIngestion = DateTime.Now;
+
+            // background timer which checks if buffer should be flushed
+            Task.Run(Timer, _cancellationToken);
+
         }
 
         /// <inheritdoc />
@@ -54,26 +76,47 @@ namespace Eshopworld.Telemetry.Kusto
             if (_eventBuffer.ContainsKey(typeof(T)))
                 _eventBuffer.Add(typeof(T), new BufferBlock<TelemetryEvent>());
 
-            await _eventBuffer[typeof(T)].SendAsync(@event);
+            var bufferBlock = _eventBuffer[typeof(T)];
+
+            await bufferBlock.SendAsync(@event, _cancellationToken);
         }
 
-        private void OnTick(object state)
+        private async Task Timer()
         {
-            if (_inProgress) return;
-
-            lock (_gate)
+            while (true)
             {
-                _inProgress = true;
+                // check every 200ms if there's enough items in the buffer, or configured time interval has passed
+                await Task.Delay(200, _cancellationToken);
 
-                foreach (var bufferBlock in _eventBuffer)
+                if (_eventBuffer.Any(x => x.Value.Count > _maxItemCount) ||
+                    DateTime.Now.Subtract(_lastIngestion).TotalMilliseconds > _timerInterval &&
+                    !_inProgress)
                 {
-                    if (bufferBlock.Value.Count > 0)
-                    {
-                        bufferBlock.Value.TryReceiveAll(out var events);
-                        DispatchEvents(events, bufferBlock.Key).GetAwaiter().GetResult();
-                    }
+                    await ProcessBuffers();
+                }
+
+                if (_cancellationToken.IsCancellationRequested)
+                    break;
+            }
+        }
+
+        private async Task ProcessBuffers()
+        {
+            // poor mans locking
+            _inProgress = true;
+            
+            foreach (var bufferBlock in _eventBuffer)
+            {
+                if (bufferBlock.Value.Count > 0)
+                {
+                    bufferBlock.Value.TryReceiveAll(out var events);
+                    await DispatchEvents(events, bufferBlock.Key);
                 }
             }
+
+            // send again after last ingest has finished
+            _lastIngestion = DateTime.Now;
+            _inProgress = false;
         }
 
         private async Task DispatchEvents(IList<TelemetryEvent> events, Type eventType)
@@ -87,7 +130,7 @@ namespace Eshopworld.Telemetry.Kusto
                     JSONMappingReference = _adminProvider.GenerateTableJsonMappingFromType(eventType),
                     ReportLevel = IngestionReportLevel.FailuresOnly,
                     ReportMethod = IngestionReportMethod.Queue,
-                    FlushImmediately = true,
+                    FlushImmediately = _flushImmediately,
                     IgnoreSizeLimit = true,
                     ValidationPolicy = null,
                     Format = DataSourceFormat.json
@@ -118,7 +161,6 @@ namespace Eshopworld.Telemetry.Kusto
             _eventBuffer.Clear();
             _adminProvider?.Dispose();
             _ingestClient?.Dispose();
-            _timer?.Dispose();
         }
     }
 }
