@@ -35,9 +35,12 @@ namespace Eshopworld.Telemetry.Kusto
                     ApplicationToken = dbDetails.AuthToken
                 });
 
-            foreach (var strategy in ingestionStrategies)
+            if (ingestionStrategies != null)
             {
-                strategy.Setup(dbDetails, _adminProvider);
+                foreach (var strategy in ingestionStrategies)
+                {
+                    strategy.Setup(dbDetails, _adminProvider);
+                }
             }
         }
 

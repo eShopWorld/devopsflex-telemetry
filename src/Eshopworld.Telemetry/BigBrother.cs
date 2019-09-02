@@ -13,6 +13,7 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Eshopworld.Core;
 using Eshopworld.Telemetry.InternalEvents;
@@ -258,6 +259,32 @@ namespace Eshopworld.Telemetry
             InternalClient.Flush();
         }
 
+        /// <summary>
+        /// Configure Kusto with custom ingestion strategy
+        /// </summary>
+        /// <param name="ingestionInterval">Local buffer flush interval in ms</param>
+        /// <param name="bufferSizeItems">Max messages in local buffer, flush immediately when reached</param>
+        /// <param name="flushImmediately">Aggregate/buffer in Kusto Data Management Cluster or flush immediately to Kusto Engine. Not related to local buffer!</param>
+        /// <returns></returns>
+        public IBigBrother UseKusto(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId, 
+            CancellationToken cancellationToken, QueuedClientOptions queuedOptions)
+        {
+            var dispatcher = new KustoDispatcher(
+                new List<IIngestionStrategy>
+                {
+                    new QueuedIngestionStrategy(cancellationToken, queuedOptions.IngestionInterval, queuedOptions.BufferSizeItems, queuedOptions.FlushImmediately)
+                },
+                new KustoDbDetails { });
+
+            // expose outside? 
+            dispatcher.Subscribe<TelemetryEvent, QueuedIngestionStrategy>(
+                TelemetryStream,
+                KustoIngestionTimeMetric,
+                InternalStream);
+
+            return this;
+        }
+
         /// <inheritdoc />
         public IBigBrother UseKusto(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId)
         {
@@ -269,20 +296,6 @@ namespace Eshopworld.Telemetry
         /// </remarks>
         public IBigBrother UseKusto(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId, IKustoIngestClient client)
         {
-            var dispatcher = new KustoDispatcher(
-                new List<IIngestionStrategy>
-                {
-                    new QueuedIngestionStrategy()
-                },
-                new KustoDbDetails { });
-
-            dispatcher.Subscribe<TelemetryEvent, QueuedIngestionStrategy>(
-                TelemetryStream, 
-                KustoIngestionTimeMetric, 
-                InternalStream);
-
-            return this;
-
             try
             {
                 KustoDbName = kustoDb;

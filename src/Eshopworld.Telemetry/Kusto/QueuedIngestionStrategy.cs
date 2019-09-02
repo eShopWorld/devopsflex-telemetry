@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -31,7 +32,11 @@ namespace Eshopworld.Telemetry.Kusto
         private readonly int _maxItemCount;
         private readonly bool _flushImmediately;
 
-        private readonly Dictionary<Type, BufferBlock<TelemetryEvent>> _eventBuffer = new Dictionary<Type, BufferBlock<TelemetryEvent>>();
+        private readonly int _internalClock = 200;
+        private bool _disposed = false;
+
+
+        private readonly ConcurrentDictionary<Type, BufferBlock<TelemetryEvent>> _eventBuffer = new ConcurrentDictionary<Type, BufferBlock<TelemetryEvent>>();
 
         /// <summary>
         /// Ingestion strategy that uses local message buffer and Kusto Data Management Cluster for buffering and aggregation
@@ -73,11 +78,11 @@ namespace Eshopworld.Telemetry.Kusto
         /// <inheritdoc />
         public async Task HandleKustoEvent<T>(T @event) where T:TelemetryEvent
         {
-            if (_eventBuffer.ContainsKey(typeof(T)))
-                _eventBuffer.Add(typeof(T), new BufferBlock<TelemetryEvent>());
+            if (_disposed) 
+                throw new ObjectDisposedException(nameof(QueuedIngestionStrategy), "Queued Ingestion client is disposed");
 
-            var bufferBlock = _eventBuffer[typeof(T)];
-
+            var bufferBlock = _eventBuffer.GetOrAdd(typeof(T), _ => new BufferBlock<TelemetryEvent>());
+            
             await bufferBlock.SendAsync(@event, _cancellationToken);
         }
 
@@ -86,16 +91,16 @@ namespace Eshopworld.Telemetry.Kusto
             while (true)
             {
                 // check every 200ms if there's enough items in the buffer, or configured time interval has passed
-                await Task.Delay(200, _cancellationToken);
+                await Task.Delay(_internalClock, _cancellationToken);
 
-                if (_eventBuffer.Any(x => x.Value.Count > _maxItemCount) ||
-                    DateTime.Now.Subtract(_lastIngestion).TotalMilliseconds > _timerInterval &&
+                if (_eventBuffer.Any(x => x.Value.Count >= _maxItemCount) ||
+                    DateTime.Now.Subtract(_lastIngestion).TotalMilliseconds >= _timerInterval &&
                     !_inProgress)
                 {
                     await ProcessBuffers();
                 }
 
-                if (_cancellationToken.IsCancellationRequested)
+                if (_cancellationToken.IsCancellationRequested || _disposed)
                     break;
             }
         }
@@ -161,6 +166,7 @@ namespace Eshopworld.Telemetry.Kusto
             _eventBuffer.Clear();
             _adminProvider?.Dispose();
             _ingestClient?.Dispose();
+            _disposed = true;
         }
     }
 }
