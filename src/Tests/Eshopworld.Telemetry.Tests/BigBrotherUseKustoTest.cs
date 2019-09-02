@@ -21,6 +21,7 @@ public class BigBrotherUseKustoTest
     private string KustoTenantId;
 
     private ICslQueryProvider KustoQueryClient;
+    private ICslAdminProvider KustoAdminClient;
 
     public BigBrotherUseKustoTest()
     {
@@ -34,14 +35,16 @@ public class BigBrotherUseKustoTest
             var kustoUri = $"https://{KustoName}.{KustoLocation}.kusto.windows.net";
             var token = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, string.Empty).Result;
 
-            KustoQueryClient = KustoClientFactory.CreateCslQueryProvider(
-            new KustoConnectionStringBuilder(kustoUri)
+            var connectionStringBuilder = new KustoConnectionStringBuilder(kustoUri)
             {
                 FederatedSecurity = true,
                 InitialCatalog = KustoDatabase,
                 AuthorityId = KustoTenantId,
                 ApplicationToken = token
-            });
+            };
+
+            KustoQueryClient = KustoClientFactory.CreateCslQueryProvider(connectionStringBuilder);
+            KustoAdminClient = KustoClientFactory.CreateCslAdminProvider(connectionStringBuilder);
         }
     }
 
@@ -53,6 +56,52 @@ public class BigBrotherUseKustoTest
         var bb = new BigBrother("", "");
         bb.UseKusto(KustoName, KustoLocation, KustoDatabase, KustoTenantId);
 
+        var evt = new KustoTestEvent();
+        bb.Publish(evt);
+
+        await Policy.Handle<Exception>()
+            .WaitAndRetryAsync(new[]
+            {
+                TimeSpan.FromSeconds(3),
+                TimeSpan.FromSeconds(10),
+                TimeSpan.FromSeconds(30)
+            })
+            .ExecuteAsync(async () =>
+            {
+                var reader = await KustoQueryClient.ExecuteQueryAsync(
+                    KustoDatabase,
+                    $"{nameof(KustoTestEvent)} | where {nameof(KustoTestEvent.Id)} == \"{evt.Id}\" | summarize count()",
+                    ClientRequestProperties.FromJsonString("{}"));
+
+                reader.Read().Should().BeTrue();
+                reader.GetInt64(0).Should().Be(1);
+            });
+    }
+
+    [Fact, IsLayer1]
+    public async Task Test_KustoTestEvent_Creates_Table()
+    {
+        KustoQueryClient.Should().NotBeNull();
+        KustoAdminClient.Should().NotBeNull();
+
+        var bb = new BigBrother("", "");
+        bb.UseKusto(KustoName, KustoLocation, KustoDatabase, KustoTenantId);
+
+        // delete the table if it exists
+        using (var dataReader = await KustoAdminClient.ExecuteControlCommandAsync(KustoDatabase, ".show tables"))
+        {
+            while (dataReader.Read())
+            {
+                var table = dataReader.GetString(0);
+                if (table.Equals(nameof(KustoTestEvent), StringComparison.OrdinalIgnoreCase))
+                {
+                    await KustoAdminClient.ExecuteControlCommandAsync(KustoDatabase, $".drop table {nameof(KustoTestEvent)}");
+                    break;
+                }
+            }
+        }
+
+        // this should create a table and publish the message
         var evt = new KustoTestEvent();
         bb.Publish(evt);
 
