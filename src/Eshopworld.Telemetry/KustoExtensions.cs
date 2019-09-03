@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Kusto.Data.Common;
 
 namespace Eshopworld.Telemetry
@@ -19,22 +20,27 @@ namespace Eshopworld.Telemetry
         /// <returns>The name of the table created.</returns>
         public static string GenerateTableFromType(this ICslAdminProvider client, Type type)
         {
+            return GenerateTableFromTypeAsync(client, type).GetAwaiter().GetResult();
+        }
+
+        public static async Task<string> GenerateTableFromTypeAsync(this ICslAdminProvider client, Type type)
+        {
             var tableName = type.Name;
             var tables = new List<string>();
             var command = CslCommandGenerator.GenerateTablesShowCommand();
 
-            var reader = client.ExecuteControlCommand(command);
+            var reader = await client.ExecuteControlCommandAsync(client.DefaultDatabaseName, command);
 
             while (reader.Read())
             {
                 tables.Add(reader.GetString(0));
             }
-            
+
             if (tables.Contains(tableName)) return tableName;
 
             var columns = type.GetProperties().Select(property => Tuple.Create(property.Name, property.PropertyType.FullName)).ToList();
             command = CslCommandGenerator.GenerateTableCreateCommand(tableName, columns);
-            client.ExecuteControlCommand(command);
+            await client.ExecuteControlCommandAsync(client.DefaultDatabaseName, command);
 
             return tableName;
         }
@@ -47,12 +53,17 @@ namespace Eshopworld.Telemetry
         /// <returns>The name of the mapping created.</returns>
         public static string GenerateTableJsonMappingFromType(this ICslAdminProvider client, Type type)
         {
+            return GenerateTableJsonMappingFromTypeAsync(client, type).GetAwaiter().GetResult();
+        }
+
+        public static async Task<string> GenerateTableJsonMappingFromTypeAsync(this ICslAdminProvider client, Type type)
+        {
             var tableName = type.Name;
             var mappingName = $"{tableName}_mapping";
             var tableMappings = new List<string>();
             var command = CslCommandGenerator.GenerateTableJsonMappingsShowCommand(tableName);
 
-            var reader = client.ExecuteControlCommand(command);
+            var reader = await client.ExecuteControlCommandAsync(client.DefaultDatabaseName, command);
 
             while (reader.Read())
             {
@@ -63,7 +74,7 @@ namespace Eshopworld.Telemetry
 
             var mappings = type.GetProperties().Select(property => new JsonColumnMapping { ColumnName = property.Name, JsonPath = $"$.{property.Name}" }).ToList();
             command = CslCommandGenerator.GenerateTableJsonMappingCreateCommand(tableName, mappingName, mappings);
-            client.ExecuteControlCommand(command);
+            await client.ExecuteControlCommandAsync(client.DefaultDatabaseName, command);
 
             return mappingName;
         }

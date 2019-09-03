@@ -22,5 +22,9 @@ namespace Eshopworld.Telemetry.Kusto
         IDisposable Subscribe<T, S>(Subject<BaseEvent> stream, Metric ingestionTimeMetrics, ISubject<TelemetryEvent> errorStream)
             where T : TelemetryEvent
             where S : IIngestionStrategy;
+
+        void Initialise(KustoDbDetails dbDetails);
+
+        void AddStrategy(IIngestionStrategy strategy);
     }
 }

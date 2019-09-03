@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Eshopworld.Core;
 using Eshopworld.Telemetry;
+using Eshopworld.Telemetry.Kusto;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
 using Kusto.Data;
@@ -25,10 +27,15 @@ public class BigBrotherUseKustoTest
 
     public BigBrotherUseKustoTest()
     {
-        _kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Machine);
-        _kustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.Machine);
-        _kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
-        _kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);
+        //_kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Machine);
+        //_kustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.Machine);
+        //_kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
+        //_kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);
+
+        _kustoName = "eswtest"; // Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Machine);
+        _kustoLocation = "westeurope"; // Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.Machine);
+        _kustoDatabase = "tele-poc"; //Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
+        _kustoTenantId = "49c77085-e8c5-4ad2-8114-1d4e71a64cc1"; //Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);	
 
         if (_kustoName != null && _kustoLocation != null && _kustoDatabase != null && _kustoTenantId != null)
         {
@@ -52,9 +59,15 @@ public class BigBrotherUseKustoTest
     public async Task Test_KustoTestEvent_StreamsToKusto()
     {
         _kustoQueryClient.Should().NotBeNull();
+        var source = new CancellationTokenSource();
 
         var bb = new BigBrother("", "");
-        bb.UseKusto(_kustoName, _kustoLocation, _kustoDatabase, _kustoTenantId);
+        //bb.UseKusto(_kustoName, _kustoLocation, _kustoDatabase, _kustoTenantId);
+        bb.UseKusto(builder =>
+        {
+            builder.UseCluster(_kustoName, _kustoLocation, _kustoDatabase, _kustoTenantId);
+            builder.Subscribe(new QueuedIngestionStrategy(source.Token)).With<KustoTestEvent>();
+        });
 
         var evt = new KustoTestEvent();
         bb.Publish(evt);
@@ -63,8 +76,9 @@ public class BigBrotherUseKustoTest
             .WaitAndRetryAsync(new[]
             {
                 TimeSpan.FromSeconds(3),
-                TimeSpan.FromSeconds(10),
-                TimeSpan.FromSeconds(30)
+                TimeSpan.FromSeconds(5),
+                TimeSpan.FromSeconds(5),
+                TimeSpan.FromSeconds(5)
             })
             .ExecuteAsync(async () =>
             {
@@ -75,6 +89,8 @@ public class BigBrotherUseKustoTest
 
                 reader.Read().Should().BeTrue();
                 reader.GetInt64(0).Should().Be(1);
+
+                source.Cancel();
             });
     }
 

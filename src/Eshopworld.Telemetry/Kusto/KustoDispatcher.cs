@@ -16,14 +16,14 @@ namespace Eshopworld.Telemetry.Kusto
     /// <inheritdoc />
     public class KustoDispatcher  : IDestinationDispatcher
     {
-        private readonly IList<IIngestionStrategy> _ingestionStrategies; // hmmm
+        private KustoDbDetails _dbDetails;
+        private readonly IList<IIngestionStrategy> _ingestionStrategies = new List<IIngestionStrategy>(); // hmmm
         private ICslAdminProvider _adminProvider;
 
-        public KustoDispatcher(IList<IIngestionStrategy> ingestionStrategies, KustoDbDetails dbDetails)
+        public void Initialise(KustoDbDetails dbDetails)
         {
-            _ingestionStrategies = ingestionStrategies;
-
-            var kustoUri = $"https://{dbDetails.DbName}.{dbDetails.Region}.kusto.windows.net";
+            _dbDetails = dbDetails;
+            var kustoUri = $"https://{dbDetails.Engine}.{dbDetails.Region}.kusto.windows.net";
             dbDetails.AuthToken = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, string.Empty).Result;
 
             _adminProvider = KustoClientFactory.CreateCslAdminProvider(
@@ -34,14 +34,12 @@ namespace Eshopworld.Telemetry.Kusto
                     Authority = dbDetails.ClientId,
                     ApplicationToken = dbDetails.AuthToken
                 });
+        }
 
-            if (ingestionStrategies != null)
-            {
-                foreach (var strategy in ingestionStrategies)
-                {
-                    strategy.Setup(dbDetails, _adminProvider);
-                }
-            }
+        public void AddStrategy(IIngestionStrategy strategy)
+        {
+            _ingestionStrategies.Add(strategy);
+            strategy.Setup(_dbDetails, _adminProvider);
         }
 
         /// <inheritdoc />
@@ -68,13 +66,16 @@ namespace Eshopworld.Telemetry.Kusto
         private async Task HandleEvent<T>(T e, IIngestionStrategy strategy, Metric ingestionTimeMetrics, ISubject<TelemetryEvent> errorStream)
             where T:TelemetryEvent
         {
+            if (errorStream == null)
+                throw new ArgumentNullException(nameof(errorStream));
+
             try
             {
                 var time = DateTime.Now;
 
                 await strategy.HandleKustoEvent(e);
 
-                ingestionTimeMetrics.TrackValue(DateTime.Now.Subtract(time).TotalMilliseconds);
+                ingestionTimeMetrics?.TrackValue(DateTime.Now.Subtract(time).TotalMilliseconds);
             }
             catch (Exception ex)
             {

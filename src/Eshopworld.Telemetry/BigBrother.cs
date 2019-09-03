@@ -24,6 +24,7 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights.Metrics;
 using Microsoft.Azure.Services.AppAuthentication;
+using Microsoft.Rest;
 using Newtonsoft.Json;
 
 namespace Eshopworld.Telemetry
@@ -266,21 +267,20 @@ namespace Eshopworld.Telemetry
         /// <param name="bufferSizeItems">Max messages in local buffer, flush immediately when reached</param>
         /// <param name="flushImmediately">Aggregate/buffer in Kusto Data Management Cluster or flush immediately to Kusto Engine. Not related to local buffer!</param>
         /// <returns></returns>
-        public IBigBrother UseKusto(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId, 
-            CancellationToken cancellationToken, QueuedClientOptions queuedOptions)
+        public IBigBrother UseKusto(Action<KustoOptionsBuilder> options)
         {
-            var dispatcher = new KustoDispatcher(
-                new List<IIngestionStrategy>
-                {
-                    new QueuedIngestionStrategy(cancellationToken, queuedOptions.IngestionInterval, queuedOptions.BufferSizeItems, queuedOptions.FlushImmediately)
-                },
-                new KustoDbDetails { });
+            var builder = new KustoOptionsBuilder(new KustoDispatcher(), TelemetryStream,  KustoIngestionTimeMetric, InternalStream);
+
+            options(builder);
+
+            //var dispatcher = new KustoDispatcher(
+            //    new KustoDbDetails { ClientId = tenantId, DbName = kustoDb, Engine = kustoEngineName, Region = kustoEngineLocation});
 
             // expose outside? 
-            dispatcher.Subscribe<TelemetryEvent, QueuedIngestionStrategy>(
-                TelemetryStream,
-                KustoIngestionTimeMetric,
-                InternalStream);
+            //dispatcher.Subscribe<TelemetryEvent, QueuedIngestionStrategy>(
+            //    TelemetryStream,
+            //KustoIngestionTimeMetric,
+            //    InternalStream);
 
             return this;
         }

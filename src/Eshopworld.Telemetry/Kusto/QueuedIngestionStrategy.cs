@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -72,7 +73,6 @@ namespace Eshopworld.Telemetry.Kusto
 
             // background timer which checks if buffer should be flushed
             Task.Run(Timer, _cancellationToken);
-
         }
 
         /// <inheritdoc />
@@ -81,9 +81,33 @@ namespace Eshopworld.Telemetry.Kusto
             if (_disposed) 
                 throw new ObjectDisposedException(nameof(QueuedIngestionStrategy), "Queued Ingestion client is disposed");
 
-            var bufferBlock = _eventBuffer.GetOrAdd(typeof(T), _ => new BufferBlock<TelemetryEvent>());
+            var eventType = @event.GetType();
+
+            var bufferBlock = _eventBuffer.GetOrAdd(eventType, _ => new BufferBlock<TelemetryEvent>());
             
+            await VerifyTableAndModelProperties<T>(eventType);
+
             await bufferBlock.SendAsync(@event, _cancellationToken);
+        }
+
+        private async Task VerifyTableAndModelProperties<T>(Type eventType) where T : TelemetryEvent
+        {
+            if (!KustoMappings.ContainsKey(eventType))
+            {
+                var ingestProps = new KustoQueuedIngestionProperties(_dbDetails.DbName, eventType.Name)
+                {
+                    TableName = await _adminProvider.GenerateTableFromTypeAsync(eventType),
+                    JSONMappingReference = await  _adminProvider.GenerateTableJsonMappingFromTypeAsync(eventType),
+                    ReportLevel = IngestionReportLevel.FailuresOnly,
+                    ReportMethod = IngestionReportMethod.Queue,
+                    FlushImmediately = _flushImmediately,
+                    IgnoreSizeLimit = true,
+                    ValidationPolicy = null,
+                    Format = DataSourceFormat.json
+                };
+
+                KustoMappings.Add(eventType, ingestProps);
+            }
         }
 
         private async Task Timer()
@@ -93,9 +117,9 @@ namespace Eshopworld.Telemetry.Kusto
                 // check every 200ms if there's enough items in the buffer, or configured time interval has passed
                 await Task.Delay(_internalClock, _cancellationToken);
 
-                if (_eventBuffer.Any(x => x.Value.Count >= _maxItemCount) ||
-                    DateTime.Now.Subtract(_lastIngestion).TotalMilliseconds >= _timerInterval &&
-                    !_inProgress)
+                if (!_inProgress &&
+                    (_eventBuffer.Any(x => x.Value.Count >= _maxItemCount) || DateTime.Now.Subtract(_lastIngestion).TotalMilliseconds >= _timerInterval) &&
+                    _eventBuffer.Any(x => x.Value.Count > 0))
                 {
                     await ProcessBuffers();
                 }
@@ -107,9 +131,11 @@ namespace Eshopworld.Telemetry.Kusto
 
         private async Task ProcessBuffers()
         {
-            // poor mans locking
+            // Kusto ingestion can take some time, so lets not start new uploads until this one finishes
             _inProgress = true;
-            
+
+            Debug.WriteLine("Processing buffers");
+
             foreach (var bufferBlock in _eventBuffer)
             {
                 if (bufferBlock.Value.Count > 0)
@@ -126,27 +152,7 @@ namespace Eshopworld.Telemetry.Kusto
 
         private async Task DispatchEvents(IList<TelemetryEvent> events, Type eventType)
         {
-            KustoQueuedIngestionProperties ingestProps;
-            if (!KustoMappings.ContainsKey(eventType))
-            {
-                ingestProps = new KustoQueuedIngestionProperties(_dbDetails.DbName, "Unknown")
-                {
-                    TableName = _adminProvider.GenerateTableFromType(eventType),
-                    JSONMappingReference = _adminProvider.GenerateTableJsonMappingFromType(eventType),
-                    ReportLevel = IngestionReportLevel.FailuresOnly,
-                    ReportMethod = IngestionReportMethod.Queue,
-                    FlushImmediately = _flushImmediately,
-                    IgnoreSizeLimit = true,
-                    ValidationPolicy = null,
-                    Format = DataSourceFormat.json
-                };
-
-                KustoMappings.Add(eventType, ingestProps);
-            }
-            else
-            {
-                ingestProps = KustoMappings[eventType];
-            }
+            var ingestProps = KustoMappings[eventType];
 
             using (var stream = new MemoryStream())
             using (var writer = new StreamWriter(stream))
