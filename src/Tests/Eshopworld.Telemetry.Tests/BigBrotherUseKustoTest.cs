@@ -27,15 +27,10 @@ public class BigBrotherUseKustoTest
 
     public BigBrotherUseKustoTest()
     {
-        //_kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Machine);
-        //_kustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.Machine);
-        //_kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
-        //_kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);
-
-        _kustoName = "eswtest"; // Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Machine);
-        _kustoLocation = "westeurope"; // Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.Machine);
-        _kustoDatabase = "tele-poc"; //Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
-        _kustoTenantId = "49c77085-e8c5-4ad2-8114-1d4e71a64cc1"; //Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);	
+        _kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Machine);
+        _kustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.Machine);
+        _kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
+        _kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);
 
         if (_kustoName != null && _kustoLocation != null && _kustoDatabase != null && _kustoTenantId != null)
         {
@@ -62,11 +57,11 @@ public class BigBrotherUseKustoTest
         var source = new CancellationTokenSource();
 
         var bb = new BigBrother("", "");
-        //bb.UseKusto(_kustoName, _kustoLocation, _kustoDatabase, _kustoTenantId);
+
         bb.UseKusto(builder =>
         {
             builder.UseCluster(_kustoName, _kustoLocation, _kustoDatabase, _kustoTenantId);
-            builder.Subscribe(new QueuedIngestionStrategy(source.Token)).With<KustoTestEvent>();
+            builder.UseQueuedIngestion<KustoTestEvent>(source.Token, 500, 50);
         });
 
         var evt = new KustoTestEvent();

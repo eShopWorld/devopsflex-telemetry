@@ -36,7 +36,6 @@ namespace Eshopworld.Telemetry.Kusto
         private readonly int _internalClock = 200;
         private bool _disposed = false;
 
-
         private readonly ConcurrentDictionary<Type, BufferBlock<TelemetryEvent>> _eventBuffer = new ConcurrentDictionary<Type, BufferBlock<TelemetryEvent>>();
 
         /// <summary>
