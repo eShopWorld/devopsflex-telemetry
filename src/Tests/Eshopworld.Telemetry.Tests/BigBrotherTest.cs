@@ -153,7 +153,7 @@ public class BigBrotherTest
             var tasks = new List<Task>();
             for (var x = 0; x < 10; x++)
             {
-                tasks.Add(Task.Run(()=> new BigBrother("blah", "blah")));
+                tasks.Add(Task.Run(() => new BigBrother("blah", "blah")));
             }
 
             //this will blow up in V2
@@ -266,24 +266,22 @@ public class BigBrotherTest
         [Fact, IsUnit]
         public async Task Test_With_ExtendedExceptionEvent()
         {
-            var telemetry = new ExtendedTestException(new Exception("blah")) { ErrorCode = HttpStatusCode.Accepted , ClientId = "clientId"};
+            var telemetry = new ExtendedTestException(new Exception("blah")) { ErrorCode = HttpStatusCode.Accepted, ClientId = "clientId" };
 
             var channel = new Mock<ITelemetryChannel>();
 
-            channel.Setup(c => c.Send(It.Is<ExceptionTelemetry>(i => 
-                i.Properties["ErrorCode"]=="202" && i.Properties["Timestamp"]!=null && i.Properties["ClientId"]=="clientId")))
+            channel.Setup(c => c.Send(It.Is<ExceptionTelemetry>(i =>
+                i.Properties["ErrorCode"] == "202" && i.Properties["Timestamp"] != null && i.Properties["ClientId"] == "clientId")))
                 .Verifiable();
 
-            var telClient = new TelemetryClient(new TelemetryConfiguration("blah", channel.Object));
-            
-            using (var bb = new BigBrother(telClient, "blah"))
-            {
-                bb.Publish(telemetry.ToExceptionEvent());
-                bb.Flush();
+            var telemetryClient = new TelemetryClient(new TelemetryConfiguration("blah", channel.Object));
 
-                await Task.Delay(TimeSpan.FromSeconds(1));
-                channel.Verify();
-            }
+            var bb = new BigBrother(telemetryClient, "blah");
+            bb.Publish(telemetry.ToExceptionEvent());
+            bb.Flush();
+
+            await Task.Delay(TimeSpan.FromSeconds(1));
+            channel.Verify();
         }
     }
 
