@@ -25,6 +25,9 @@ namespace Eshopworld.Telemetry.Kusto
 
         void Initialise(KustoDbDetails dbDetails);
 
+        /// <summary>
+        /// Registers new ingestion strategy
+        /// </summary>
         void AddStrategy(IIngestionStrategy strategy);
     }
 }

@@ -20,6 +20,10 @@ namespace Eshopworld.Telemetry.Kusto
         private readonly IList<IIngestionStrategy> _ingestionStrategies = new List<IIngestionStrategy>(); // hmmm
         private ICslAdminProvider _adminProvider;
 
+        /// <summary>
+        /// Setup Kusto admin provider
+        /// </summary>
+        /// <param name="dbDetails"></param>
         public void Initialise(KustoDbDetails dbDetails)
         {
             _dbDetails = dbDetails;
@@ -36,6 +40,7 @@ namespace Eshopworld.Telemetry.Kusto
                 });
         }
 
+        /// <inheritdoc />
         public void AddStrategy(IIngestionStrategy strategy)
         {
             _ingestionStrategies.Add(strategy);
@@ -63,6 +68,10 @@ namespace Eshopworld.Telemetry.Kusto
             return subscription;
         }
 
+
+        /// <summary>
+        /// Dispatch an event to strategy. Exceptions will be sent to the error stream.
+        /// </summary>
         private async Task HandleEvent<T>(T e, IIngestionStrategy strategy, Metric ingestionTimeMetrics, ISubject<TelemetryEvent> errorStream)
             where T:TelemetryEvent
         {

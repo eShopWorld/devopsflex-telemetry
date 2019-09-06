@@ -273,15 +273,6 @@ namespace Eshopworld.Telemetry
 
             options(builder);
 
-            //var dispatcher = new KustoDispatcher(
-            //    new KustoDbDetails { ClientId = tenantId, DbName = kustoDb, Engine = kustoEngineName, Region = kustoEngineLocation});
-
-            // expose outside? 
-            //dispatcher.Subscribe<TelemetryEvent, QueuedIngestionStrategy>(
-            //    TelemetryStream,
-            //KustoIngestionTimeMetric,
-            //    InternalStream);
-
             return this;
         }
 

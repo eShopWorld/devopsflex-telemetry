@@ -89,6 +89,9 @@ namespace Eshopworld.Telemetry.Kusto
             await bufferBlock.SendAsync(@event, _cancellationToken);
         }
 
+        /// <summary>
+        /// Create table mappings
+        /// </summary>
         private async Task VerifyTableAndModelProperties<T>(Type eventType) where T : TelemetryEvent
         {
             if (!KustoMappings.ContainsKey(eventType))
