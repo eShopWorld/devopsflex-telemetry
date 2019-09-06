@@ -4,13 +4,19 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reactive;
+using System.Reactive.Concurrency;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Eshopworld.Core;
+using Kusto.Cloud.Platform.Utils;
 using Kusto.Data;
 using Kusto.Data.Common;
 using Kusto.Ingest;
+using Microsoft.ApplicationInsights;
 using Newtonsoft.Json;
 
 namespace Eshopworld.Telemetry.Kusto
@@ -26,17 +32,18 @@ namespace Eshopworld.Telemetry.Kusto
         private ICslAdminProvider _adminProvider;
         private IKustoQueuedIngestClient _ingestClient;
 
-        private bool _inProgress = false;
-        private DateTime _lastIngestion;
         private readonly CancellationToken _cancellationToken;
         private readonly int _timerInterval;
         private readonly int _maxItemCount;
         private readonly bool _flushImmediately;
 
-        private readonly int _internalClock = 200;
         private bool _disposed = false;
 
-        private readonly ConcurrentDictionary<Type, BufferBlock<TelemetryEvent>> _eventBuffer = new ConcurrentDictionary<Type, BufferBlock<TelemetryEvent>>();
+        private Metric _ingestionTimeMetric;
+        private ISubject<TelemetryEvent> _errorStream;
+        private readonly ConcurrentDictionary<Type, Subject<TelemetryEvent>> _typeStream = new ConcurrentDictionary<Type, Subject<TelemetryEvent>>();
+
+        private Subject<TelemetryEvent> _stream = new Subject<TelemetryEvent>();
 
         /// <summary>
         /// Ingestion strategy that uses local message buffer and Kusto Data Management Cluster for buffering and aggregation
@@ -53,10 +60,12 @@ namespace Eshopworld.Telemetry.Kusto
         }
 
         /// <inheritdoc />
-        public void Setup(KustoDbDetails dbDetails, ICslAdminProvider adminProvider)
+        public void Setup(KustoDbDetails dbDetails, ICslAdminProvider adminProvider, ISubject<TelemetryEvent> errorStream, Metric ingestionTimeMetrics)
         {
             _dbDetails = dbDetails;
             _adminProvider = adminProvider;
+            _errorStream = errorStream ?? throw new ArgumentNullException(nameof(errorStream));
+            _ingestionTimeMetric = ingestionTimeMetrics ?? throw new ArgumentNullException(nameof(ingestionTimeMetrics));
 
             var kustoIngestUri = $"https://ingest-{dbDetails.Engine}.{dbDetails.Region}.kusto.windows.net";
 
@@ -68,10 +77,10 @@ namespace Eshopworld.Telemetry.Kusto
                 ApplicationToken = dbDetails.AuthToken
             });
 
-            _lastIngestion = DateTime.Now;
-
-            // background timer which checks if buffer should be flushed
-            Task.Run(Timer, _cancellationToken);
+            var disposable = _stream.Buffer(TimeSpan.FromMilliseconds(_timerInterval), _maxItemCount)
+                .SubscribeOn(Scheduler.Default)
+                .SelectMany(FlushBuffer)
+                .Subscribe();
         }
 
         /// <inheritdoc />
@@ -82,11 +91,69 @@ namespace Eshopworld.Telemetry.Kusto
 
             var eventType = @event.GetType();
 
-            var bufferBlock = _eventBuffer.GetOrAdd(eventType, _ => new BufferBlock<TelemetryEvent>());
-            
             await VerifyTableAndModelProperties<T>(eventType);
 
-            await bufferBlock.SendAsync(@event, _cancellationToken);
+            //var subject = _typeStream.GetOrAdd(eventType, _ =>
+            //{
+            //    var eventSubject = new Subject<TelemetryEvent>();
+            //    eventSubject
+            //        .Buffer(TimeSpan.FromMilliseconds(_timerInterval), _maxItemCount)
+            //        .SubscribeOn(Scheduler.Default)
+            //        .SelectMany(FlushBuffer)
+            //        .Subscribe();
+
+            //    return eventSubject;
+            //});
+
+            _stream.OnNext(@event);
+
+            //subject.OnNext(@event);
+        }
+
+        private async Task<Unit> FlushBuffer(IList<TelemetryEvent> events)
+        {
+            if (events == null || events.Count == 0)
+                return Unit.Default;
+
+            try
+            {
+                var beginTime = DateTime.Now;
+
+                var eventTypeGroups = events.GroupBy(x => x.GetType());
+
+                foreach (var typeGroup in eventTypeGroups)
+                {
+                    if (typeGroup.Any())
+                        await DispatchEvents(typeGroup, typeGroup.Key);
+                }
+
+                //await DispatchEvents(events, events[0].GetType());
+
+                _ingestionTimeMetric.TrackValue(DateTime.Now.Subtract(beginTime).TotalMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                _errorStream.OnNext(ex.ToExceptionEvent());
+            }
+
+            return Unit.Default;
+        }
+
+        private async Task DispatchEvents(IEnumerable<TelemetryEvent> events, Type eventType)
+        {
+            var ingestProps = KustoMappings[eventType];
+
+            using (var stream = new MemoryStream())
+            using (var writer = new StreamWriter(stream))
+            {
+                foreach (var telemetryEvent in events)
+                    writer.WriteLine(JsonConvert.SerializeObject(telemetryEvent));
+                
+                writer.Flush();
+                stream.Seek(0, SeekOrigin.Begin);
+
+                await _ingestClient.IngestFromStreamAsync(stream, ingestProps, true);
+            }
         }
 
         /// <summary>
@@ -112,66 +179,13 @@ namespace Eshopworld.Telemetry.Kusto
             }
         }
 
-        private async Task Timer()
-        {
-            while (true)
-            {
-                // check every 200ms if there's enough items in the buffer, or configured time interval has passed
-                await Task.Delay(_internalClock, _cancellationToken);
-
-                if (!_inProgress &&
-                    (_eventBuffer.Any(x => x.Value.Count >= _maxItemCount) || DateTime.Now.Subtract(_lastIngestion).TotalMilliseconds >= _timerInterval) &&
-                    _eventBuffer.Any(x => x.Value.Count > 0))
-                {
-                    await ProcessBuffers();
-                }
-
-                if (_cancellationToken.IsCancellationRequested || _disposed)
-                    break;
-            }
-        }
-
-        private async Task ProcessBuffers()
-        {
-            // Kusto ingestion can take some time, so lets not start new uploads until this one finishes
-            _inProgress = true;
-
-            Debug.WriteLine("Processing buffers");
-
-            foreach (var bufferBlock in _eventBuffer)
-            {
-                if (bufferBlock.Value.Count > 0)
-                {
-                    bufferBlock.Value.TryReceiveAll(out var events);
-                    await DispatchEvents(events, bufferBlock.Key);
-                }
-            }
-
-            // send again after last ingest has finished
-            _lastIngestion = DateTime.Now;
-            _inProgress = false;
-        }
-
-        private async Task DispatchEvents(IList<TelemetryEvent> events, Type eventType)
-        {
-            var ingestProps = KustoMappings[eventType];
-
-            using (var stream = new MemoryStream())
-            using (var writer = new StreamWriter(stream))
-            {
-                foreach (var telemetryEvent in events)
-                    writer.WriteLine(JsonConvert.SerializeObject(telemetryEvent));
-                
-                writer.Flush();
-                stream.Seek(0, SeekOrigin.Begin);
-
-                await _ingestClient.IngestFromStreamAsync(stream, ingestProps, true);
-            }
-        }
-
         public void Dispose()
         {
-            _eventBuffer.Clear();
+            foreach (var subject in _typeStream)
+            {
+                subject.Value.Dispose();
+            }
+
             _adminProvider?.Dispose();
             _ingestClient?.Dispose();
             _disposed = true;

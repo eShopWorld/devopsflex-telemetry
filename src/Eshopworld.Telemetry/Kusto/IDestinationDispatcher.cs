@@ -19,11 +19,11 @@ namespace Eshopworld.Telemetry.Kusto
         /// <param name="ingestionTimeMetrics">Timed metrics</param>
         /// <param name="errorStream">Error metrics</param>
         /// <returns>Disposable subscription</returns>
-        IDisposable Subscribe<T, S>(Subject<BaseEvent> stream, Metric ingestionTimeMetrics, ISubject<TelemetryEvent> errorStream)
+        IDisposable Subscribe<T, S>(Subject<BaseEvent> stream)
             where T : TelemetryEvent
             where S : IIngestionStrategy;
 
-        void Initialise(KustoDbDetails dbDetails);
+        void Initialise(KustoDbDetails dbDetails, Metric ingestionTimeMetrics, ISubject<TelemetryEvent> errorStream);
 
         /// <summary>
         /// Registers new ingestion strategy

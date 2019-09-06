@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Eshopworld.Core;
 using Kusto.Data.Common;
+using Microsoft.ApplicationInsights;
 
 namespace Eshopworld.Telemetry.Kusto
 {
@@ -18,6 +20,6 @@ namespace Eshopworld.Telemetry.Kusto
         /// <summary>
         /// Initialize connection clients
         /// </summary>
-        void Setup(KustoDbDetails dbDetails, ICslAdminProvider adminProvider);
+        void Setup(KustoDbDetails dbDetails, ICslAdminProvider adminProvider, ISubject<TelemetryEvent> errorStream, Metric ingestionTimeMetrics);
     }
 }

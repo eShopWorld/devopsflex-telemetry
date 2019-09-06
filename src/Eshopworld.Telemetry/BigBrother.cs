@@ -269,6 +269,8 @@ namespace Eshopworld.Telemetry
         /// <returns></returns>
         public IBigBrother UseKusto(Action<KustoOptionsBuilder> options)
         {
+            KustoIngestionTimeMetric = InternalClient.GetMetric(new MetricIdentifier("", "KustoIngestionTime"));
+
             var builder = new KustoOptionsBuilder(new KustoDispatcher(), TelemetryStream,  KustoIngestionTimeMetric, InternalStream);
 
             options(builder);

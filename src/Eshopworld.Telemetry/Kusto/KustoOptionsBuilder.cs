@@ -26,37 +26,10 @@ namespace Eshopworld.Telemetry.Kusto
         { 
             _dbDetails = new KustoDbDetails { ClientId = tenantId, DbName = database, Engine = engine, Region = region };
 
-            Dispatcher.Initialise(_dbDetails);
+            Dispatcher.Initialise(_dbDetails, IngestionTimeMetric, ErrorStream);
 
             return this;
         }
-
-        //internal KustoStrategyBuilder<S> Subscribe<S>(S strategy) where S : IIngestionStrategy
-        //{
-        //    var strategyBuilder = new KustoStrategyBuilder<S>(strategy, Dispatcher, this);
-
-        //    return strategyBuilder;
-        //}
-
-        //public class KustoStrategyBuilder<S> where S: IIngestionStrategy
-        //{
-        //    private readonly IDestinationDispatcher _dispatcher;
-        //    private readonly KustoOptionsBuilder _builder;
-
-        //    public KustoStrategyBuilder(IIngestionStrategy strategy, IDestinationDispatcher dispatcher, KustoOptionsBuilder builder)
-        //    {
-        //        _dispatcher = dispatcher;
-        //        _builder = builder;
-
-        //        _dispatcher.AddStrategy(strategy);
-        //    }
-
-        //    public KustoStrategyBuilder<S> With<T>() where T : TelemetryEvent
-        //    {
-        //        _dispatcher.Subscribe<T, S>(_builder.TelemetryStream, _builder.IngestionTimeMetric, _builder.ErrorStream);
-        //        return this;
-        //    }
-        //}
     }
 
     public static class QueuedClientBuilderExtensions
@@ -75,7 +48,7 @@ namespace Eshopworld.Telemetry.Kusto
             where  T:TelemetryEvent
         {
             Check(builder, token, bufferInterval, maxBufferItems);
-            builder.Dispatcher.Subscribe<T, QueuedIngestionStrategy>(builder.TelemetryStream, builder.IngestionTimeMetric, builder.ErrorStream);
+            builder.Dispatcher.Subscribe<T, QueuedIngestionStrategy>(builder.TelemetryStream);
             return builder;
         }
     }
