@@ -30,33 +30,6 @@ namespace Eshopworld.Telemetry.Kusto
 
             return this;
         }
-
-        //internal KustoStrategyBuilder<S> Subscribe<S>(S strategy) where S : IIngestionStrategy
-        //{
-        //    var strategyBuilder = new KustoStrategyBuilder<S>(strategy, Dispatcher, this);
-
-        //    return strategyBuilder;
-        //}
-
-        //public class KustoStrategyBuilder<S> where S: IIngestionStrategy
-        //{
-        //    private readonly IDestinationDispatcher _dispatcher;
-        //    private readonly KustoOptionsBuilder _builder;
-
-        //    public KustoStrategyBuilder(IIngestionStrategy strategy, IDestinationDispatcher dispatcher, KustoOptionsBuilder builder)
-        //    {
-        //        _dispatcher = dispatcher;
-        //        _builder = builder;
-
-        //        _dispatcher.AddStrategy(strategy);
-        //    }
-
-        //    public KustoStrategyBuilder<S> With<T>() where T : TelemetryEvent
-        //    {
-        //        _dispatcher.Subscribe<T, S>(_builder.TelemetryStream, _builder.IngestionTimeMetric, _builder.ErrorStream);
-        //        return this;
-        //    }
-        //}
     }
 
     public static class QueuedClientBuilderExtensions
