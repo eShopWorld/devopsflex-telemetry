@@ -14,7 +14,7 @@ using Microsoft.Azure.Services.AppAuthentication;
 namespace Eshopworld.Telemetry.Kusto
 {
     /// <inheritdoc />
-    public class KustoDispatcher  : IDestinationDispatcher
+    internal class KustoDispatcher  : IDestinationDispatcher
     {
         private KustoDbDetails _dbDetails;
         private readonly IList<IIngestionStrategy> _ingestionStrategies = new List<IIngestionStrategy>(); // hmmm

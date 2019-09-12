@@ -15,12 +15,18 @@ using Newtonsoft.Json;
 
 namespace Eshopworld.Telemetry.Kusto
 {
+    public delegate void MessagesSentDelegate(int n);
+
     /// <summary>
     /// Queued ingestion client
     /// </summary>
-    public class QueuedIngestionStrategy : IIngestionStrategy
+    internal class QueuedIngestionStrategy : IIngestionStrategy
     {
         internal readonly Dictionary<Type, KustoQueuedIngestionProperties> KustoMappings = new Dictionary<Type, KustoQueuedIngestionProperties>();
+        
+        internal MessagesSentDelegate OnMessageSent;
+        private int _messagesSent = 0;
+
 
         private KustoDbDetails _dbDetails;
         private ICslAdminProvider _adminProvider;
@@ -34,9 +40,10 @@ namespace Eshopworld.Telemetry.Kusto
         private readonly bool _flushImmediately;
 
         private readonly int _internalClock = 200;
+        private Thread _bgThread;
         private bool _disposed = false;
 
-        private readonly ConcurrentDictionary<Type, BufferBlock<TelemetryEvent>> _eventBuffer = new ConcurrentDictionary<Type, BufferBlock<TelemetryEvent>>();
+        private readonly ConcurrentDictionary<Type, ConcurrentQueue<TelemetryEvent>> _eventQueue = new ConcurrentDictionary<Type, ConcurrentQueue<TelemetryEvent>>();
 
         /// <summary>
         /// Ingestion strategy that uses local message buffer and Kusto Data Management Cluster for buffering and aggregation
@@ -71,7 +78,8 @@ namespace Eshopworld.Telemetry.Kusto
             _lastIngestion = DateTime.Now;
 
             // background timer which checks if buffer should be flushed
-            Task.Run(Timer, _cancellationToken);
+            _bgThread = new Thread(Timer);
+            //_bgThread.Start();
         }
 
         /// <inheritdoc />
@@ -82,11 +90,11 @@ namespace Eshopworld.Telemetry.Kusto
 
             var eventType = @event.GetType();
 
-            var bufferBlock = _eventBuffer.GetOrAdd(eventType, _ => new BufferBlock<TelemetryEvent>());
+            var queue = _eventQueue.GetOrAdd(eventType, _ => new ConcurrentQueue<TelemetryEvent>());
             
             await VerifyTableAndModelProperties<T>(eventType);
 
-            await bufferBlock.SendAsync(@event, _cancellationToken);
+            queue.Enqueue(@event);
         }
 
         /// <summary>
@@ -112,18 +120,18 @@ namespace Eshopworld.Telemetry.Kusto
             }
         }
 
-        private async Task Timer()
+        private void Timer()
         {
             while (true)
             {
                 // check every 200ms if there's enough items in the buffer, or configured time interval has passed
-                await Task.Delay(_internalClock, _cancellationToken);
+                Thread.Sleep(200);
 
                 if (!_inProgress &&
-                    (_eventBuffer.Any(x => x.Value.Count >= _maxItemCount) || DateTime.Now.Subtract(_lastIngestion).TotalMilliseconds >= _timerInterval) &&
-                    _eventBuffer.Any(x => x.Value.Count > 0))
+                    (_eventQueue.Any(x => x.Value.Count >= _maxItemCount) || DateTime.Now.Subtract(_lastIngestion).TotalMilliseconds >= _timerInterval) &&
+                    _eventQueue.Any(x => x.Value.Count > 0))
                 {
-                    await ProcessBuffers();
+                    ProcessBuffers().ConfigureAwait(false).GetAwaiter().GetResult();
                 }
 
                 if (_cancellationToken.IsCancellationRequested || _disposed)
@@ -138,12 +146,21 @@ namespace Eshopworld.Telemetry.Kusto
 
             Debug.WriteLine("Processing buffers");
 
-            foreach (var bufferBlock in _eventBuffer)
+            foreach (var queue in _eventQueue)
             {
-                if (bufferBlock.Value.Count > 0)
+                var count = queue.Value.Count;
+                if (count > 0)
                 {
-                    bufferBlock.Value.TryReceiveAll(out var events);
-                    await DispatchEvents(events, bufferBlock.Key);
+                    var events = new List<TelemetryEvent>();
+
+                    // refactor?
+                    for (int i = 0; i < count; i++)
+                    {
+                        queue.Value.TryDequeue(out var @event);
+                        events.Add(@event);
+                    }
+                    
+                    await DispatchEvents(events, queue.Key);
                 }
             }
 
@@ -166,12 +183,17 @@ namespace Eshopworld.Telemetry.Kusto
                 stream.Seek(0, SeekOrigin.Begin);
 
                 await _ingestClient.IngestFromStreamAsync(stream, ingestProps, true);
+
+                _messagesSent += events.Count;
+
+                OnMessageSent?.Invoke(_messagesSent);
             }
         }
 
         public void Dispose()
         {
-            _eventBuffer.Clear();
+            _bgThread.Abort();
+            _eventQueue.Clear();
             _adminProvider?.Dispose();
             _ingestClient?.Dispose();
             _disposed = true;

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Reactive.Subjects;
 using System.Threading;
 using Eshopworld.Core;
@@ -34,14 +35,15 @@ namespace Eshopworld.Telemetry.Kusto
 
     public static class QueuedClientBuilderExtensions
     {
-        private static bool _strategyAdded = false;
+        private static QueuedIngestionStrategy _queuedIngestionStrategy;
 
         private static void Check(KustoOptionsBuilder builder, CancellationToken token, int bufferInterval, int maxBufferItems)
         {
-            if (!_strategyAdded)
-                builder.Dispatcher.AddStrategy(new QueuedIngestionStrategy(token, bufferInterval, maxBufferItems));
-
-            _strategyAdded = true;
+            if (_queuedIngestionStrategy == null)
+            {
+                _queuedIngestionStrategy = new QueuedIngestionStrategy(token, bufferInterval, maxBufferItems);
+                builder.Dispatcher.AddStrategy(_queuedIngestionStrategy);
+            }
         }
 
         public static KustoOptionsBuilder UseQueuedIngestion<T>(this KustoOptionsBuilder builder, CancellationToken token, int bufferInterval = 1000, int maxBufferItems = 50)
@@ -50,6 +52,11 @@ namespace Eshopworld.Telemetry.Kusto
             Check(builder, token, bufferInterval, maxBufferItems);
             builder.Dispatcher.Subscribe<T, QueuedIngestionStrategy>(builder.TelemetryStream, builder.IngestionTimeMetric, builder.ErrorStream);
             return builder;
+        }
+
+        public static void OnMessageSent(this KustoOptionsBuilder builder, Action<int> onSent)
+        {
+            _queuedIngestionStrategy.OnMessageSent += x => onSent(x);
         }
     }
 }

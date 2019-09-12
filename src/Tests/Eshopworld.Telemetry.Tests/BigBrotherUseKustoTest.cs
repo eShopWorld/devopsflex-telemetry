@@ -32,6 +32,7 @@ public class BigBrotherUseKustoTest
         _kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
         _kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);
 
+
         if (_kustoName != null && _kustoLocation != null && _kustoDatabase != null && _kustoTenantId != null)
         {
             var kustoUri = $"https://{_kustoName}.{_kustoLocation}.kusto.windows.net";

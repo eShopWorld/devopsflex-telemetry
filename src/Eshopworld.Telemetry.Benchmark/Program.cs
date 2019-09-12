@@ -1,4 +1,10 @@
-﻿namespace Eshopworld.Telemetry.Benchmark
+﻿using System.Linq;
+using System.Threading;
+using BenchmarkDotNet.Environments;
+using BenchmarkDotNet.Jobs;
+using Eshopworld.Telemetry.Kusto;
+
+namespace Eshopworld.Telemetry.Benchmark
 {
     using System;
     using System.Collections.Generic;
@@ -16,7 +22,7 @@
         {
             private class Config : ManualConfig
             {
-                public Config()
+                public Config() 
                 {
                     Options |= ConfigOptions.DisableOptimizationsValidator;
                 }
@@ -66,6 +72,41 @@
             }
         }
 
+        public class KustoBenchmarksManual
+        {
+            public void Queued_buffer_1s_500msg()
+            {
+                Console.WriteLine("Queued_buffer_1s_500msg");
+
+                var kustoName = "";
+                var kustoLocation = "";
+                var kustoDatabase = "";
+                var kustoTenantId = "";
+
+                var semaphore = new SemaphoreSlim(0);
+
+                var brother = new BigBrother();
+                brother.UseKusto(b =>
+                {
+                    b.UseCluster(kustoName, kustoLocation, kustoDatabase, kustoTenantId);
+                    b.UseQueuedIngestion<KustoBenchmarkEvent>(CancellationToken.None, 1000, 500);
+                    b.OnMessageSent(x =>
+                    {
+                        if (x >= 2)
+                            semaphore.Release();
+                    });
+                });
+
+                for (int i = 0; i < 2; i++)
+                {
+                    brother.Publish(new KustoBenchmarkEvent());
+                }
+
+                Console.WriteLine("Waiting ...");
+                semaphore.Wait();
+            }
+        }
+
         public class KustoBenchmarkEvent : DomainEvent
         {
             public KustoBenchmarkEvent()
@@ -95,7 +136,11 @@
 
         public static void Main(string[] args)
         {
-            var summary = BenchmarkRunner.Run<KustoBenchmark>();
+            //var summary = BenchmarkRunner.Run<KustoBenchmark>();
+
+            var benchmark = new KustoBenchmarksManual();
+            benchmark.Queued_buffer_1s_500msg();
+            Console.WriteLine("done.");
         }
     }
 }
