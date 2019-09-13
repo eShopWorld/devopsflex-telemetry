@@ -1,7 +1,5 @@
-﻿using System.Linq;
+﻿using System.Diagnostics;
 using System.Threading;
-using BenchmarkDotNet.Environments;
-using BenchmarkDotNet.Jobs;
 using Eshopworld.Telemetry.Kusto;
 
 namespace Eshopworld.Telemetry.Benchmark
@@ -11,7 +9,6 @@ namespace Eshopworld.Telemetry.Benchmark
     using System.Threading.Tasks;
     using BenchmarkDotNet.Attributes;
     using BenchmarkDotNet.Configs;
-    using BenchmarkDotNet.Running;
     using Eshopworld.Core;
 
     public class Program
@@ -60,10 +57,11 @@ namespace Eshopworld.Telemetry.Benchmark
             }
 
             [Benchmark]
-            public void TwoHundred_NoCheck_Direct()
+            [Arguments(200)]
+            public void TwoHundred_NoCheck_Direct(int count)
             {
                 var tasks = new List<Task>();
-                for (int i = 0; i < 200; i++)
+                for (int i = 0; i < count; i++)
                 {
                     tasks.Add(bb.HandleKustoEvent(new KustoBenchmarkEvent()));
                 }
@@ -74,36 +72,39 @@ namespace Eshopworld.Telemetry.Benchmark
 
         public class KustoBenchmarksManual
         {
-            public void Queued_buffer_1s_500msg()
+            public Task Queued_buffer_1s_500msg(int count)
             {
                 Console.WriteLine("Queued_buffer_1s_500msg");
 
-                var kustoName = "";
-                var kustoLocation = "";
-                var kustoDatabase = "";
+                var kustoName = "eswtest";
+                var kustoLocation = "westeurope";
+                var kustoDatabase = "tele-poc";
                 var kustoTenantId = "";
 
-                var semaphore = new SemaphoreSlim(0);
+                var source = new TaskCompletionSource<bool>();
 
                 var brother = new BigBrother();
                 brother.UseKusto(b =>
                 {
                     b.UseCluster(kustoName, kustoLocation, kustoDatabase, kustoTenantId);
                     b.UseQueuedIngestion<KustoBenchmarkEvent>(CancellationToken.None, 1000, 500);
+
                     b.OnMessageSent(x =>
                     {
-                        if (x >= 2)
-                            semaphore.Release();
+                        Console.WriteLine($"Ingested {x} messages");
+                        if (x >= count)
+                            source.SetResult(true);
                     });
                 });
 
-                for (int i = 0; i < 2; i++)
+                for (int i = 0; i < count; i++)
                 {
                     brother.Publish(new KustoBenchmarkEvent());
                 }
 
                 Console.WriteLine("Waiting ...");
-                semaphore.Wait();
+
+                return source.Task;
             }
         }
 
@@ -134,13 +135,28 @@ namespace Eshopworld.Telemetry.Benchmark
             public TimeSpan SomeTimeSpan { get; set; }
         }
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             //var summary = BenchmarkRunner.Run<KustoBenchmark>();
 
+            var count = 2;
+
+            var stopwatch = Stopwatch.StartNew();
+
             var benchmark = new KustoBenchmarksManual();
-            benchmark.Queued_buffer_1s_500msg();
-            Console.WriteLine("done.");
+            await benchmark.Queued_buffer_1s_500msg(count);
+
+            Console.WriteLine($"done queued in {stopwatch.ElapsedMilliseconds}ms");
+
+            Console.WriteLine("waiting 30 sec to cool down...");
+            await Task.Delay(TimeSpan.FromSeconds(30));
+
+            stopwatch.Restart();
+
+            var benchmark2 = new KustoBenchmark();
+            benchmark2.TwoHundred_NoCheck_Direct(count);
+
+            Console.WriteLine($"done direct in {stopwatch.ElapsedMilliseconds}ms");
         }
     }
 }

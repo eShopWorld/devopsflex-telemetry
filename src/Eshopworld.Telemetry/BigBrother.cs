@@ -364,13 +364,26 @@ namespace Eshopworld.Telemetry
 
         internal void SetupKustoSubscription()
         {
-            var subscription = TelemetryStream.OfType<TelemetryEvent>()
+            var filterObservable = TelemetryStream.OfType<TelemetryEvent>()
                                               .Where(e => !(e is ExceptionEvent) &&
                                                           !(e is MetricTelemetryEvent) &&
-                                                          !(e is TimedTelemetryEvent))
-                                              .Select(e => Observable.FromAsync(async () => await HandleKustoEvent(e)))
-                                              .Merge()
-                                              .Subscribe();
+                                                          !(e is TimedTelemetryEvent));
+            IDisposable subscription = null;
+            if (true)  // check options
+            {
+                subscription = filterObservable
+                    .Select(e => Observable.FromAsync(async () => await HandleKustoEvent(e)))
+                    .Merge()
+                    .Subscribe();
+            }
+            else
+            {
+                subscription = filterObservable
+                    .Buffer(TimeSpan.FromMilliseconds(1000), 500)
+                    .Select(e => Observable.FromAsync(async () => await HandleKustoEvents(e))) 
+                    .Merge()
+                    .Subscribe();
+            }
 
             TelemetrySubscriptions.AddSubscription(typeof(KustoExtensions), subscription);
         }
@@ -489,6 +502,12 @@ namespace Eshopworld.Telemetry
                     TrackEvent(new ConvertEvent<TelemetryEvent, EventTelemetry>(@event).ToTelemetry(), true);
                     break;
             }
+        }
+
+        public Task HandleKustoEvents(IEnumerable<TelemetryEvent> events)
+        {
+            // ingest block here
+            return Task.CompletedTask;
         }
 
         /// <summary>

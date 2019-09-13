@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
@@ -80,11 +82,11 @@ namespace Eshopworld.Telemetry.Kusto
 
             try
             {
-                var time = DateTime.Now;
+                var time = DateTime.UtcNow;
 
                 await strategy.HandleKustoEvent(e);
 
-                ingestionTimeMetrics?.TrackValue(DateTime.Now.Subtract(time).TotalMilliseconds);
+                ingestionTimeMetrics?.TrackValue(DateTime.UtcNow.Subtract(time).TotalMilliseconds);
             }
             catch (Exception ex)
             {
