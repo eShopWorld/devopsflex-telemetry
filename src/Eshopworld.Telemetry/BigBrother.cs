@@ -543,8 +543,6 @@ namespace Eshopworld.Telemetry
 
                         var startTime = DateTime.UtcNow;
 
-                        await Task.Delay(0);
-
                         await KustoQueuedIngestClient.IngestFromStreamAsync(stream, ingestProps, true);
 
                         KustoIngestionTimeMetric.TrackValue(DateTime.UtcNow.Subtract(startTime).TotalMilliseconds);
