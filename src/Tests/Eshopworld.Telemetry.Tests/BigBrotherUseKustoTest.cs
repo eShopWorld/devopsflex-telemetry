@@ -58,11 +58,10 @@ public class BigBrotherUseKustoTest
 
         var bb = new BigBrother("", "");
 
-        bb.UseKusto(builder =>
-        {
-            builder.UseCluster(_kustoName, _kustoLocation, _kustoDatabase, _kustoTenantId);
-            builder.UseQueuedIngestion<KustoTestEvent>(source.Token, 500, 50);
-        });
+        bb.UseKusto()
+            .WithCluster(_kustoName, _kustoLocation, _kustoDatabase, _kustoTenantId)
+            .WithQueuedClient<KustoTestEvent>()
+            .Build();
 
         var evt = new KustoTestEvent();
         bb.Publish(evt);

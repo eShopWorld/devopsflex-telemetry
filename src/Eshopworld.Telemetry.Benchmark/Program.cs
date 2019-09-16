@@ -84,19 +84,17 @@ namespace Eshopworld.Telemetry.Benchmark
                 var source = new TaskCompletionSource<bool>();
 
                 var brother = new BigBrother();
-                brother.UseKusto(b =>
-                {
-                    b.UseCluster(kustoName, kustoLocation, kustoDatabase, kustoTenantId);
-                    b.UseQueuedIngestion<KustoBenchmarkEvent>(CancellationToken.None, 1000, 500);
-
-                    b.OnMessageSent(x =>
+                brother
+                    .UseKusto()
+                    .WithCluster(kustoName, kustoLocation, kustoDatabase, kustoTenantId)
+                    .WithDirectClient<KustoBenchmarkEvent>()
+                    .WithFallbackQueuedClient()
+                    .Build(n =>
                     {
-                        Console.WriteLine($"Ingested {x} messages");
-                        if (x >= count)
+                        if (n>= count)
                             source.SetResult(true);
                     });
-                });
-
+                
                 for (int i = 0; i < count; i++)
                 {
                     brother.Publish(new KustoBenchmarkEvent());
@@ -106,6 +104,19 @@ namespace Eshopworld.Telemetry.Benchmark
 
                 return source.Task;
             }
+        }
+
+        public class KustoBenchmarkEventSecond : DomainEvent
+        {
+            public KustoBenchmarkEventSecond()
+            {
+                Id = Guid.NewGuid();
+                Created = DateTime.UtcNow;
+            }
+
+            public Guid Id { get; set; }
+
+            public DateTime Created { get; set; }
         }
 
         public class KustoBenchmarkEvent : DomainEvent
@@ -139,7 +150,7 @@ namespace Eshopworld.Telemetry.Benchmark
         {
             //var summary = BenchmarkRunner.Run<KustoBenchmark>();
 
-            var count = 2;
+            var count = 100;
 
             var stopwatch = Stopwatch.StartNew();
 
@@ -148,13 +159,13 @@ namespace Eshopworld.Telemetry.Benchmark
 
             Console.WriteLine($"done queued in {stopwatch.ElapsedMilliseconds}ms");
 
-            Console.WriteLine("waiting 30 sec to cool down...");
-            await Task.Delay(TimeSpan.FromSeconds(30));
+            //Console.WriteLine("waiting 30 sec to cool down...");
+            //await Task.Delay(TimeSpan.FromSeconds(30));
 
-            stopwatch.Restart();
+            //stopwatch.Restart();
 
-            var benchmark2 = new KustoBenchmark();
-            benchmark2.TwoHundred_NoCheck_Direct(count);
+            //var benchmark2 = new KustoBenchmark();
+            //benchmark2.TwoHundred_NoCheck_Direct(count);
 
             Console.WriteLine($"done direct in {stopwatch.ElapsedMilliseconds}ms");
         }

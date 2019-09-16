@@ -1,62 +1,91 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reactive.Subjects;
-using System.Threading;
 using Eshopworld.Core;
-using Microsoft.ApplicationInsights;
 
 namespace Eshopworld.Telemetry.Kusto
 {
     public class KustoOptionsBuilder
     {
-        internal readonly IDestinationDispatcher Dispatcher;
-        internal readonly Subject<BaseEvent> TelemetryStream;
-        internal readonly Metric IngestionTimeMetric;
-        internal readonly ISubject<TelemetryEvent> ErrorStream;
-        private KustoDbDetails _dbDetails;
+        private readonly Action<KustoOptionsBuilder> _onBuild;
 
-        public KustoOptionsBuilder(IDestinationDispatcher dispatcher, Subject<BaseEvent> telemetryStream, Metric ingestionTimeMetric, ISubject<TelemetryEvent> errorStream)
+        internal KustoDbDetails DbDetails;
+        internal readonly IDictionary<IngestionClient, List<Type>> ClientTypes = new Dictionary<IngestionClient, List<Type>>();
+        internal BufferedClientOptions BufferOptions;
+
+        internal IngestionClient Fallback = IngestionClient.None;
+
+        internal Action<long> OnMessageSent;
+
+        internal KustoOptionsBuilder(Action<KustoOptionsBuilder> onBuild)
         {
-            Dispatcher = dispatcher;
-            TelemetryStream = telemetryStream;
-            IngestionTimeMetric = ingestionTimeMetric;
-            ErrorStream = errorStream;
+            _onBuild = onBuild;
+            BufferOptions = new BufferedClientOptions
+            {
+                BufferSizeItems = 100,
+                FlushImmediately = true,
+                IngestionInterval = TimeSpan.FromMilliseconds(1000)
+            };
         }
-        
-        public KustoOptionsBuilder UseCluster(string engine, string region, string database, string tenantId)
-        { 
-            _dbDetails = new KustoDbDetails { ClientId = tenantId, DbName = database, Engine = engine, Region = region };
 
-            Dispatcher.Initialise(_dbDetails);
+        public KustoOptionsBuilder WithCluster(string engine, string region, string database, string tenantId)
+        { 
+            DbDetails = new KustoDbDetails { ClientId = tenantId, DbName = database, Engine = engine, Region = region };
+            return this;
+        }
+
+        public KustoOptionsBuilder WithQueuedClient<T>(BufferedClientOptions options = null) where T : TelemetryEvent
+        {
+            var types = ClientTypes.GetOrAdd(IngestionClient.Queued, () => new List<Type>());
+
+            types.Add(typeof(T));
+
+            BufferOptions = options ?? BufferOptions;
 
             return this;
         }
+
+        public KustoOptionsBuilder WithDirectClient<T>() where T : TelemetryEvent
+        {
+            var types = ClientTypes.GetOrAdd(IngestionClient.Direct, () => new List<Type>());
+
+            types.Add(typeof(T));
+
+            return this;
+        }
+
+        public KustoOptionsBuilder WithFallbackQueuedClient(BufferedClientOptions options = null)
+        {
+            if (Fallback == IngestionClient.Direct)
+                throw new InvalidOperationException("Default already set to Direct client");
+
+            Fallback = IngestionClient.Queued;
+
+            BufferOptions = options ?? BufferOptions;
+
+            return this;
+        }
+
+        public KustoOptionsBuilder WithFallbackDirectClient()
+        {
+            if (Fallback == IngestionClient.Queued)
+                throw new InvalidOperationException("Default already set to Queued client");
+
+            Fallback = IngestionClient.Direct;
+
+            return this;
+        }
+
+        public void Build(Action<long> onMessageSent = null)
+        {
+            OnMessageSent = onMessageSent;
+            _onBuild(this);
+        }
     }
 
-    public static class QueuedClientBuilderExtensions
+    internal enum IngestionClient
     {
-        private static QueuedIngestionStrategy _queuedIngestionStrategy;
-
-        private static void Check(KustoOptionsBuilder builder, CancellationToken token, int bufferInterval, int maxBufferItems)
-        {
-            if (_queuedIngestionStrategy == null)
-            {
-                _queuedIngestionStrategy = new QueuedIngestionStrategy(token, bufferInterval, maxBufferItems);
-                builder.Dispatcher.AddStrategy(_queuedIngestionStrategy);
-            }
-        }
-
-        public static KustoOptionsBuilder UseQueuedIngestion<T>(this KustoOptionsBuilder builder, CancellationToken token, int bufferInterval = 1000, int maxBufferItems = 50)
-            where  T:TelemetryEvent
-        {
-            Check(builder, token, bufferInterval, maxBufferItems);
-            builder.Dispatcher.Subscribe<T, QueuedIngestionStrategy>(builder.TelemetryStream, builder.IngestionTimeMetric, builder.ErrorStream);
-            return builder;
-        }
-
-        public static void OnMessageSent(this KustoOptionsBuilder builder, Action<int> onSent)
-        {
-            _queuedIngestionStrategy.OnMessageSent += x => onSent(x);
-        }
+        None,
+        Queued,
+        Direct
     }
 }
