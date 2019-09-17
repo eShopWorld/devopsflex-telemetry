@@ -38,7 +38,7 @@ namespace Eshopworld.Telemetry
         {
             if (!dictionary.ContainsKey(key))
                 dictionary.Add(key, valueFactory());
-
+            
             return dictionary[key];
         }
     }

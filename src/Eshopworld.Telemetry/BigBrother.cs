@@ -375,7 +375,9 @@ namespace Eshopworld.Telemetry
 
             var bufferedSubscription = filterObservable
                 .Where(e => IsRegisteredOrDefault(IngestionClient.Queued, e.GetType()))
-                .Buffer(_kustoOptionsBuilder.BufferOptions.IngestionInterval, _kustoOptionsBuilder.BufferOptions.BufferSizeItems)
+                .Buffer(
+                    _kustoOptionsBuilder?.BufferOptions.IngestionInterval ?? TimeSpan.Zero, 
+                    _kustoOptionsBuilder?.BufferOptions.BufferSizeItems ?? 1)
                 .Where(e => e != null && e.Any())
                 .Select(e => Observable.FromAsync(async () => await HandleKustoEvents(e)))
                 .Merge()
@@ -503,6 +505,8 @@ namespace Eshopworld.Telemetry
 
         private bool IsRegisteredOrDefault(IngestionClient client, Type type)
         {
+            if (_kustoOptionsBuilder == null) return true;
+
             // event type is registered for current client (queued, direct) type
             if (_kustoOptionsBuilder.ClientTypes.ContainsKey(client) &&
                 _kustoOptionsBuilder.ClientTypes[client].Contains(type))

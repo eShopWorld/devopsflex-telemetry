@@ -82,7 +82,7 @@ namespace Eshopworld.Telemetry.Kusto
         }
     }
 
-    internal enum IngestionClient
+    public enum IngestionClient
     {
         None,
         Queued,
