@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Kusto.Data.Common;
+﻿using Kusto.Data.Common;
 
 namespace Eshopworld.Telemetry
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Contains extensions to clients in the Kusto SDK.
@@ -18,12 +18,7 @@ namespace Eshopworld.Telemetry
         /// <param name="client">The <see cref="ICslAdminProvider"/> that we are extending.</param>
         /// <param name="type">The <see cref="Type"/> that we are generating a table for.</param>
         /// <returns>The name of the table created.</returns>
-        public static string GenerateTableFromType(this ICslAdminProvider client, Type type)
-        {
-            return GenerateTableFromTypeAsync(client, type).GetAwaiter().GetResult();
-        }
-
-        public static async Task<string> GenerateTableFromTypeAsync(this ICslAdminProvider client, Type type)
+        public static async Task<string> GenerateTableFromType(this ICslAdminProvider client, Type type)
         {
             var tableName = type.Name;
             var tables = new List<string>();
@@ -44,19 +39,14 @@ namespace Eshopworld.Telemetry
 
             return tableName;
         }
-
+       
         /// <summary>
         /// Generates a Kusto table mapping for a specific <see cref="Type"/>, by mapping it's properties to column mappings.
         /// </summary>
         /// <param name="client">The <see cref="ICslAdminProvider"/> client that we are extending.</param>
         /// <param name="type">The <see cref="Type"/> that we are generating the JSON mapping for.</param>
         /// <returns>The name of the mapping created.</returns>
-        public static string GenerateTableJsonMappingFromType(this ICslAdminProvider client, Type type)
-        {
-            return GenerateTableJsonMappingFromTypeAsync(client, type).GetAwaiter().GetResult();
-        }
-
-        public static async Task<string> GenerateTableJsonMappingFromTypeAsync(this ICslAdminProvider client, Type type)
+        public static async Task<string> GenerateTableJsonMappingFromType(this ICslAdminProvider client, Type type)
         {
             var tableName = type.Name;
             var mappingName = $"{tableName}_mapping";

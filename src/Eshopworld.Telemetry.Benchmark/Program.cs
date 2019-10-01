@@ -1,8 +1,4 @@
-﻿using System.Diagnostics;
-using System.Threading;
-using Eshopworld.Telemetry.Kusto;
-
-namespace Eshopworld.Telemetry.Benchmark
+﻿namespace Eshopworld.Telemetry.Benchmark
 {
     using System;
     using System.Collections.Generic;
@@ -10,6 +6,8 @@ namespace Eshopworld.Telemetry.Benchmark
     using BenchmarkDotNet.Attributes;
     using BenchmarkDotNet.Configs;
     using Eshopworld.Core;
+    using System.Diagnostics;
+
 
     public class Program
     {
@@ -72,14 +70,16 @@ namespace Eshopworld.Telemetry.Benchmark
 
         public class KustoBenchmarksManual
         {
-            public Task Queued_buffer_1s_500msg(int count)
+            [Benchmark]
+            [Arguments(500)]
+            public Task Queued_buffer_1s(int count)
             {
-                Console.WriteLine("Queued_buffer_1s_500msg");
+                Console.WriteLine($"Queued buffered 1sec {count} messages");
 
-                var kustoName = "eswtest";
-                var kustoLocation = "westeurope";
-                var kustoDatabase = "tele-poc";
-                var kustoTenantId = "";
+                var kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Machine);
+                var kustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.Machine);
+                var kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
+                var kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);
 
                 var source = new TaskCompletionSource<bool>();
 
@@ -87,7 +87,6 @@ namespace Eshopworld.Telemetry.Benchmark
                 brother
                     .UseKusto()
                     .WithCluster(kustoName, kustoLocation, kustoDatabase, kustoTenantId)
-                    .WithDirectClient<KustoBenchmarkEvent>()
                     .WithFallbackQueuedClient()
                     .Build(n =>
                     {
@@ -150,24 +149,25 @@ namespace Eshopworld.Telemetry.Benchmark
         {
             //var summary = BenchmarkRunner.Run<KustoBenchmark>();
 
-            var count = 100;
+            var count = 1;
 
             var stopwatch = Stopwatch.StartNew();
 
             var benchmark = new KustoBenchmarksManual();
-            await benchmark.Queued_buffer_1s_500msg(count);
+            await benchmark.Queued_buffer_1s(count);
 
             Console.WriteLine($"done queued in {stopwatch.ElapsedMilliseconds}ms");
+            Console.WriteLine("waiting 30 sec to cool down...");
+            await Task.Delay(TimeSpan.FromSeconds(2));
 
-            //Console.WriteLine("waiting 30 sec to cool down...");
-            //await Task.Delay(TimeSpan.FromSeconds(30));
+            stopwatch.Restart();
 
-            //stopwatch.Restart();
-
-            //var benchmark2 = new KustoBenchmark();
-            //benchmark2.TwoHundred_NoCheck_Direct(count);
+            var benchmark2 = new KustoBenchmark();
+            benchmark2.TwoHundred_NoCheck_Direct(count);
 
             Console.WriteLine($"done direct in {stopwatch.ElapsedMilliseconds}ms");
+
+            await Task.Delay(TimeSpan.FromSeconds(2));
         }
     }
 }

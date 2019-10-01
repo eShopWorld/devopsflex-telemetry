@@ -9,6 +9,5 @@
         public string Engine;
         public string Region;
         public string ClientId;
-        public string AuthToken;
     }
 }

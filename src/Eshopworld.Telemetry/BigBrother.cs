@@ -128,7 +128,7 @@ namespace Eshopworld.Telemetry
 
         internal Metric KustoIngestionTimeMetric;
 
-        private KustoOptionsBuilder _kustoOptionsBuilder;
+        private KustoOptionsBuilder _kustoOptionsBuilder = KustoOptionsBuilder.Default();
         private long _messagesSent = 0;
 
         /// <summary>
@@ -267,6 +267,9 @@ namespace Eshopworld.Telemetry
             InternalClient.Flush();
         }
 
+        /// <summary>
+        /// Ingest telemetry events into Kusto Data Explorer. Use fluent configuration API to configure client and ingestion strategies, and call .Build() at the end! 
+        /// </summary>
         public KustoOptionsBuilder UseKusto()
         {
             return new KustoOptionsBuilder(builder =>
@@ -277,7 +280,7 @@ namespace Eshopworld.Telemetry
         }
 
         /// <remarks>
-        /// This will be documented later, because for now I'm not changing the interface for BigBrother to avoid breaking changes overlapping with v3.
+        /// Ingest telemetry events into Kusto. Uses queued/buffered client, call different overload of this method to configure different ingestion strategy.
         /// </remarks>
         public IBigBrother UseKusto(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId)
         {
@@ -505,7 +508,8 @@ namespace Eshopworld.Telemetry
 
         private bool IsRegisteredOrDefault(IngestionClient client, Type type)
         {
-            if (_kustoOptionsBuilder == null) return true;
+            if (_kustoOptionsBuilder == null) 
+                throw new InvalidOperationException("Incorrect configuration of Kusto client");
 
             // event type is registered for current client (queued, direct) type
             if (_kustoOptionsBuilder.ClientTypes.ContainsKey(client) &&
@@ -552,7 +556,7 @@ namespace Eshopworld.Telemetry
                         KustoIngestionTimeMetric.TrackValue(DateTime.UtcNow.Subtract(startTime).TotalMilliseconds);
 
                         Interlocked.Add(ref _messagesSent, typeEvents.Count());
-                        _kustoOptionsBuilder.OnMessageSent?.Invoke(_messagesSent);
+                        _kustoOptionsBuilder?.OnMessageSent?.Invoke(_messagesSent);
                     }
                 }
             }
@@ -588,7 +592,7 @@ namespace Eshopworld.Telemetry
                     KustoIngestionTimeMetric.TrackValue(DateTime.UtcNow.Subtract(startTime).TotalMilliseconds);
 
                     Interlocked.Increment(ref _messagesSent);
-                    _kustoOptionsBuilder.OnMessageSent?.Invoke(_messagesSent);
+                    _kustoOptionsBuilder?.OnMessageSent?.Invoke(_messagesSent);
                 }
             }
             catch (Exception e)
@@ -606,11 +610,11 @@ namespace Eshopworld.Telemetry
                 {
                     ingestProps = new KustoQueuedIngestionProperties(KustoDbName, "Unknown")
                     {
-                        TableName = KustoAdminClient.GenerateTableFromType(eventType),
-                        JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(eventType),
+                        TableName = KustoAdminClient.GenerateTableFromType(eventType).Result,
+                        JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(eventType).Result,
                         ReportLevel = IngestionReportLevel.FailuresOnly,
                         ReportMethod = IngestionReportMethod.Queue,
-                        FlushImmediately = _kustoOptionsBuilder.BufferOptions.FlushImmediately,
+                        FlushImmediately = _kustoOptionsBuilder?.BufferOptions.FlushImmediately ?? true,
                         IgnoreSizeLimit = true,
                         ValidationPolicy = null,
                         Format = DataSourceFormat.json
@@ -636,8 +640,8 @@ namespace Eshopworld.Telemetry
                 {
                     ingestProps = new KustoIngestionProperties(KustoDbName, "Unknown")
                     {
-                        TableName = KustoAdminClient.GenerateTableFromType(eventType),
-                        JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(eventType),
+                        TableName = KustoAdminClient.GenerateTableFromType(eventType).Result,
+                        JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(eventType).Result,
                         IgnoreSizeLimit = true,
                         ValidationPolicy = null,
                         Format = DataSourceFormat.json

@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using Eshopworld.Core;
-
-namespace Eshopworld.Telemetry.Kusto
+﻿namespace Eshopworld.Telemetry.Kusto
 {
+    using System;
+    using System.Collections.Generic;
+    using Eshopworld.Core;
+
     public class KustoOptionsBuilder
     {
         private readonly Action<KustoOptionsBuilder> _onBuild;
@@ -19,12 +19,7 @@ namespace Eshopworld.Telemetry.Kusto
         internal KustoOptionsBuilder(Action<KustoOptionsBuilder> onBuild)
         {
             _onBuild = onBuild;
-            BufferOptions = new BufferedClientOptions
-            {
-                BufferSizeItems = 100,
-                FlushImmediately = true,
-                IngestionInterval = TimeSpan.FromMilliseconds(1000)
-            };
+            BufferOptions = new BufferedClientOptions(TimeSpan.FromMilliseconds(1000), 100, true);
         }
 
         public KustoOptionsBuilder WithCluster(string engine, string region, string database, string tenantId)
@@ -80,6 +75,8 @@ namespace Eshopworld.Telemetry.Kusto
             OnMessageSent = onMessageSent;
             _onBuild(this);
         }
+
+        public static KustoOptionsBuilder Default() => new KustoOptionsBuilder(null).WithFallbackQueuedClient();
     }
 
     public enum IngestionClient
