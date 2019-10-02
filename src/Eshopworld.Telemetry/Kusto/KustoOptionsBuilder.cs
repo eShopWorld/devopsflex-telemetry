@@ -7,15 +7,14 @@
     public class KustoOptionsBuilder
     {
         private readonly Action<KustoOptionsBuilder> _onBuild;
-
-        internal KustoDbDetails DbDetails;
-
         private readonly Dictionary<IngestionClient, List<Type>> ClientTypes = new Dictionary<IngestionClient, List<Type>>();
-        internal BufferedClientOptions BufferOptions;
-
-        internal IngestionClient Fallback = IngestionClient.None;
-
         private Action<long> _onMessageSent;
+
+        internal KustoDbDetails DbDetails { get; private set;  }
+        
+        internal BufferedClientOptions BufferOptions { get; private set; }
+
+        internal IngestionClient Fallback { get; private set; } = IngestionClient.None;
 
         internal KustoOptionsBuilder(Action<KustoOptionsBuilder> onBuild)
         {
