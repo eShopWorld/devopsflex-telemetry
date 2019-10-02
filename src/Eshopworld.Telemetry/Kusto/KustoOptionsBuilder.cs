@@ -9,17 +9,18 @@
         private readonly Action<KustoOptionsBuilder> _onBuild;
 
         internal KustoDbDetails DbDetails;
-        internal readonly IDictionary<IngestionClient, List<Type>> ClientTypes = new Dictionary<IngestionClient, List<Type>>();
+
+        private readonly Dictionary<IngestionClient, List<Type>> ClientTypes = new Dictionary<IngestionClient, List<Type>>();
         internal BufferedClientOptions BufferOptions;
 
         internal IngestionClient Fallback = IngestionClient.None;
 
-        internal Action<long> OnMessageSent;
+        private Action<long> _onMessageSent;
 
         internal KustoOptionsBuilder(Action<KustoOptionsBuilder> onBuild)
         {
             _onBuild = onBuild;
-            BufferOptions = new BufferedClientOptions(TimeSpan.FromMilliseconds(1000), 100, true);
+            BufferOptions = new BufferedClientOptions();
         }
 
         public KustoOptionsBuilder WithCluster(string engine, string region, string database, string tenantId)
@@ -72,11 +73,35 @@
 
         public void Build(Action<long> onMessageSent = null)
         {
-            OnMessageSent = onMessageSent;
+            _onMessageSent = onMessageSent;
             _onBuild(this);
         }
 
-        public static KustoOptionsBuilder Default() => new KustoOptionsBuilder(null).WithFallbackQueuedClient();
+        internal static KustoOptionsBuilder Default() => new KustoOptionsBuilder(null).WithFallbackQueuedClient();
+
+        internal bool IsRegisteredOrDefault(IngestionClient client, Type type)
+        {
+            // event type is registered for current client (queued, direct) type
+            if (ClientTypes.ContainsKey(client) && ClientTypes[client].Contains(type))
+                return true;
+
+            var other = client == IngestionClient.Direct ? IngestionClient.Queued : IngestionClient.Direct;
+            var notInOtherClient = ClientTypes.ContainsKey(other) && !ClientTypes[other].Contains(type);
+            var otherClientDoesNotExists = !ClientTypes.ContainsKey(other);
+
+            // fallback method: event type is not registered for current client type,
+            // so lets check if there's default client, and if this event type is not
+            // registered for another client
+            if (Fallback == client && (notInOtherClient || otherClientDoesNotExists))
+                return true;
+
+            return false;
+        }
+
+        internal void OnMessagesSent(long count)
+        {
+            _onMessageSent.Invoke(count);
+        }
     }
 
     public enum IngestionClient

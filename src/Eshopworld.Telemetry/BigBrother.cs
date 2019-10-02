@@ -371,13 +371,13 @@ namespace Eshopworld.Telemetry
                             !(e is TimedTelemetryEvent));
 
             var directSubscription = filterObservable
-                .Where(e => IsRegisteredOrDefault(IngestionClient.Direct, e.GetType()))
+                .Where(e => _kustoOptionsBuilder.IsRegisteredOrDefault(IngestionClient.Direct, e.GetType()))
                 .Select(e => Observable.FromAsync(async () => await HandleKustoEvent(e)))
                 .Merge()
                 .Subscribe();
 
             var bufferedSubscription = filterObservable
-                .Where(e => IsRegisteredOrDefault(IngestionClient.Queued, e.GetType()))
+                .Where(e => _kustoOptionsBuilder.IsRegisteredOrDefault(IngestionClient.Queued, e.GetType()))
                 .Buffer(
                     _kustoOptionsBuilder?.BufferOptions.IngestionInterval ?? TimeSpan.Zero, 
                     _kustoOptionsBuilder?.BufferOptions.BufferSizeItems ?? 1)
@@ -506,29 +506,6 @@ namespace Eshopworld.Telemetry
             }
         }
 
-        private bool IsRegisteredOrDefault(IngestionClient client, Type type)
-        {
-            if (_kustoOptionsBuilder == null) 
-                throw new InvalidOperationException("Incorrect configuration of Kusto client");
-
-            // event type is registered for current client (queued, direct) type
-            if (_kustoOptionsBuilder.ClientTypes.ContainsKey(client) &&
-                _kustoOptionsBuilder.ClientTypes[client].Contains(type))
-                return true;
-
-            var other = client == IngestionClient.Direct ? IngestionClient.Queued : IngestionClient.Direct;
-            var notInOtherClient = _kustoOptionsBuilder.ClientTypes.ContainsKey(other) && !_kustoOptionsBuilder.ClientTypes[other].Contains(type);
-            var otherClientDoesNotExists = !_kustoOptionsBuilder.ClientTypes.ContainsKey(other);
-
-            // fallback method: event type is not registered for current client type,
-            // so lets check if there's default client, and if this event type is not
-            // registered for another client
-            if (_kustoOptionsBuilder.Fallback == client && (notInOtherClient || otherClientDoesNotExists))
-                return true;
-
-            return false;
-        }
-
         internal virtual async Task HandleKustoEvents(IList<TelemetryEvent> events)
         {
             try
@@ -555,8 +532,7 @@ namespace Eshopworld.Telemetry
 
                         KustoIngestionTimeMetric.TrackValue(DateTime.UtcNow.Subtract(startTime).TotalMilliseconds);
 
-                        Interlocked.Add(ref _messagesSent, typeEvents.Count());
-                        _kustoOptionsBuilder?.OnMessageSent?.Invoke(_messagesSent);
+                        _kustoOptionsBuilder.OnMessagesSent(Interlocked.Add(ref _messagesSent, typeEvents.Count()));
                     }
                 }
             }
@@ -591,8 +567,7 @@ namespace Eshopworld.Telemetry
 
                     KustoIngestionTimeMetric.TrackValue(DateTime.UtcNow.Subtract(startTime).TotalMilliseconds);
 
-                    Interlocked.Increment(ref _messagesSent);
-                    _kustoOptionsBuilder?.OnMessageSent?.Invoke(_messagesSent);
+                    _kustoOptionsBuilder.OnMessagesSent(Interlocked.Increment(ref _messagesSent));
                 }
             }
             catch (Exception e)

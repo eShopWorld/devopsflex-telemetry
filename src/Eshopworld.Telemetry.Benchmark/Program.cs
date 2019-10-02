@@ -1,4 +1,6 @@
-﻿namespace Eshopworld.Telemetry.Benchmark
+﻿using Eshopworld.Telemetry.Kusto;
+
+namespace Eshopworld.Telemetry.Benchmark
 {
     using System;
     using System.Collections.Generic;
@@ -56,7 +58,7 @@
 
             [Benchmark]
             [Arguments(200)]
-            public void TwoHundred_NoCheck_Direct(int count)
+            public void NoCheck_Direct(int count)
             {
                 var tasks = new List<Task>();
                 for (int i = 0; i < count; i++)
@@ -157,17 +159,15 @@
             await benchmark.Queued_buffer_1s(count);
 
             Console.WriteLine($"done queued in {stopwatch.ElapsedMilliseconds}ms");
-            Console.WriteLine("waiting 30 sec to cool down...");
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            Console.WriteLine("waiting 30 sec for Kusto to catch up...");
+            await Task.Delay(TimeSpan.FromSeconds(30));
 
             stopwatch.Restart();
 
             var benchmark2 = new KustoBenchmark();
-            benchmark2.TwoHundred_NoCheck_Direct(count);
+            benchmark2.NoCheck_Direct(count);
 
             Console.WriteLine($"done direct in {stopwatch.ElapsedMilliseconds}ms");
-
-            await Task.Delay(TimeSpan.FromSeconds(2));
         }
     }
 }
