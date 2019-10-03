@@ -22,12 +22,20 @@
             BufferOptions = new BufferedClientOptions();
         }
 
+        /// <summary>
+        /// Configure Kusto cluster connection details
+        /// </summary>
         public KustoOptionsBuilder WithCluster(string engine, string region, string database, string tenantId)
         { 
             DbDetails = new KustoDbDetails { ClientId = tenantId, DbName = database, Engine = engine, Region = region };
             return this;
         }
 
+        /// <summary>
+        /// Use queued buffered client for telemetry messages of type T
+        /// </summary>
+        /// <param name="options">Buffer configuration (max buffer size and ingestion interval)</param>
+        /// <returns>Fluent builder. Call <see cref="Build"/> at the end!</returns>
         public KustoOptionsBuilder WithQueuedClient<T>(BufferedClientOptions options = null) where T : TelemetryEvent
         {
             var types = ClientTypes.GetOrAdd(IngestionClient.Queued, () => new List<Type>());
@@ -39,6 +47,10 @@
             return this;
         }
 
+        /// <summary>
+        /// Use direct client for telemetry messages of type T
+        /// </summary>
+        /// <returns>Fluent builder. Call <see cref="Build"/> at the end!</returns>
         public KustoOptionsBuilder WithDirectClient<T>() where T : TelemetryEvent
         {
             var types = ClientTypes.GetOrAdd(IngestionClient.Direct, () => new List<Type>());
@@ -48,6 +60,11 @@
             return this;
         }
 
+        /// <summary>
+        /// Use queued buffered client for all messages not explicitly registered   
+        /// </summary>
+        /// <param name="options"></param>
+        /// <returns>Fluent builder. Call <see cref="Build"/> at the end!</returns>
         public KustoOptionsBuilder WithFallbackQueuedClient(BufferedClientOptions options = null)
         {
             if (Fallback == IngestionClient.Direct)
@@ -60,6 +77,10 @@
             return this;
         }
 
+        /// <summary>
+        /// Use direct client for all messages not explicitly registered   
+        /// </summary>
+        /// <returns>Fluent builder. Call <see cref="Build"/> at the end!</returns>
         public KustoOptionsBuilder WithFallbackDirectClient()
         {
             if (Fallback == IngestionClient.Queued)
@@ -70,6 +91,10 @@
             return this;
         }
 
+        /// <summary>
+        /// Register configured message types and ingestion strategies. 
+        /// </summary>
+        /// <param name="onMessageSent">Callback invoked after messages have been sent to Kusto</param>
         public void Build(Action<long> onMessageSent = null)
         {
             _onMessageSent = onMessageSent;
