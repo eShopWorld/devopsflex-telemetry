@@ -116,22 +116,12 @@
             // fallback method: event type is not registered for current client type,
             // so lets check if there's default client, and if this event type is not
             // registered for another client
-            if (Fallback == client && (notInOtherClient || otherClientDoesNotExists))
-                return true;
-
-            return false;
+            return Fallback == client && (notInOtherClient || otherClientDoesNotExists);
         }
 
         internal void OnMessagesSent(long count)
         {
             _onMessageSent.Invoke(count);
         }
-    }
-
-    public enum IngestionClient
-    {
-        None,
-        Queued,
-        Direct
     }
 }
