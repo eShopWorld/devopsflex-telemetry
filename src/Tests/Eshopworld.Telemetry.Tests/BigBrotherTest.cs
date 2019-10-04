@@ -251,6 +251,7 @@ public class BigBrotherTest
 
                                             Task.Factory.StartNew(() =>
                                             {
+                                                var brother = new BigBrother("blah", "blah"); // to initialize internal Rx subscriptions
                                                 Task.Delay(TimeSpan.FromSeconds(3));
                                                 BigBrother.Write(new ExceptionEvent(new Exception(exceptionMessage)));
                                             });
@@ -281,7 +282,7 @@ public class BigBrotherTest
                 bb.Publish(telemetry.ToExceptionEvent());
                 bb.Flush();
 
-                await Task.Delay(TimeSpan.FromSeconds(1));
+                await Task.Delay(TimeSpan.FromSeconds(2));
                 channel.Verify();
             }
         }
