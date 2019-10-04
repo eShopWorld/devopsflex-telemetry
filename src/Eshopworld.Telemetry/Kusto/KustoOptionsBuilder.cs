@@ -16,7 +16,7 @@
 
         internal IngestionClient Fallback { get; private set; } = IngestionClient.None;
 
-        internal KustoOptionsBuilder(Action<KustoOptionsBuilder> onBuild)
+        internal KustoOptionsBuilder(Action<KustoOptionsBuilder> onBuild = null)
         {
             _onBuild = onBuild;
             BufferOptions = new BufferedClientOptions();
