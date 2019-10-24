@@ -55,9 +55,9 @@ public class BigBrotherUseKustoTest
     }
 
     [Theory, IsLayer1]
-    [InlineData(IngestionClient.Direct)]
-    [InlineData(IngestionClient.Queued)]
-    public async Task Test_KustoTestEvent_StreamsToKusto(IngestionClient client)
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Test_KustoTestEvent_StreamsToKusto(bool useDirect)
     {
         _kustoQueryClient.Should().NotBeNull();
         var source = new CancellationTokenSource();
@@ -67,15 +67,13 @@ public class BigBrotherUseKustoTest
         var builder = bb.UseKusto()
             .WithCluster(_kustoName, _kustoLocation, _kustoDatabase, _kustoTenantId);
 
-        if (client == IngestionClient.Queued)
-            builder.RegisterType<KustoTestEvent>().WithQueuedClient().Build();
-        else
+        if (useDirect)
             builder.RegisterType<KustoTestEvent>().WithDirectClient().Build();
+        else
+            builder.RegisterType<KustoTestEvent>().WithQueuedClient().Build();
 
         var evt = new KustoTestEvent();
         bb.Publish(evt);
-
-        _output.WriteLine($"Event dispatched to BB with {client} client");
 
         await Policy.Handle<Exception>()
             .WaitAndRetryAsync(new[]

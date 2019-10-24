@@ -35,8 +35,6 @@ namespace Eshopworld.Telemetry
     /// </summary>
     public class BigBrother : IBigBrother, IDisposable
     {
-        private readonly object _gate = new object();
-
         /// <summary>
         /// The internal telemetry stream, used by packages to report errors and usage to an internal AI account.
         /// </summary>
@@ -547,6 +545,7 @@ namespace Eshopworld.Telemetry
             }
         }
 
+        [SuppressMessage("Critical Code Smell", "S3966:Objects should not be disposed more than once", Justification = "Flawed Analyzer")]
         internal virtual async Task HandleKustoEvents(IList<TelemetryEvent> events)
         {
             try
@@ -587,6 +586,7 @@ namespace Eshopworld.Telemetry
         /// Handles a <see cref="TelemetryEvent"/> that is being streamed to Kusto.
         /// </summary>
         /// <param name="event">The event being handled.</param>
+        [SuppressMessage("Critical Code Smell", "S3966:Objects should not be disposed more than once", Justification = "Flawed Analyzer")]
         internal virtual async Task HandleKustoEvent(TelemetryEvent @event)
         {
             var eventType = @event.GetType();
@@ -653,6 +653,15 @@ namespace Eshopworld.Telemetry
                 InternalSubscriptions[key]?.Dispose();
             }
             InternalSubscriptions.Clear();
+
+            TelemetryStream.OnCompleted();
+            TelemetryStream?.Dispose();
+
+            GlobalExceptionAiSubscription?.Dispose();
+
+            KustoAdminClient?.Dispose();
+            KustoDirectIngestClient?.Dispose();
+            KustoQueuedIngestClient?.Dispose();
 
             TelemetryClient.Flush();
             InternalClient.Flush();
