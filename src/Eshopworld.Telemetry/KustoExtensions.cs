@@ -1,10 +1,11 @@
-﻿namespace Eshopworld.Telemetry
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using Kusto.Data.Common;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Kusto.Data.Common;
 
+namespace Eshopworld.Telemetry
+{
     /// <summary>
     /// Contains extensions to clients in the Kusto SDK.
     /// </summary>
@@ -16,13 +17,13 @@
         /// <param name="client">The <see cref="ICslAdminProvider"/> that we are extending.</param>
         /// <param name="type">The <see cref="Type"/> that we are generating a table for.</param>
         /// <returns>The name of the table created.</returns>
-        public static string GenerateTableFromType(this ICslAdminProvider client, Type type)
+        public static async Task<string> GenerateTableFromType(this ICslAdminProvider client, Type type)
         {
             var tableName = type.Name;
             var tables = new List<string>();
             var command = CslCommandGenerator.GenerateTablesShowCommand();
 
-            var reader = client.ExecuteControlCommand(command);
+            var reader = await client.ExecuteControlCommandAsync(client.DefaultDatabaseName, command);
 
             while (reader.Read())
             {
@@ -54,25 +55,25 @@
             var columns = type.GetProperties().Select(property => new ColumnSchema(property.Name, property.PropertyType.FullName)).ToList();
             command = CslCommandGenerator.GenerateTableCreateCommand(new TableSchema(tableName, columns));
 
-            client.ExecuteControlCommand(command);
+            await client.ExecuteControlCommandAsync(client.DefaultDatabaseName, command);
 
             return tableName;
         }
-
+       
         /// <summary>
         /// Generates a Kusto table mapping for a specific <see cref="Type"/>, by mapping it's properties to column mappings.
         /// </summary>
         /// <param name="client">The <see cref="ICslAdminProvider"/> client that we are extending.</param>
         /// <param name="type">The <see cref="Type"/> that we are generating the JSON mapping for.</param>
         /// <returns>The name of the mapping created.</returns>
-        public static string GenerateTableJsonMappingFromType(this ICslAdminProvider client, Type type)
+        public static async Task<string> GenerateTableJsonMappingFromType(this ICslAdminProvider client, Type type)
         {
             var tableName = type.Name;
             var mappingName = $"{tableName}_mapping";
             var tableMappings = new List<string>();
             var command = CslCommandGenerator.GenerateTableJsonMappingsShowCommand(tableName);
 
-            var reader = client.ExecuteControlCommand(command);
+            var reader = await client.ExecuteControlCommandAsync(client.DefaultDatabaseName, command);
 
             while (reader.Read())
             {
@@ -83,7 +84,7 @@
 
             var mappings = type.GetProperties().Select(property => new JsonColumnMapping { ColumnName = property.Name, JsonPath = $"$.{property.Name}" }).ToList();
             command = CslCommandGenerator.GenerateTableJsonMappingCreateCommand(tableName, mappingName, mappings);
-            client.ExecuteControlCommand(command);
+            await client.ExecuteControlCommandAsync(client.DefaultDatabaseName, command);
 
             return mappingName;
         }
@@ -109,7 +110,7 @@
 
                 if (column.CslType != existing.CslType)
                 {
-                    throw new InvalidSchemaMigrationException($"Can't migrate column {column.Name}' from type {column.CslType} to type {existing.CslType}");
+                    throw new InvalidSchemaMigrationException($"Can't migrate column {column.Name} from type {column.CslType} to type {existing.CslType}");
                 }
             }
 

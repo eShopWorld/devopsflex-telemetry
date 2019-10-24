@@ -251,6 +251,7 @@ public class BigBrotherTest
 
                                             Task.Factory.StartNew(() =>
                                             {
+                                                var brother = new BigBrother("blah", "blah"); // to initialize internal Rx subscriptions
                                                 Task.Delay(TimeSpan.FromSeconds(3));
                                                 BigBrother.Write(new ExceptionEvent(new Exception(exceptionMessage)));
                                             });

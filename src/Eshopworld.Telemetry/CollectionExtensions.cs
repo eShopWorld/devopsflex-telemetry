@@ -1,4 +1,6 @@
-﻿namespace Eshopworld.Telemetry
+﻿using System.Collections.Generic;
+
+namespace Eshopworld.Telemetry
 {
     using System;
     using System.Collections.Concurrent;
@@ -30,6 +32,14 @@
             {
                 dictionary.TryAdd(type, subscription);
             }
+        }
+
+        public static V GetOrAdd<K, V>(this IDictionary<K, V> dictionary, K key, Func<V> valueFactory)
+        {
+            if (!dictionary.ContainsKey(key))
+                dictionary.Add(key, valueFactory());
+            
+            return dictionary[key];
         }
     }
 }

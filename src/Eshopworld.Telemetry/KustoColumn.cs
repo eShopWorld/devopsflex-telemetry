@@ -1,8 +1,8 @@
-﻿namespace Eshopworld.Telemetry
-{
-    using System;
-    using Kusto.Data.Common;
+﻿using System;
+using Kusto.Data.Common;
 
+namespace Eshopworld.Telemetry
+{
     internal class KustoColumn : IEquatable<KustoColumn>
     {
         internal KustoColumn(string name, string cslType)

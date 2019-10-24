@@ -190,3 +190,45 @@ public void Deconstruct(out IObservable<BbEvent> telemetryObservable, out IObser
 This can be used in Unit Tests to instead of verifying Publish calls, the test just subscribes to the internal streams
 and asserts in the scope of that subscription. If you go down this route, be carefull with parallel tests and multiple
 subscriptions and make sure you always dispose of subscriptions to those Observables at the end of the test.
+
+
+## Kusto
+
+Telemetry events can be sent to Data Explorer (Kusto). To wire it up just specify cluster connection defails and ingestion strategy/type combination (or fallback defaults).  
+Ingestion strategies:  
+- *Queued & buffered* - uses local application buffer, and also Kusto's aggregation buffer (Data Management Cluster) before flushing the data to Kusto database (Data Explorer Engine). Much safer and reliable approach since internal Service Bus is used to offer better delivery guarantees  
+ **Note:** local and Kusto buffers are fully configurable, by max buffer interval, massage count and/or size  
+ **When to use:** lots of messages per second (100s or more), higher delivery reliability required, many services sending messages in parallel to one database  
+ **Local app buffer defaults:** flush every 1 second or 100 messages, whatever comes first
+- *Direct* - sends telemetry event directly to Kusto Engine. Less reliable but lower latency  
+ **When to use:** message per second count not to high (up to ~50)
+
+BibBrother first checks if there's a registered type per strategy, and then falls back to default strategy. 
+
+ Few examples:
+```c#
+var bb = new BigBrother()
+    .UseKusto()
+    .WithCluster(engineName, region, database, tenantId)
+    .WithQueuedClient<FooTelemetryEvent>()
+    .WithDirectClient<BarTelemetryEvent>()
+    .WithFallbackQueuedClient() // all other types are going to queued client strategy
+    .Build();
+
+// or set queued strategy defaults (works on both per type and fallback defaults):
+var bb = new BigBrother()
+    .UseKusto()
+    .WithCluster(engineName, region, database, tenantId)
+    .WithQueuedClient<FooTelemetryEvent>(
+        new BufferedClientOptions { IngestionInterval = TimeSpan.FromSeconds(5), BufferSizeItems = 500 })
+    .Build();
+
+// or the simplest configuration: 
+var bb = new BigBrother()
+    .UseKusto()
+    .WithCluster(engineName, region, database, tenantId)
+    .WithFallbackDirectClient() 
+    .Build();
+```
+
+Don't forget to call .Build() at the end of configuration!
