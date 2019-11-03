@@ -272,31 +272,35 @@ namespace Eshopworld.Telemetry
             return new KustoOptionsBuilder(builder =>
             {
                 _kustoOptionsBuilder = builder;
-                UseKusto(builder.DbDetails.Engine, builder.DbDetails.Region, builder.DbDetails.DbName, builder.DbDetails.ClientId);
+                UseKustoInternal(builder.DbDetails.Engine, builder.DbDetails.Region, builder.DbDetails.DbName, builder.DbDetails.ClientId);
 
                 foreach (var type in _kustoOptionsBuilder.RegisteredDirectTypes)
                 {
-                    if (KustoDirectMappings.ContainsKey(type)) continue;
+                    if (KustoDirectMappings.ContainsKey(type)) 
+                        continue;
 
-                    var ingestProps = new KustoIngestionProperties(KustoDbName, "Unknown")
-                        {
-                            TableName = KustoAdminClient.GenerateTableFromType(type).Result,
-                            JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(type).Result,
-                            IgnoreSizeLimit = true,
-                            ValidationPolicy = null,
-                            Format = DataSourceFormat.json
-                        };
+                    var tableName = KustoAdminClient.GenerateOrMigrateTableFromType(type).Result;
+                    var ingestProps = new KustoIngestionProperties(KustoDbName, tableName)
+                    {
+                        TableName = tableName,
+                        JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(type).Result,
+                        IgnoreSizeLimit = true,
+                        ValidationPolicy = null,
+                        Format = DataSourceFormat.json
+                    };
 
-                        KustoDirectMappings.Add(type, ingestProps);
+                    KustoDirectMappings.Add(type, ingestProps);
                 }
 
                 foreach (var type in _kustoOptionsBuilder.RegisteredQueuedTypes)
                 {
                     if (!KustoQueuedMappings.ContainsKey(type))
                     {
-                        var ingestProps = new KustoQueuedIngestionProperties(KustoDbName, "Unknown")
+                        var tableName = KustoAdminClient.GenerateOrMigrateTableFromType(type).Result;
+
+                        var ingestProps = new KustoQueuedIngestionProperties(KustoDbName, tableName)
                         {
-                            TableName = KustoAdminClient.GenerateTableFromType(type).Result,
+                            TableName = tableName,
                             JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(type).Result,
                             ReportLevel = IngestionReportLevel.FailuresOnly,
                             ReportMethod = IngestionReportMethod.Queue,
@@ -310,14 +314,6 @@ namespace Eshopworld.Telemetry
                     }
                 }
             });
-        }
-
-        /// <remarks>
-        /// Ingest telemetry events into Kusto. Uses queued/buffered client, call different overload of this method to configure different ingestion strategy.
-        /// </remarks>
-        public IBigBrother UseKusto(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId)
-        {
-            throw new InvalidOperationException($"Don't use this, use {nameof(UseKusto)}() with the fluent API instead.");
         }
 
         /// <remarks>

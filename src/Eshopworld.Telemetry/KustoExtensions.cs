@@ -17,7 +17,7 @@ namespace Eshopworld.Telemetry
         /// <param name="client">The <see cref="ICslAdminProvider"/> that we are extending.</param>
         /// <param name="type">The <see cref="Type"/> that we are generating a table for.</param>
         /// <returns>The name of the table created.</returns>
-        public static async Task<string> GenerateTableFromType(this ICslAdminProvider client, Type type)
+        public static async Task<string> GenerateOrMigrateTableFromType(this ICslAdminProvider client, Type type)
         {
             var tableName = type.Name;
             var tables = new List<string>();
@@ -42,10 +42,18 @@ namespace Eshopworld.Telemetry
                     existingColumns.Add(new KustoColumn(reader.GetString(0), reader.GetString(1)));
                 }
 
-                var newColumns = type.GetProperties().Select(property => new KustoColumn(property.Name, property.PropertyType)).ToList();
-                var toAddColumns = CompareAndMigrateSchema(existingColumns, newColumns).Select(c => new ColumnSchema(c.Name, null, null, c.CslType.ToString()));
+                var newColumns = type.GetProperties()
+                    .Select(property => new KustoColumn(property.Name, property.PropertyType)).ToList();
 
-                command = CslCommandGenerator.GenerateTableCreateCommand(new TableSchema(tableName, toAddColumns));
+                var toAddColumns = CompareAndMigrateSchema(existingColumns, newColumns)
+                    .Select(c => new ColumnSchema(c.Name, c.ClrType.Name.ToLower(), null, c.CslType.ToString().ToLower()))
+                    .ToArray();
+
+                var tableSchema = new TableSchema(tableName, toAddColumns);
+                //command = CslCommandGenerator.GenerateTableAlterMergeCommand(tableSchema);
+                //command = CslCommandGenerator.GenerateTableCreateCommand(new TableSchema(tableName, toAddColumns));
+                command = $".alter-merge table {tableName} ({string.Join(", ", toAddColumns.Select(x => x.Name + ":" + x.CslType))})";
+
                 client.ExecuteControlCommand(command);
 
                 return tableName;
