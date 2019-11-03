@@ -11,6 +11,12 @@ namespace Eshopworld.Telemetry.Tests
         [Fact, IsUnit]
         public void Test_IsRegistered_ToDirectClient()
         {
+            var bb = new BigBrother();
+
+            bb.UseKusto()
+              .WithCluster("", "", "", "").RegisterAssembly(GetType().Assembly).WithDirectClient()
+              .RegisterType<OptionsTestEvent>().WithDirectClient().Build();
+
             var builder = new KustoOptionsBuilder();
 
             builder.RegisterType<OptionsTestEvent>().WithDirectClient();
@@ -31,7 +37,7 @@ namespace Eshopworld.Telemetry.Tests
         [Fact, IsUnit]
         public void Test_IsRegistered_False_UnknownTypeNoDefaults()
         {
-            var builder = (KustoOptionsBuilder)new KustoOptionsBuilder().RegisterType<OptionsTestEvent>().WithQueuedClient()
+            var builder = (KustoOptionsBuilder) new KustoOptionsBuilder().RegisterType<OptionsTestEvent>().WithQueuedClient()
                                                                          .RegisterType<OptionsTestEvent>().WithDirectClient();
 
             builder.RegisteredQueuedTypes.Should().Contain(typeof(OptionsTestEvent));

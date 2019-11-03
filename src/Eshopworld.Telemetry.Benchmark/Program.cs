@@ -22,7 +22,9 @@ namespace Eshopworld.Telemetry.Benchmark
                 }
             }
 
-            private readonly BigBrother _bb;
+            private readonly BigBrother _bbForHandle;
+
+            private readonly BigBrother _bbForPublish;
 
             public KustoBenchmark()
             {
@@ -31,14 +33,18 @@ namespace Eshopworld.Telemetry.Benchmark
                 var kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
                 var kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);
 
-                _bb = new BigBrother("", "");
-                _bb.UseKusto(kustoName, kustoLocation, kustoDatabase, kustoTenantId);
+                _bbForHandle = new BigBrother("", "");
+                _bbForHandle.UseKusto()
+                            .WithCluster(kustoName, kustoLocation, kustoDatabase, kustoTenantId)
+                            .RegisterType<KustoBenchmarkEvent>()
+                            .WithDirectClient()
+                            .Build();
             }
 
             [Benchmark]
             public void One_NoCheck_Direct()
             {
-                _bb.HandleKustoEvent(new KustoBenchmarkEvent()).ConfigureAwait(false).GetAwaiter().GetResult();
+                _bbForHandle.HandleKustoEvent(new KustoBenchmarkEvent()).ConfigureAwait(false).GetAwaiter().GetResult();
             }
 
             [Benchmark]
@@ -47,7 +53,7 @@ namespace Eshopworld.Telemetry.Benchmark
                 var tasks = new List<Task>();
                 for (int i = 0; i < 50; i++)
                 {
-                    tasks.Add(_bb.HandleKustoEvent(new KustoBenchmarkEvent()));
+                    tasks.Add(_bbForHandle.HandleKustoEvent(new KustoBenchmarkEvent()));
                 }
 
                 Task.WhenAll(tasks).ConfigureAwait(false).GetAwaiter().GetResult();
@@ -60,7 +66,7 @@ namespace Eshopworld.Telemetry.Benchmark
                 var tasks = new List<Task>();
                 for (int i = 0; i < count; i++)
                 {
-                    tasks.Add(_bb.HandleKustoEvent(new KustoBenchmarkEvent()));
+                    tasks.Add(_bbForHandle.HandleKustoEvent(new KustoBenchmarkEvent()));
                 }
 
                 Task.WhenAll(tasks).ConfigureAwait(false).GetAwaiter().GetResult();
@@ -73,8 +79,6 @@ namespace Eshopworld.Telemetry.Benchmark
             [Arguments(500)]
             public Task Queued_buffer_1s(int count)
             {
-                Console.WriteLine($"Queued buffered 1sec {count} messages");
-
                 var kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Machine);
                 var kustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.Machine);
                 var kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
@@ -98,8 +102,6 @@ namespace Eshopworld.Telemetry.Benchmark
                 {
                     brother.Publish(new KustoBenchmarkEvent());
                 }
-
-                Console.WriteLine("Waiting ...");
 
                 return source.Task;
             }
