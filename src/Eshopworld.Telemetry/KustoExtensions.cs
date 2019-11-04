@@ -45,16 +45,16 @@ namespace Eshopworld.Telemetry
                 var newColumns = type.GetProperties()
                     .Select(property => new KustoColumn(property.Name, property.PropertyType)).ToList();
 
-                var toAddColumns = CompareAndMigrateSchema(existingColumns, newColumns)
-                    .Select(c => new ColumnSchema(c.Name, c.ClrType.Name.ToLower(), null, c.CslType.ToString().ToLower()))
-                    .ToArray();
+                var toAddColumns = CompareAndMigrateSchema(existingColumns, newColumns).ToList();
 
-                var tableSchema = new TableSchema(tableName, toAddColumns);
-                //command = CslCommandGenerator.GenerateTableAlterMergeCommand(tableSchema);
-                //command = CslCommandGenerator.GenerateTableCreateCommand(new TableSchema(tableName, toAddColumns));
-                command = $".alter-merge table {tableName} ({string.Join(", ", toAddColumns.Select(x => x.Name + ":" + x.CslType))})";
+                if (toAddColumns.Count > 0)
+                {
+                    var columnsMerge = toAddColumns.Concat(existingColumns).Select(c => new ColumnSchema(c.Name, c.ClrType.FullName));
+                    var tableSchema = new TableSchema(tableName, columnsMerge);
 
-                client.ExecuteControlCommand(command);
+                    command = CslCommandGenerator.GenerateTableAlterMergeCommand(tableSchema);
+                    client.ExecuteControlCommand(command);
+                }
 
                 return tableName;
             }

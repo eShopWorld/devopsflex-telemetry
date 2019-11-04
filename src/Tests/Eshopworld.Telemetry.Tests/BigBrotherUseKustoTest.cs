@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Eshopworld.Core;
 using Eshopworld.Telemetry;
-using Eshopworld.Telemetry.Kusto;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
 using Kusto.Data;
@@ -60,7 +58,6 @@ public class BigBrotherUseKustoTest
     public async Task Test_KustoTestEvent_StreamsToKusto(bool useDirect)
     {
         _kustoQueryClient.Should().NotBeNull();
-        var source = new CancellationTokenSource();
 
         var bb = new BigBrother("", "");
 
@@ -76,32 +73,130 @@ public class BigBrotherUseKustoTest
         bb.Publish(evt);
 
         await Policy.Handle<Exception>()
-            .WaitAndRetryAsync(new[]
-            {
-                TimeSpan.FromSeconds(3),
-                TimeSpan.FromSeconds(5),
-                TimeSpan.FromSeconds(5),
-                TimeSpan.FromSeconds(5)
-            })
-            .ExecuteAsync(async () =>
-            {
-                var reader = await _kustoQueryClient.ExecuteQueryAsync(
-                    _kustoDatabase,
-                    $"{nameof(KustoTestEvent)} | where {nameof(KustoTestEvent.Id)} == \"{evt.Id}\" | summarize count()",
-                    ClientRequestProperties.FromJsonString("{}"));
+                    .WaitAndRetryAsync(new[]
+                    {
+                        TimeSpan.FromSeconds(3),
+                        TimeSpan.FromSeconds(5),
+                        TimeSpan.FromSeconds(5),
+                        TimeSpan.FromSeconds(5)
+                    })
+                    .ExecuteAsync(async () =>
+                    {
+                        var reader = await _kustoQueryClient.ExecuteQueryAsync(
+                            _kustoDatabase,
+                            $"{nameof(KustoTestEvent)} | where {nameof(KustoTestEvent.Id)} == \"{evt.Id}\" | summarize count()",
+                            ClientRequestProperties.FromJsonString("{}"));
 
-                _output.WriteLine("Checking if event is in Kusto ...");
+                        _output.WriteLine("Checking if event is in Kusto ...");
 
-                reader.Read().Should().BeTrue();
-                reader.GetInt64(0).Should().Be(1);
+                        reader.Read().Should().BeTrue();
+                        reader.GetInt64(0).Should().Be(1);
 
-                _output.WriteLine("Event verified.");
-
-                source.Cancel();
-            });
+                        _output.WriteLine("Event verified.");
+                    });
     }
 
+    [Fact, IsLayer1]
+    public async Task Test_KustoMigrationTestEvent_MigratesTwice()
+    {
+        _kustoQueryClient.Should().NotBeNull();
 
+        var bb = new BigBrother("", "");
+        bb.UseKusto()
+          .WithCluster(_kustoName, _kustoLocation, _kustoDatabase, _kustoTenantId)
+          .RegisterType<Initial.KustoMigrationTestEvent>().WithDirectClient()
+          .Build();
+
+        var evt = new Initial.KustoMigrationTestEvent();
+        bb.Publish(evt);
+
+        await Policy.Handle<Exception>()
+                    .WaitAndRetryAsync(new[]
+                    {
+                        TimeSpan.FromSeconds(3),
+                        TimeSpan.FromSeconds(5),
+                        TimeSpan.FromSeconds(5),
+                        TimeSpan.FromSeconds(5)
+                    })
+                    .ExecuteAsync(async () =>
+                    {
+                        var reader = await _kustoQueryClient.ExecuteQueryAsync(
+                            _kustoDatabase,
+                            $"{nameof(Initial.KustoMigrationTestEvent)} | where {nameof(Initial.KustoMigrationTestEvent.Id)} == \"{evt.Id}\" | summarize count()",
+                            ClientRequestProperties.FromJsonString("{}"));
+
+                        _output.WriteLine("Checking if event is in Kusto ...");
+
+                        reader.Read().Should().BeTrue();
+                        reader.GetInt64(0).Should().Be(1);
+
+                        _output.WriteLine("Initial Event verified.");
+                    });
+
+        bb = new BigBrother("", "");
+        bb.UseKusto()
+          .WithCluster(_kustoName, _kustoLocation, _kustoDatabase, _kustoTenantId)
+          .RegisterType<MigrationOne.KustoMigrationTestEvent>().WithDirectClient()
+          .Build();
+
+        var evt2 = new MigrationOne.KustoMigrationTestEvent();
+        bb.Publish(evt2);
+
+        await Policy.Handle<Exception>()
+                    .WaitAndRetryAsync(new[]
+                    {
+                        TimeSpan.FromSeconds(3),
+                        TimeSpan.FromSeconds(5),
+                        TimeSpan.FromSeconds(5),
+                        TimeSpan.FromSeconds(5)
+                    })
+                    .ExecuteAsync(async () =>
+                    {
+                        var reader = await _kustoQueryClient.ExecuteQueryAsync(
+                            _kustoDatabase,
+                            $"{nameof(MigrationOne.KustoMigrationTestEvent)} | where {nameof(MigrationOne.KustoMigrationTestEvent.Id)} == \"{evt2.Id}\" | summarize count()",
+                            ClientRequestProperties.FromJsonString("{}"));
+
+                        _output.WriteLine("Checking if event is in Kusto ...");
+
+                        reader.Read().Should().BeTrue();
+                        reader.GetInt64(0).Should().Be(1);
+
+                        _output.WriteLine("Migration ONE Event verified.");
+                    });
+
+        bb = new BigBrother("", "");
+        bb.UseKusto()
+          .WithCluster(_kustoName, _kustoLocation, _kustoDatabase, _kustoTenantId)
+          .RegisterType<MigrationTwo.KustoMigrationTestEvent>().WithDirectClient()
+          .Build();
+
+        var evt3 = new MigrationTwo.KustoMigrationTestEvent();
+        bb.Publish(evt3);
+
+        await Policy.Handle<Exception>()
+                    .WaitAndRetryAsync(new[]
+                    {
+                        TimeSpan.FromSeconds(3),
+                        TimeSpan.FromSeconds(5),
+                        TimeSpan.FromSeconds(5),
+                        TimeSpan.FromSeconds(5)
+                    })
+                    .ExecuteAsync(async () =>
+                    {
+                        var reader = await _kustoQueryClient.ExecuteQueryAsync(
+                            _kustoDatabase,
+                            $"{nameof(MigrationTwo.KustoMigrationTestEvent)} | where {nameof(MigrationTwo.KustoMigrationTestEvent.Id)} == \"{evt3.Id}\" | summarize count()",
+                            ClientRequestProperties.FromJsonString("{}"));
+
+                        _output.WriteLine("Checking if event is in Kusto ...");
+
+                        reader.Read().Should().BeTrue();
+                        reader.GetInt64(0).Should().Be(1);
+
+                        _output.WriteLine("Migration TWO Event verified.");
+                    });
+    }
 
     [Fact, IsUnit]
     public void Test_ExceptionTelemetry_DoesntStream_ToKusto()
@@ -174,3 +269,69 @@ public class KustoTestEvent : DomainEvent
 public class KustoTestTimedEvent : TimedTelemetryEvent { }
 
 public class KustoTestMetricEvent : MetricTelemetryEvent { }
+
+namespace Initial
+{
+    public class KustoMigrationTestEvent : DomainEvent
+    {
+        public KustoMigrationTestEvent()
+        {
+            Id = Guid.NewGuid();
+            SomeInt = new Random().Next(100);
+            SomeStringOne = Lorem.GetSentence();
+        }
+
+        public Guid Id { get; set; }
+
+        public int SomeInt { get; set; }
+
+        public string SomeStringOne { get; set; }
+    }
+}
+
+namespace MigrationOne
+{
+    public class KustoMigrationTestEvent : DomainEvent
+    {
+        public KustoMigrationTestEvent()
+        {
+            Id = Guid.NewGuid();
+            SomeInt = new Random().Next(100);
+            SomeStringOne = Lorem.GetSentence();
+            SomeStringTwo = Lorem.GetSentence();
+        }
+
+        public Guid Id { get; set; }
+
+        public int SomeInt { get; set; }
+
+        public string SomeStringOne { get; set; }
+
+        public string SomeStringTwo { get; set; }
+    }
+}
+
+namespace MigrationTwo
+{
+    public class KustoMigrationTestEvent : DomainEvent
+    {
+        public KustoMigrationTestEvent()
+        {
+            Id = Guid.NewGuid();
+            SomeInt = new Random().Next(100);
+            SomeStringOne = Lorem.GetSentence();
+            SomeStringTwo = Lorem.GetSentence();
+            SomeStringThree = Lorem.GetSentence();
+        }
+
+        public Guid Id { get; set; }
+
+        public int SomeInt { get; set; }
+
+        public string SomeStringOne { get; set; }
+
+        public string SomeStringTwo { get; set; }
+
+        public string SomeStringThree { get; set; }
+    }
+}
