@@ -196,6 +196,9 @@ public class BigBrotherUseKustoTest
 
                         _output.WriteLine("Migration TWO Event verified.");
                     });
+
+        var command = CslCommandGenerator.GenerateTableDropCommand(nameof(MigrationTwo.KustoMigrationTestEvent));
+        await _kustoAdminClient.ExecuteControlCommandAsync(_kustoAdminClient.DefaultDatabaseName, command);
     }
 
     [Fact, IsUnit]
