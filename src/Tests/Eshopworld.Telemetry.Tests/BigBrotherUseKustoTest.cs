@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Eshopworld.Core;
-using Eshopworld.Telemetry;
-using Eshopworld.Telemetry.Kusto;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
 using Kusto.Data;
@@ -16,163 +13,163 @@ using Polly;
 using Xunit;
 using Xunit.Abstractions;
 
-// ReSharper disable once CheckNamespace
-public class BigBrotherUseKustoTest
+namespace Eshopworld.Telemetry.Tests
 {
-    private readonly ITestOutputHelper _output;
-    private readonly string _kustoName;
-    private readonly string _kustoLocation;
-    private readonly string _kustoDatabase;
-    private readonly string _kustoTenantId;
-
-    private readonly ICslQueryProvider _kustoQueryClient;
-    private readonly ICslAdminProvider _kustoAdminClient;
-
-    public BigBrotherUseKustoTest(ITestOutputHelper output)
+    public class BigBrotherUseKustoTest
     {
-        _output = output;
-        _kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Process);
-        _kustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.Machine);
-        _kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
-        _kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);
+        private readonly ITestOutputHelper _output;
+        private readonly string _kustoName;
+        private readonly string _kustoLocation;
+        private readonly string _kustoDatabase;
+        private readonly string _kustoTenantId;
 
-        if (_kustoName != null && _kustoLocation != null && _kustoDatabase != null && _kustoTenantId != null)
+        private readonly ICslQueryProvider _kustoQueryClient;
+        private readonly ICslAdminProvider _kustoAdminClient;
+
+        public BigBrotherUseKustoTest(ITestOutputHelper output)
         {
-            var kustoUri = $"https://{_kustoName}.{_kustoLocation}.kusto.windows.net";
-            var token = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, string.Empty).Result;
-            var kustoConnectionString =
-                new KustoConnectionStringBuilder(kustoUri)
-                {
-                    FederatedSecurity = true,
-                    InitialCatalog = _kustoDatabase,
-                    Authority = _kustoTenantId,
-                    ApplicationToken = token
-                };
+            _output = output;
+            _kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Process);
+            _kustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.Machine);
+            _kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
+            _kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);
 
-            _kustoQueryClient = KustoClientFactory.CreateCslQueryProvider(kustoConnectionString);
-            _kustoAdminClient = KustoClientFactory.CreateCslAdminProvider(kustoConnectionString);
+            if (_kustoName != null && _kustoLocation != null && _kustoDatabase != null && _kustoTenantId != null)
+            {
+                var kustoUri = $"https://{_kustoName}.{_kustoLocation}.kusto.windows.net";
+                var token = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, string.Empty).Result;
+                var kustoConnectionString =
+                    new KustoConnectionStringBuilder(kustoUri)
+                    {
+                        FederatedSecurity = true,
+                        InitialCatalog = _kustoDatabase,
+                        Authority = _kustoTenantId,
+                        ApplicationToken = token
+                    };
+
+                _kustoQueryClient = KustoClientFactory.CreateCslQueryProvider(kustoConnectionString);
+                _kustoAdminClient = KustoClientFactory.CreateCslAdminProvider(kustoConnectionString);
+            }
+        }
+
+        [Theory, IsLayer1]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task Test_KustoTestEvent_StreamsToKusto(bool useDirect)
+        {
+            _kustoQueryClient.Should().NotBeNull();
+
+            var bb = new BigBrother("", "");
+
+            var builder = bb.UseKusto()
+                .WithCluster(_kustoName, _kustoLocation, _kustoDatabase, _kustoTenantId);
+
+            if (useDirect)
+                builder.RegisterType<KustoTestEvent>().WithDirectClient().Build();
+            else
+                builder.RegisterType<KustoTestEvent>().WithQueuedClient().Build();
+
+            var evt = new KustoTestEvent();
+            bb.Publish(evt);
+
+            await Policy.Handle<Exception>()
+                .WaitAndRetryAsync(new[]
+                {
+                    TimeSpan.FromSeconds(3),
+                    TimeSpan.FromSeconds(5),
+                    TimeSpan.FromSeconds(5),
+                    TimeSpan.FromSeconds(5)
+                })
+                .ExecuteAsync(async () =>
+                {
+                    var reader = await _kustoQueryClient.ExecuteQueryAsync(
+                        _kustoDatabase,
+                        $"{nameof(KustoTestEvent)} | where {nameof(KustoTestEvent.Id)} == \"{evt.Id}\" | summarize count()",
+                        ClientRequestProperties.FromJsonString("{}"));
+
+                    _output.WriteLine("Checking if event is in Kusto ...");
+
+                    reader.Read().Should().BeTrue();
+                    reader.GetInt64(0).Should().Be(1);
+
+                    _output.WriteLine("Event verified.");
+                });
+        }
+
+        [Fact, IsUnit]
+        public void Test_ExceptionTelemetry_DoesntStream_ToKusto()
+        {
+            var bb = new Mock<BigBrother>();
+            bb.Setup(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>())).Verifiable();
+            bb.Setup(x => x.HandleKustoEvents(It.IsAny<IList<TelemetryEvent>>())).Verifiable();
+
+            bb.Object.SetupKustoSubscription();
+            bb.Object.Publish(new Exception().ToExceptionEvent());
+
+            bb.Verify(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>()), Times.Never);
+            bb.Verify(x => x.HandleKustoEvents(It.IsAny<IList<TelemetryEvent>>()), Times.Never);
+        }
+
+        [Fact, IsUnit]
+        public void Test_TimedTelemetry_DoesntStream_ToKusto()
+        {
+            var bb = new Mock<BigBrother>();
+            bb.Setup(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>())).Verifiable();
+            bb.Setup(x => x.HandleKustoEvents(It.IsAny<IList<TelemetryEvent>>())).Verifiable();
+
+            bb.Object.SetupKustoSubscription();
+            bb.Object.Publish(new KustoTestTimedEvent());
+
+            bb.Verify(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>()), Times.Never);
+            bb.Verify(x => x.HandleKustoEvents(It.IsAny<IList<TelemetryEvent>>()), Times.Never);
+        }
+
+        [Fact, IsUnit]
+        public void Test_MetricTelemetry_DoesntStream_ToKusto()
+        {
+            var bb = new Mock<BigBrother>();
+            bb.Setup(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>())).Verifiable();
+            bb.Setup(x => x.HandleKustoEvents(It.IsAny<IList<TelemetryEvent>>())).Verifiable();
+
+            bb.Object.SetupKustoSubscription();
+            bb.Object.Publish(new KustoTestMetricEvent());
+
+            bb.Verify(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>()), Times.Never);
+            bb.Verify(x => x.HandleKustoEvents(It.IsAny<IList<TelemetryEvent>>()), Times.Never);
         }
     }
 
-    [Theory, IsLayer1]
-    [InlineData(IngestionClient.Direct)]
-    [InlineData(IngestionClient.Queued)]
-    public async Task Test_KustoTestEvent_StreamsToKusto(IngestionClient client)
+    public class KustoTestEvent : DomainEvent
     {
-        _kustoQueryClient.Should().NotBeNull();
-        var source = new CancellationTokenSource();
+        public KustoTestEvent()
+        {
+            Id = Guid.NewGuid();
+            SomeInt = new Random().Next(100);
+            SomeStringOne = Lorem.GetSentence();
+            SomeStringTwo = Lorem.GetSentence();
+            SomeDateTime = DateTime.Now;
+            SomeTimeSpan = TimeSpan.FromMinutes(new Random().Next(60));
+        }
 
-        var bb = new BigBrother("", "");
+        public Guid Id { get; set; }
 
-        var builder = bb.UseKusto()
-            .WithCluster(_kustoName, _kustoLocation, _kustoDatabase, _kustoTenantId);
+        public int SomeInt { get; set; }
 
-        if (client == IngestionClient.Queued)
-            builder.WithFallbackQueuedClient().Build();
-        else
-            builder.WithFallbackDirectClient().Build();
+        public string SomeStringOne { get; set; }
 
-        var evt = new KustoTestEvent();
-        bb.Publish(evt);
+        public string SomeStringTwo { get; set; }
 
-        _output.WriteLine($"Event dispatched to BB with {client} client");
+        public DateTime SomeDateTime { get; set; }
 
-        await Policy.Handle<Exception>()
-            .WaitAndRetryAsync(new[]
-            {
-                TimeSpan.FromSeconds(3),
-                TimeSpan.FromSeconds(5),
-                TimeSpan.FromSeconds(5),
-                TimeSpan.FromSeconds(5)
-            })
-            .ExecuteAsync(async () =>
-            {
-                var reader = await _kustoQueryClient.ExecuteQueryAsync(
-                    _kustoDatabase,
-                    $"{nameof(KustoTestEvent)} | where {nameof(KustoTestEvent.Id)} == \"{evt.Id}\" | summarize count()",
-                    ClientRequestProperties.FromJsonString("{}"));
-
-                _output.WriteLine("Checking if event is in Kusto ...");
-
-                reader.Read().Should().BeTrue();
-                reader.GetInt64(0).Should().Be(1);
-
-                _output.WriteLine("Event verified.");
-
-                source.Cancel();
-            });
+        public TimeSpan SomeTimeSpan { get; set; }
     }
 
-
-
-    [Fact, IsUnit]
-    public void Test_ExceptionTelemetry_DoesntStream_ToKusto()
+    public class KustoTestTimedEvent : TimedTelemetryEvent
     {
-        var bb = new Mock<BigBrother>();
-        bb.Setup(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>())).Verifiable();
-        bb.Setup(x => x.HandleKustoEvents(It.IsAny<IList<TelemetryEvent>>())).Verifiable();
-
-        bb.Object.SetupKustoSubscription();
-        bb.Object.Publish(new Exception().ToExceptionEvent());
-
-        bb.Verify(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>()), Times.Never);
-        bb.Verify(x => x.HandleKustoEvents(It.IsAny<IList<TelemetryEvent>>()), Times.Never);
     }
 
-    [Fact, IsUnit]
-    public void Test_TimedTelemetry_DoesntStream_ToKusto()
+    public class KustoTestMetricEvent : MetricTelemetryEvent
     {
-        var bb = new Mock<BigBrother>();
-        bb.Setup(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>())).Verifiable();
-        bb.Setup(x => x.HandleKustoEvents(It.IsAny<IList<TelemetryEvent>>())).Verifiable();
-
-        bb.Object.SetupKustoSubscription();
-        bb.Object.Publish(new KustoTestTimedEvent());
-
-        bb.Verify(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>()), Times.Never);
-        bb.Verify(x => x.HandleKustoEvents(It.IsAny<IList<TelemetryEvent>>()), Times.Never);
     }
 
-    [Fact, IsUnit]
-    public void Test_MetricTelemetry_DoesntStream_ToKusto()
-    {
-        var bb = new Mock<BigBrother>();
-        bb.Setup(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>())).Verifiable();
-        bb.Setup(x => x.HandleKustoEvents(It.IsAny<IList<TelemetryEvent>>())).Verifiable();
-
-        bb.Object.SetupKustoSubscription();
-        bb.Object.Publish(new KustoTestMetricEvent());
-
-        bb.Verify(x => x.HandleKustoEvent(It.IsAny<TelemetryEvent>()), Times.Never);
-        bb.Verify(x => x.HandleKustoEvents(It.IsAny<IList<TelemetryEvent>>()), Times.Never);
-    }
 }
-
-public class KustoTestEvent : DomainEvent
-{
-    public KustoTestEvent()
-    {
-        Id = Guid.NewGuid();
-        SomeInt = new Random().Next(100);
-        SomeStringOne = Lorem.GetSentence();
-        SomeStringTwo = Lorem.GetSentence();
-        SomeDateTime = DateTime.Now;
-        SomeTimeSpan = TimeSpan.FromMinutes(new Random().Next(60));
-    }
-
-    public Guid Id { get; set; }
-
-    public int SomeInt { get; set; }
-
-    public string SomeStringOne { get; set; }
-
-    public string SomeStringTwo { get; set; }
-
-    public DateTime SomeDateTime { get; set; }
-
-    public TimeSpan SomeTimeSpan { get; set; }
-}
-
-public class KustoTestTimedEvent : TimedTelemetryEvent { }
-
-public class KustoTestMetricEvent : MetricTelemetryEvent { }

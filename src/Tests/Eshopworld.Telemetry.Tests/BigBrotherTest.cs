@@ -146,19 +146,6 @@ public class BigBrotherTest
             // wipe all internal subscriptions
             BigBrotherExtensions.WipeInternalSubscriptions();
         }
-
-        [Fact, IsDev]
-        public async Task Test_HighContention()
-        {
-            var tasks = new List<Task>();
-            for (var x = 0; x < 10; x++)
-            {
-                tasks.Add(Task.Run(()=> new BigBrother("blah", "blah")));
-            }
-
-            //this will blow up in V2
-            await Task.WhenAll(tasks.ToArray());
-        }
     }
 
     public class HandleEvent
