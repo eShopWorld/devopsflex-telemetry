@@ -4,7 +4,7 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights.ServiceFabric;
 using Microsoft.ApplicationInsights.ServiceFabric.Module;
 
-namespace Eshopworld.Telemetry.DependencyInjection
+namespace Eshopworld.Telemetry.Configuration
 {
     /// <summary>
     /// Registers Service Fabric components of telemetry pipeline.

@@ -4,8 +4,11 @@ using Eshopworld.Core;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Extensibility;
 
-namespace Eshopworld.Telemetry.DependencyInjection
+namespace Eshopworld.Telemetry.Configuration
 {
+    /// <summary>
+    /// Registers general Application Inisghts telemetry components.
+    /// </summary>
     public class TelemetryModule : Module
     {
         protected override void Load(ContainerBuilder builder)

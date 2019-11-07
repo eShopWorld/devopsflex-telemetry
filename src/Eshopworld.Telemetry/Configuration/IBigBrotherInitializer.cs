@@ -1,4 +1,4 @@
-﻿namespace Eshopworld.Telemetry.DependencyInjection
+﻿namespace Eshopworld.Telemetry.Configuration
 {
     /// <summary>
     /// Configures a BigBrother instance during its initialization.
