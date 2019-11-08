@@ -24,8 +24,6 @@ namespace Eshopworld.Telemetry.Benchmark
 
             private readonly BigBrother _bbForHandle;
 
-            private readonly BigBrother _bbForPublish;
-
             public KustoBenchmark()
             {
                 var kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Machine);

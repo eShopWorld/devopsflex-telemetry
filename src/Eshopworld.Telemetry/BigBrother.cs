@@ -299,23 +299,23 @@ namespace Eshopworld.Telemetry
 
                 foreach (var type in _kustoOptionsBuilder.RegisteredQueuedTypes)
                 {
-                    if (!KustoQueuedMappings.ContainsKey(type))
-                    {
-                        var tableName = KustoAdminClient.GenerateTableFromType(type).Result;
-                        var ingestProps = new KustoQueuedIngestionProperties(KustoDbName, tableName)
-                        {
-                            TableName = tableName,
-                            JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(type).Result,
-                            ReportLevel = IngestionReportLevel.FailuresOnly,
-                            ReportMethod = IngestionReportMethod.Queue,
-                            FlushImmediately = _kustoOptionsBuilder?.BufferOptions.FlushImmediately ?? true,
-                            IgnoreSizeLimit = true,
-                            ValidationPolicy = null,
-                            Format = DataSourceFormat.json
-                        };
+                    if (KustoQueuedMappings.ContainsKey(type)) 
+                        continue;
 
-                        KustoQueuedMappings.Add(type, ingestProps);
-                    }
+                    var tableName = KustoAdminClient.GenerateTableFromType(type).Result;
+                    var ingestProps = new KustoQueuedIngestionProperties(KustoDbName, tableName)
+                    {
+                        TableName = tableName,
+                        JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(type).Result,
+                        ReportLevel = IngestionReportLevel.FailuresOnly,
+                        ReportMethod = IngestionReportMethod.Queue,
+                        FlushImmediately = _kustoOptionsBuilder?.BufferOptions.FlushImmediately ?? true,
+                        IgnoreSizeLimit = true,
+                        ValidationPolicy = null,
+                        Format = DataSourceFormat.json
+                    };
+
+                    KustoQueuedMappings.Add(type, ingestProps);
                 }
             });
         }
