@@ -1,16 +1,13 @@
-﻿using Eshopworld.Telemetry.Kusto;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Configs;
+using Eshopworld.Core;
+using System.Diagnostics;
 
 namespace Eshopworld.Telemetry.Benchmark
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using BenchmarkDotNet.Attributes;
-    using BenchmarkDotNet.Configs;
-    using Eshopworld.Core;
-    using System.Diagnostics;
-
-
     public class Program
     {
         [CoreJob]
@@ -19,13 +16,13 @@ namespace Eshopworld.Telemetry.Benchmark
         {
             private class Config : ManualConfig
             {
-                public Config() 
+                public Config()
                 {
                     Options |= ConfigOptions.DisableOptimizationsValidator;
                 }
             }
 
-            private BigBrother bb;
+            private readonly BigBrother _bbForHandle;
 
             public KustoBenchmark()
             {
@@ -34,14 +31,18 @@ namespace Eshopworld.Telemetry.Benchmark
                 var kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
                 var kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);
 
-                bb = new BigBrother("", "");
-                bb.UseKusto(kustoName, kustoLocation, kustoDatabase, kustoTenantId);
+                _bbForHandle = new BigBrother("", "");
+                _bbForHandle.UseKusto()
+                            .WithCluster(kustoName, kustoLocation, kustoDatabase, kustoTenantId)
+                            .RegisterType<KustoBenchmarkEvent>()
+                            .WithDirectClient()
+                            .Build();
             }
 
             [Benchmark]
             public void One_NoCheck_Direct()
             {
-                bb.HandleKustoEvent(new KustoBenchmarkEvent()).ConfigureAwait(false).GetAwaiter().GetResult();
+                _bbForHandle.HandleKustoEvent(new KustoBenchmarkEvent()).ConfigureAwait(false).GetAwaiter().GetResult();
             }
 
             [Benchmark]
@@ -50,7 +51,7 @@ namespace Eshopworld.Telemetry.Benchmark
                 var tasks = new List<Task>();
                 for (int i = 0; i < 50; i++)
                 {
-                    tasks.Add(bb.HandleKustoEvent(new KustoBenchmarkEvent()));
+                    tasks.Add(_bbForHandle.HandleKustoEvent(new KustoBenchmarkEvent()));
                 }
 
                 Task.WhenAll(tasks).ConfigureAwait(false).GetAwaiter().GetResult();
@@ -63,7 +64,7 @@ namespace Eshopworld.Telemetry.Benchmark
                 var tasks = new List<Task>();
                 for (int i = 0; i < count; i++)
                 {
-                    tasks.Add(bb.HandleKustoEvent(new KustoBenchmarkEvent()));
+                    tasks.Add(_bbForHandle.HandleKustoEvent(new KustoBenchmarkEvent()));
                 }
 
                 Task.WhenAll(tasks).ConfigureAwait(false).GetAwaiter().GetResult();
@@ -76,8 +77,6 @@ namespace Eshopworld.Telemetry.Benchmark
             [Arguments(500)]
             public Task Queued_buffer_1s(int count)
             {
-                Console.WriteLine($"Queued buffered 1sec {count} messages");
-
                 var kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Machine);
                 var kustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.Machine);
                 var kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
@@ -89,19 +88,18 @@ namespace Eshopworld.Telemetry.Benchmark
                 brother
                     .UseKusto()
                     .WithCluster(kustoName, kustoLocation, kustoDatabase, kustoTenantId)
-                    .WithFallbackQueuedClient()
+                    .RegisterType<KustoBenchmarkEvent>()
+                    .WithQueuedClient()
                     .Build(n =>
                     {
-                        if (n>= count)
+                        if (n >= count)
                             source.SetResult(true);
                     });
-                
+
                 for (int i = 0; i < count; i++)
                 {
                     brother.Publish(new KustoBenchmarkEvent());
                 }
-
-                Console.WriteLine("Waiting ...");
 
                 return source.Task;
             }
