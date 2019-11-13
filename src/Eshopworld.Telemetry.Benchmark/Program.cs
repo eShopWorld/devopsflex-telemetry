@@ -85,9 +85,11 @@ namespace Eshopworld.Telemetry.Benchmark
                 var source = new TaskCompletionSource<bool>();
 
                 var brother = new BigBrother();
+
                 brother
                     .UseKusto()
                     .WithCluster(kustoName, kustoLocation, kustoDatabase, kustoTenantId)
+                    .WithBufferOptions(new BufferedClientOptions { BufferSizeItems = 50, IngestionInterval = TimeSpan.FromSeconds(1), FlushImmediately = true})
                     .RegisterType<KustoBenchmarkEvent>()
                     .WithQueuedClient()
                     .Build(n =>
