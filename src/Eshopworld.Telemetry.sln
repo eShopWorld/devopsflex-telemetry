@@ -7,6 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 		..\.gitignore = ..\.gitignore
+		nuget.config = nuget.config
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
@@ -14,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eshopworld.Telemetry", "Esh
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eshopworld.Telemetry.Tests", "Tests\Eshopworld.Telemetry.Tests\Eshopworld.Telemetry.Tests.csproj", "{FC8A017C-51CF-44F4-9B8F-663162263031}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eshopworld.Telemetry.Benchmark", "Eshopworld.Telemetry.Benchmark\Eshopworld.Telemetry.Benchmark.csproj", "{F0CFBC86-AC83-4269-9EB7-B63305356292}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eshopworld.Telemetry.Benchmark", "Eshopworld.Telemetry.Benchmark\Eshopworld.Telemetry.Benchmark.csproj", "{F0CFBC86-AC83-4269-9EB7-B63305356292}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

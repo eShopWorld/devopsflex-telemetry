@@ -6,7 +6,7 @@
     using System.Reflection;
     using Eshopworld.Core;
 
-    public class KustoOptionsBuilder : IKustoClusterBuilder, IKustoOptionsBuilder, IKustoOptionsTypeBuilder
+    public class KustoOptionsBuilder : IKustoClusterBuilder, IKustoOptionsBuilder, IKustoOptionsTypeBuilder, IKustoBufferedOptionsBuilder
     {
         private readonly Action<KustoOptionsBuilder> _onBuild;
 
@@ -30,7 +30,7 @@
         }
 
         /// <inheritdoc />
-        public IKustoOptionsBuilder WithCluster(string engine, string region, string database, string tenantId)
+        public IKustoBufferedOptionsBuilder WithCluster(string engine, string region, string database, string tenantId)
         {
             DbDetails = new KustoDbDetails { ClientId = tenantId, DbName = database, Engine = engine, Region = region };
             return this;
