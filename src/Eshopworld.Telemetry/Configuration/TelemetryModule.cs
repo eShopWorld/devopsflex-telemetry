@@ -22,7 +22,7 @@ namespace Eshopworld.Telemetry.Configuration
                 var bigBrotherInitializers = c.Resolve<IEnumerable<IBigBrotherInitializer>>();
                 foreach (var initializer in bigBrotherInitializers)
                 {
-                    initializer.Initialize(bb);
+                    initializer.Initialize(bb, c);
                 }
 
                 return bb;

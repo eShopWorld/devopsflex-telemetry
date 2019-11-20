@@ -1,4 +1,5 @@
-﻿using Eshopworld.Core;
+﻿using Autofac;
+using Eshopworld.Core;
 
 namespace Eshopworld.Telemetry.Configuration
 {
@@ -22,7 +23,8 @@ namespace Eshopworld.Telemetry.Configuration
         /// Configures how the <see cref="BigBrother"/> instance processes domain events.
         /// </summary>
         /// <param name="bigBrother">The BigBrother instance to configure.</param>
-        public void Initialize(BigBrother bigBrother)
+        /// <param name="componentContext">The component context.</param>
+        public void Initialize(BigBrother bigBrother, IComponentContext componentContext)
         {
             if (_publishEvents != null)
                 bigBrother.PublishEventsToTopics(_publishEvents);

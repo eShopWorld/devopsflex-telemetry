@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Fabric.Common.Tracing;
 using System.Linq;
 using System.Threading;
@@ -17,7 +18,7 @@ namespace Eshopworld.Telemetry.Tests.Configuration
         [Fact, IsLayer0]
         public void SetsProperties()
         {
-            var events = new List<ITelemetry>();
+            var events = new ConcurrentBag<ITelemetry>();
             var builder = new TelemetryClientBuilder();
             builder.AddInitializer(LogicalCallTelemetryInitializer.Instance);
             var telemetryClient = builder.Build(e => events.Add(e));
@@ -27,7 +28,7 @@ namespace Eshopworld.Telemetry.Tests.Configuration
             telemetryClient.Flush();
 
             events.Should().HaveCount(1);
-            events[0].Should().BeOfType<EventTelemetry>()
+            events.First().Should().BeOfType<EventTelemetry>()
                 .Which.Properties.Should().ContainKey("TestProperty")
                 .WhichValue.Should().Be("TestValue");
         }
@@ -35,7 +36,7 @@ namespace Eshopworld.Telemetry.Tests.Configuration
         [Fact, IsLayer0]
         public async Task SetsPropertiesPerLogicalThread()
         {
-            var events = new List<ITelemetry>();
+            var events = new ConcurrentBag<ITelemetry>();
             var builder = new TelemetryClientBuilder();
             builder.AddInitializer(LogicalCallTelemetryInitializer.Instance);
             var telemetryClient = builder.Build(e => events.Add(e));

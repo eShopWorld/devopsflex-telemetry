@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using Autofac;
 using Eshopworld.Core;
 using Eshopworld.Telemetry.Configuration;
@@ -28,7 +30,7 @@ namespace Eshopworld.Telemetry.Tests.Configuration
         [Fact, IsLayer0]
         public void BigBrotherCanBeBuild()
         {
-            var events = new List<ITelemetry>();
+            var events = new ConcurrentBag<ITelemetry>();
             var instrumentationKey = Guid.NewGuid().ToString();
             var containerBuilder = new ContainerBuilder();
             containerBuilder.Register(c => new TelemetryClientBuilder().Build(t => events.Add(t)));
@@ -48,8 +50,8 @@ namespace Eshopworld.Telemetry.Tests.Configuration
         [Fact, IsLayer0]
         public void BigBrotherCanBeConfigured()
         {
-            var events = new List<ITelemetry>();
-            var baseEvents = new List<BaseEvent>();
+            var events = new ConcurrentBag<ITelemetry>();
+            var baseEvents = new ConcurrentBag<BaseEvent>();
             var instrumentationKey = Guid.NewGuid().ToString();
             var containerBuilder = new ContainerBuilder();
             containerBuilder.RegisterModule<TelemetryModule>();
@@ -69,7 +71,7 @@ namespace Eshopworld.Telemetry.Tests.Configuration
         [Fact, IsLayer0]
         public void LogicalCallTelemetryInitializerAddsProperties()
         {
-            var events = new List<ITelemetry>();
+            var events = new ConcurrentBag<ITelemetry>();
             var instrumentationKey = Guid.NewGuid().ToString();
             var containerBuilder = new ContainerBuilder();
             containerBuilder.Register(c => new TelemetryClientBuilder().AddInitializers(c.Resolve<IEnumerable<ITelemetryInitializer>>()).Build(t => events.Add(t)));
@@ -83,7 +85,7 @@ namespace Eshopworld.Telemetry.Tests.Configuration
             bb.Flush();
 
             events.Should().HaveCount(1);
-            events[0].Should().BeOfType<EventTelemetry>()
+            events.First().Should().BeOfType<EventTelemetry>()
                 .Which.Properties.Should().ContainKey("TestProp")
                 .WhichValue.Should().Be("TestValue");
         }
@@ -125,7 +127,7 @@ namespace Eshopworld.Telemetry.Tests.Configuration
                 _baseEventAction = baseEventAction;
             }
 
-            public void Initialize(BigBrother bigBrother)
+            public void Initialize(BigBrother bigBrother, IComponentContext componentContext)
             {
                 var (telemetryObservable, telemetryObserver, internalObservable) = bigBrother;
                 telemetryObservable.Subscribe(e => _baseEventAction(e));

@@ -1,4 +1,6 @@
-﻿namespace Eshopworld.Telemetry.Configuration
+﻿using Autofac;
+
+namespace Eshopworld.Telemetry.Configuration
 {
     /// <summary>
     /// Configures a BigBrother instance during its initialization.
@@ -9,6 +11,7 @@
         /// Performs the configuration of the BigBrother instance.
         /// </summary>
         /// <param name="bigBrother">The BigBrother instance.</param>
-        void Initialize(BigBrother bigBrother);
+        /// <param name="componentContext">The component context.</param>
+        void Initialize(BigBrother bigBrother, IComponentContext componentContext);
     }
 }
