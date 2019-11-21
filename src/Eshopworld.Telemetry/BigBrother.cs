@@ -133,9 +133,8 @@
         /// <param name="aiKey">The application's Application Insights instrumentation key.</param>
         /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
         public BigBrother([NotNull]string aiKey, [NotNull]string internalKey)
+            : this(null, aiKey, internalKey)
         {
-            SetupTelemetryClient(aiKey, internalKey);
-            SetupSubscriptions();
         }
 
         /// <summary>
@@ -146,10 +145,15 @@
         /// <param name="client">The application's existing <see cref="TelemetryClient"/>.</param>
         /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
         public BigBrother([NotNull]TelemetryClient client, [NotNull]string internalKey)
-            // ReSharper disable once AssignNullToNotNullAttribute
-            : this((string)null, internalKey)
+            : this(client, null, internalKey)
+        {
+        }
+
+        private BigBrother(TelemetryClient client, string aiKey, [NotNull]string internalKey)
         {
             TelemetryClient = client;
+            SetupTelemetryClient(aiKey, internalKey);
+            SetupSubscriptions();
         }
 
         /// <summary>
