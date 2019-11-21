@@ -19,7 +19,7 @@ public class ContainerBuilderExtensionsTests
         containerBuilder.Register(c => new TelemetrySettings { InstrumentationKey = instrumentationKey, InternalKey = instrumentationKey });
         containerBuilder.RegisterModule<TelemetryModule>();
 
-        containerBuilder.ConfigureBigBrother(bb => bb.KustoDbName = "aa");
+        containerBuilder.ConfigureBigBrother(bigBrother => bigBrother.KustoDbName = "aa");
         var container = containerBuilder.Build();
 
         var bb = container.Resolve<IBigBrother>() as BigBrother;
@@ -37,7 +37,8 @@ public class ContainerBuilderExtensionsTests
         containerBuilder.Register(c => new TestData { Value = "bb" });
         containerBuilder.RegisterModule<TelemetryModule>();
 
-        containerBuilder.ConfigureBigBrother((bb, cc) => bb.KustoDbName = cc.Resolve<TestData>().Value);
+        containerBuilder.ConfigureBigBrother(
+            (bigBrother, cc) => bigBrother.KustoDbName = cc.Resolve<TestData>().Value);
         var container = containerBuilder.Build();
 
         var bb = container.Resolve<IBigBrother>() as BigBrother;
