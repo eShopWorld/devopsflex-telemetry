@@ -1,6 +1,10 @@
 ﻿using System;
 using Autofac;
+using Autofac.Integration.ServiceFabric;
 using Eshopworld.Telemetry.Configuration;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DependencyCollector;
+using Microsoft.ApplicationInsights.Extensibility;
 
 namespace Eshopworld.Telemetry
 {
@@ -31,6 +35,25 @@ namespace Eshopworld.Telemetry
         {
             containerBuilder.RegisterInstance<IBigBrotherInitializer>(new ConfigureBigBrotherInitializer((bigBrother, componentContext) => configure(bigBrother, componentContext)));
             return containerBuilder;
+        }
+
+        /// <summary>
+        /// Configures telemetry initializers for statefull services.
+        /// Warning: It must not be used in Asp.Net Core projects.
+        /// </summary>
+        /// <param name="builder">The container builder.</param>
+        /// <returns>The container builder.</returns>
+        public static ContainerBuilder AddStatefullServiceTelemetry(this ContainerBuilder builder)
+        {
+            builder.RegisterType<OperationCorrelationTelemetryInitializer>().As<ITelemetryInitializer>();
+            builder.RegisterType<HttpDependenciesParsingTelemetryInitializer>().As<ITelemetryInitializer>();
+            builder.RegisterType<DependencyTrackingTelemetryModule>().As<ITelemetryModule>();
+
+            builder.RegisterType<TelemetryClient>().SingleInstance();
+
+            builder.RegisterServiceFabricSupport();
+
+            return builder;
         }
     }
 }
