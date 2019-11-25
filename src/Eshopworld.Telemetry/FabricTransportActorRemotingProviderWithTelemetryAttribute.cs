@@ -22,12 +22,12 @@ namespace Eshopworld.Telemetry
 
             return new Dictionary<string, Func<ActorService, IServiceRemotingListener>>
             {
-                { Constants.ListenerNameV2, CreateListner },
+                { Constants.ListenerNameV2, CreateListener },
             };
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "The lifecycle of the ActorServiceRemotingDispatcher depends on the remoting infrastructure and it cannot be disposed manually.")]
-        private IServiceRemotingListener CreateListner(ActorService actorService)
+        private IServiceRemotingListener CreateListener(ActorService actorService)
         {
             // Create a standard remoting dispatcher with a proxy which initializes the request telemetry
             var dispatcher = new TelemetryContextInitializingDispatcher(new ActorServiceRemotingDispatcher(actorService, new DataContractRemotingMessageFactory()), actorService.Context);
