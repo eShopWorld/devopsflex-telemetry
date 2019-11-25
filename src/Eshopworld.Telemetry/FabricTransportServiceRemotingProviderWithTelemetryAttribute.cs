@@ -16,6 +16,12 @@ namespace Eshopworld.Telemetry
     [AttributeUsage(AttributeTargets.Assembly)]
     public class FabricTransportServiceRemotingProviderWithTelemetryAttribute : FabricTransportServiceRemotingProviderAttribute
     {
+        public FabricTransportServiceRemotingProviderWithTelemetryAttribute()
+        {
+            RemotingListenerVersion = RemotingListenerVersion.V2;
+            RemotingClientVersion = RemotingClientVersion.V2;
+        }
+
         public override Dictionary<string, Func<ServiceContext, IService, IServiceRemotingListener>> CreateServiceRemotingListeners()
         {
             if (RemotingListenerVersion != RemotingListenerVersion.V2)

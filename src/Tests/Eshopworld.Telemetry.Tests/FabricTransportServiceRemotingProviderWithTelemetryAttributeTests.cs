@@ -11,10 +11,7 @@ namespace Eshopworld.Telemetry.Tests
         [Fact, IsLayer0]
         public void FabricTransportServiceRemotingProviderWithTelemetryAttributeCreatesRemotingListener()
         {
-            var attr = new FabricTransportServiceRemotingProviderWithTelemetryAttribute
-            {
-                RemotingListenerVersion = RemotingListenerVersion.V2,
-            };
+            var attr = new FabricTransportServiceRemotingProviderWithTelemetryAttribute();
 
             var dict = attr.CreateServiceRemotingListeners();
 
