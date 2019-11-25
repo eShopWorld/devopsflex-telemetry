@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Autofac;
 using Autofac.Integration.ServiceFabric;
 using Eshopworld.Telemetry.Configuration;
@@ -52,6 +53,23 @@ namespace Eshopworld.Telemetry
             builder.RegisterType<TelemetryClient>().SingleInstance();
 
             builder.RegisterServiceFabricSupport();
+
+            builder.Register(c =>
+            {
+                var telemetrySettings = c.Resolve<TelemetrySettings>();
+                var configuration = new TelemetryConfiguration(telemetrySettings.InstrumentationKey);
+                foreach (var initializer in c.Resolve<IEnumerable<ITelemetryInitializer>>())
+                {
+                    configuration.TelemetryInitializers.Add(initializer);
+                }
+
+                foreach (var module in c.Resolve<IEnumerable<ITelemetryModule>>())
+                {
+                    module.Initialize(configuration);
+                }
+
+                return configuration;
+            });
 
             return builder;
         }
