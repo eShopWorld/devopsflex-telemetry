@@ -55,5 +55,16 @@ namespace Eshopworld.Telemetry
 
             return builder;
         }
+
+        public static ContainerBuilder ConfigureTelemetryKeys(this ContainerBuilder builder, string instrumentationKey, string internalKey)
+        {
+            builder.RegisterInstance(new TelemetrySettings
+            {
+                InstrumentationKey = instrumentationKey,
+                InternalKey = internalKey,
+            });
+
+            return builder;
+        }
     }
 }

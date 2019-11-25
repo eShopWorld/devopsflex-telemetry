@@ -69,6 +69,21 @@ public class ContainerBuilderExtensionsTests
         containerBuilder.Properties.ContainsKey("__ServiceFabricRegistered").Should().BeTrue();
     }
 
+    [Fact, IsLayer0]
+    public void ConfigureTelemetryKeysRegistersKeys()
+    {
+        var containerBuilder = new ContainerBuilder();
+        var instrumentationKey = Guid.NewGuid().ToString();
+        var internalKey = Guid.NewGuid().ToString();
+
+        containerBuilder.ConfigureTelemetryKeys(instrumentationKey, internalKey);
+
+        var container = containerBuilder.Build();
+        var telemetrySettings = container.Resolve<TelemetrySettings>();
+        telemetrySettings.InstrumentationKey.Should().Be(instrumentationKey);
+        telemetrySettings.InternalKey.Should().Be(internalKey);
+    }
+
     private class TestData
     {
         public string Value { get; set; }

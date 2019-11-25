@@ -9,7 +9,7 @@ namespace Eshopworld.Telemetry.Configuration
     /// <summary>
     /// Registers Service Fabric components of telemetry pipeline.
     /// </summary>
-    public class ServiceFabricModule : Module
+    public class ServiceFabricTelemetryModule : Module
     {
         protected override void Load(ContainerBuilder builder)
         {
