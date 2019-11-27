@@ -16,6 +16,12 @@ namespace Eshopworld.Telemetry
     [AttributeUsage(AttributeTargets.Assembly)]
     public class FabricTransportServiceRemotingProviderWithTelemetryAttribute : FabricTransportServiceRemotingProviderAttribute
     {
+        public FabricTransportServiceRemotingProviderWithTelemetryAttribute()
+        {
+            RemotingListenerVersion = RemotingListenerVersion.V2;
+            RemotingClientVersion = RemotingClientVersion.V2;
+        }
+
         public override Dictionary<string, Func<ServiceContext, IService, IServiceRemotingListener>> CreateServiceRemotingListeners()
         {
             if (RemotingListenerVersion != RemotingListenerVersion.V2)
@@ -23,12 +29,12 @@ namespace Eshopworld.Telemetry
 
             return new Dictionary<string, Func<ServiceContext, IService, IServiceRemotingListener>>
             {
-                { Constants.ListenerNameV2, CreateListner },
+                { Constants.ListenerNameV2, CreateListener },
             };
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "The lifecycle of the ServiceRemotingMessageDispatcher depends on the remoting infrastructure and it cannot be disposed manually.")]
-        private IServiceRemotingListener CreateListner(ServiceContext serviceContext, IService service)
+        private IServiceRemotingListener CreateListener(ServiceContext serviceContext, IService service)
         {
             // Create a standard remoting dispatcher with a proxy which initializes the request telemetry
             var dispatcher = new TelemetryContextInitializingDispatcher(new ServiceRemotingMessageDispatcher(serviceContext, service, new DataContractRemotingMessageFactory()), serviceContext);

@@ -11,6 +11,7 @@ using FluentAssertions;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DependencyCollector;
 using Microsoft.ApplicationInsights.Extensibility;
+using Moq;
 using Xunit;
 
 public class ContainerBuilderExtensionsTests
@@ -82,6 +83,28 @@ public class ContainerBuilderExtensionsTests
         var telemetrySettings = container.Resolve<TelemetrySettings>();
         telemetrySettings.InstrumentationKey.Should().Be(instrumentationKey);
         telemetrySettings.InternalKey.Should().Be(internalKey);
+    }
+
+    [Fact, IsLayer0]
+    public void AddStatefullServiceTelemetryRegistersTelemetryConfiguration()
+    {
+        var instrumentationKey = Guid.NewGuid().ToString();
+        var internalKey = Guid.NewGuid().ToString();
+        var telemetryInitializerMoq = new Mock<ITelemetryInitializer>();
+        var telemetryModuleMoq = new Mock<ITelemetryModule>();
+        telemetryModuleMoq.Setup(x => x.Initialize(It.IsAny<TelemetryConfiguration>()));
+        var containerBuilder = new ContainerBuilder();
+        containerBuilder.RegisterInstance(telemetryInitializerMoq.Object);
+        containerBuilder.RegisterInstance(telemetryModuleMoq.Object);
+        containerBuilder.ConfigureTelemetryKeys(instrumentationKey, internalKey);
+
+        containerBuilder.AddStatefullServiceTelemetry();
+
+        var container = containerBuilder.Build();
+        var configuration = container.Resolve<TelemetryConfiguration>();
+        configuration.InstrumentationKey.Should().Be(instrumentationKey);
+        configuration.TelemetryInitializers.Should().Contain(telemetryInitializerMoq.Object);
+        telemetryModuleMoq.Verify(x => x.Initialize(It.IsAny<TelemetryConfiguration>()), Times.Once);
     }
 
     private class TestData
