@@ -19,7 +19,6 @@ namespace Eshopworld.Telemetry.Configuration
                 return FabricTelemetryInitializerExtension.CreateFabricTelemetryInitializer(serviceContext);
             }).As<ITelemetryInitializer>();
             builder.Register(c => new ServiceRemotingRequestTrackingTelemetryModule { SetComponentCorrelationHttpHeaders = true }).As<ITelemetryModule>();
-            builder.RegisterType<ServiceRemotingDependencyTrackingTelemetryModule>().As<ITelemetryModule>();
         }
     }
 }
