@@ -48,16 +48,11 @@ namespace Eshopworld.Telemetry
         {
             builder.RegisterType<OperationCorrelationTelemetryInitializer>().As<ITelemetryInitializer>();
             builder.RegisterType<HttpDependenciesParsingTelemetryInitializer>().As<ITelemetryInitializer>();
-            builder.Register(c=> {
-
-                var config = c.Resolve<TelemetryConfiguration>();
-
+            builder.Register(c=> {             
                 var module = new DependencyTrackingTelemetryModule();
                 module.ExcludeComponentCorrelationHttpHeadersOnDomains.Add("core.windows.net");
                 module.IncludeDiagnosticSourceActivities.Add("Microsoft.Azure.ServiceBus");
                 module.IncludeDiagnosticSourceActivities.Add("Microsoft.Azure.EventHubs");
-
-                module.Initialize(config);
 
                 return module;
             }).As<ITelemetryModule>();
