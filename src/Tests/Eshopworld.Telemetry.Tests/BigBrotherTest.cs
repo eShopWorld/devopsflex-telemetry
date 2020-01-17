@@ -81,7 +81,7 @@ public class BigBrotherTest
             var bbMock = new Mock<BigBrother> { CallBase = true };
             var tEvent = new TestTelemetryEvent();
 
-            TestTelemetryEvent rEvent = null;
+            TestTelemetryEvent? rEvent = null;
             using (bbMock.Object.TelemetryStream.OfType<TestTelemetryEvent>().Subscribe(e => rEvent = e))
             {
                 bbMock.Object.Publish(tEvent);
@@ -233,30 +233,28 @@ public class BigBrotherTest
             var completed = Task.Factory.StartNew(
                                     () =>
                                     {
-                                        using (var session = new TraceEventSession($"TestSession_{nameof(Test_WriteEvent_WithTraceEvent)}"))
-                                        {
-                                            session.Source.Dynamic.AddCallbackForProviderEvent(
-                                                ErrorEventSource.EventSourceName,
-                                                nameof(ErrorEventSource.Tasks.ExceptionEvent),
-                                                e =>
-                                                {
-                                                    e.PayloadByName("message").Should().Be(exceptionMessage);
-                                                    e.PayloadByName("eventPayload").Should().NotBeNull();
-
-                                                    // ReSharper disable once AccessToDisposedClosure
-                                                    session.Source?.Dispose();
-                                                });
-
-                                            session.EnableProvider(ErrorEventSource.EventSourceName);
-
-                                            Task.Factory.StartNew(() =>
+                                        using var session = new TraceEventSession($"TestSession_{nameof(Test_WriteEvent_WithTraceEvent)}");
+                                        session.Source.Dynamic.AddCallbackForProviderEvent(
+                                            ErrorEventSource.EventSourceName,
+                                            nameof(ErrorEventSource.Tasks.ExceptionEvent),
+                                            e =>
                                             {
-                                                Task.Delay(TimeSpan.FromSeconds(3));
-                                                BigBrother.Write(new ExceptionEvent(new Exception(exceptionMessage)));
+                                                e.PayloadByName("message").Should().Be(exceptionMessage);
+                                                e.PayloadByName("eventPayload").Should().NotBeNull();
+
+                                                // ReSharper disable once AccessToDisposedClosure
+                                                session.Source?.Dispose();
                                             });
 
-                                            session.Source.Process();
-                                        }
+                                        session.EnableProvider(ErrorEventSource.EventSourceName);
+
+                                        Task.Factory.StartNew(() =>
+                                        {
+                                            Task.Delay(TimeSpan.FromSeconds(3));
+                                            BigBrother.Write(new ExceptionEvent(new Exception(exceptionMessage)));
+                                        });
+
+                                        session.Source.Process();
                                     })
                                 .Wait(TimeSpan.FromSeconds(30));
 
@@ -276,14 +274,13 @@ public class BigBrotherTest
 
             var telClient = new TelemetryClient(new TelemetryConfiguration("blah", channel.Object));
 
-            using (var bb = new BigBrother(telClient, "blah"))
-            {
-                bb.Publish(telemetry.ToExceptionEvent());
-                bb.Flush();
+            using var bb = new BigBrother(telClient, "blah");
 
-                await Task.Delay(TimeSpan.FromSeconds(1));
-                channel.Verify();
-            }
+            bb.Publish(telemetry.ToExceptionEvent());
+            bb.Flush();
+
+            await Task.Delay(TimeSpan.FromSeconds(1));
+            channel.Verify();
         }
     }
 

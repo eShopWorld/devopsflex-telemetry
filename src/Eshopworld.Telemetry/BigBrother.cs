@@ -12,7 +12,6 @@
     using System.Runtime.CompilerServices;
     using Core;
     using InternalEvents;
-    using JetBrains.Annotations;
     using Kusto.Data;
     using Kusto.Data.Common;
     using Kusto.Data.Net.Client;
@@ -75,22 +74,22 @@
         /// <summary>
         /// Contains the <see cref="IPublishEvents"/> instance used to publish to topics.
         /// </summary>
-        internal IPublishEvents TopicPublisher;
+        internal IPublishEvents? TopicPublisher;
 
         /// <summary>
         /// Contains the exception stream typed dictionary of sink subscription.
         /// </summary>
-        internal IDisposable EventSourceSinkSubscription;
+        internal IDisposable? EventSourceSinkSubscription;
 
         /// <summary>
         /// Contains the exception stream typed dictionary of sink subscription.
         /// </summary>
-        internal IDisposable TraceSinkSubscription;
+        internal IDisposable? TraceSinkSubscription;
 
         /// <summary>
         /// Constans the static ExceptionStream subscription from this client.
         /// </summary>
-        internal IDisposable GlobalExceptionAiSubscription;
+        internal IDisposable? GlobalExceptionAiSubscription;
 
         /// <summary>
         /// The external telemetry client, used to publish events through <see cref="BigBrother"/>.
@@ -100,17 +99,17 @@
         /// <summary>
         /// The name of the Kusto database we are using.
         /// </summary>
-        internal string KustoDbName;
+        internal string? KustoDbName;
 
         /// <summary>
         /// The <see cref="ICslAdminProvider"/> Kusto Admin client we use to setup tables and table mappings.
         /// </summary>
-        internal ICslAdminProvider KustoAdminClient;
+        internal ICslAdminProvider? KustoAdminClient;
 
         /// <summary>
         /// The <see cref="IKustoQueuedIngestClient"/> used for Kusto data ingestion.
         /// </summary>
-        internal IKustoQueuedIngestClient KustoIngestClient;
+        internal IKustoQueuedIngestClient? KustoIngestClient;
 
         /// <summary>
         /// Static initialization of static resources in <see cref="BigBrother"/> instances.
@@ -132,9 +131,14 @@
         /// </summary>
         /// <param name="aiKey">The application's Application Insights instrumentation key.</param>
         /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
-        public BigBrother([NotNull]string aiKey, [NotNull]string internalKey)
-            : this(null, aiKey, internalKey)
+        public BigBrother(string aiKey, string internalKey)
         {
+            TelemetryClient = new TelemetryClient(new TelemetryConfiguration
+            {
+                InstrumentationKey = aiKey,
+            });
+            InternalClient.InstrumentationKey = internalKey;
+            SetupSubscriptions();
         }
 
         /// <summary>
@@ -144,15 +148,10 @@
         /// </summary>
         /// <param name="client">The application's existing <see cref="TelemetryClient"/>.</param>
         /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
-        public BigBrother([NotNull]TelemetryClient client, [NotNull]string internalKey)
-            : this(client, null, internalKey)
-        {
-        }
-
-        private BigBrother(TelemetryClient client, string aiKey, [NotNull]string internalKey)
+        public BigBrother(TelemetryClient client, string internalKey)
         {
             TelemetryClient = client;
-            SetupTelemetryClient(aiKey, internalKey);
+            InternalClient.InstrumentationKey = internalKey;
             SetupSubscriptions();
         }
 
@@ -196,9 +195,9 @@
             [CallerFilePath] string callerFilePath = "",
             [CallerLineNumber] int callerLineNumber = -1) where T : TelemetryEvent
         {
-            if (TopicPublisher != null && @event is DomainEvent)
+            if (@event is DomainEvent)
             {
-                TopicPublisher.Publish(@event).Wait();
+                TopicPublisher?.Publish(@event).Wait();
             }
 
             if (@event is TelemetryEvent telemetryEvent)
@@ -236,7 +235,7 @@
         public IBigBrother DeveloperMode()
         {
 #if DEBUG
-            if (TelemetryConfiguration.Active != null && TelemetryConfiguration.Active.TelemetryChannel != null)
+            if (TelemetryConfiguration.Active?.TelemetryChannel != null)
             {
                 TelemetryConfiguration.Active.TelemetryChannel.DeveloperMode = true;
             }
@@ -280,24 +279,6 @@
 
             SetupKustoSubscription();
             return this;
-        }
-
-        /// <summary>
-        /// Sets up the internal telemetry clients, both the one used to push normal events and the one used to push internal instrumentation.
-        /// </summary>
-        /// <param name="aiKey">The application's Application Insights instrumentation key.</param>
-        /// <param name="internalKey">The DevOps internal telemetry Application Insights instrumentation key.</param>
-        internal void SetupTelemetryClient(string aiKey, [NotNull]string internalKey)
-        {
-            if (aiKey != null)
-            {
-                TelemetryClient = new TelemetryClient
-                {
-                    InstrumentationKey = aiKey
-                };
-            }
-
-            InternalClient.InstrumentationKey = internalKey;
         }
 
         /// <summary>
@@ -347,7 +328,7 @@
         /// </summary>
         /// <param name="telemetry">An event log item.</param>
         /// <param name="isInternal">True if this is an internal event, false otherwise.</param>
-        internal virtual void TrackEvent(EventTelemetry telemetry, bool isInternal = false)
+        internal virtual void TrackEvent(EventTelemetry? telemetry, bool isInternal = false)
         {
             if (isInternal)
             {
@@ -464,15 +445,14 @@
                 ingestProps = KustoMappings[eventType];
             }
 
-            using (var stream = new MemoryStream())
-            using (var writer = new StreamWriter(stream))
-            {
-                writer.WriteLine(JsonConvert.SerializeObject(@event));
-                writer.Flush();
-                stream.Seek(0, SeekOrigin.Begin);
+            using var stream = new MemoryStream();
+            using var writer = new StreamWriter(stream);
+            
+            writer.WriteLine(JsonConvert.SerializeObject(@event));
+            writer.Flush();
+            stream.Seek(0, SeekOrigin.Begin);
 
-                KustoIngestClient.IngestFromStream(stream, ingestProps, leaveOpen: true);
-            }
+            KustoIngestClient.IngestFromStream(stream, ingestProps, leaveOpen: true);
         }
 
         /// <summary>

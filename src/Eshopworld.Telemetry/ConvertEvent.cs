@@ -2,9 +2,9 @@
 {
     using System;
     using System.Diagnostics;
+    using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using Core;
-    using JetBrains.Annotations;
     using Microsoft.ApplicationInsights.Channel;
     using Microsoft.ApplicationInsights.DataContracts;
 
@@ -14,7 +14,7 @@
     /// <typeparam name="TFrom">The type of the <see cref="BaseEvent"/> we are converting from.</typeparam>
     /// <typeparam name="TTo">The type of the <see cref="ITelemetry"/> event we are converting to.</typeparam>
     public class ConvertEvent<TFrom, TTo>
-        where TTo : ITelemetry, ISupportProperties, ISupportMetrics, new()
+        where TTo : class, ITelemetry, ISupportProperties, ISupportMetrics, new()
         where TFrom : BaseEvent
     {
         internal readonly TFrom Event;
@@ -23,7 +23,7 @@
         /// This exists to make the class testable and to allow control over the "Now" during a test.
         /// </summary>
         [NotNull]
-        internal Func<DateTime> Now = () => DateTime.Now;
+        internal Func<DateTimeOffset> Now = () => DateTime.UtcNow;
 
         /// <summary>
         /// Initializes a new instance of <see cref="ConvertEvent{TFrom,TTo}"/>.
@@ -52,8 +52,7 @@
         /// the AI client.
         /// </summary>
         /// <returns>The converted <see cref="EventTelemetry"/> event.</returns>
-        [CanBeNull]
-        public TTo ToTelemetry()
+        public TTo? ToTelemetry()
         {
             try
             {

@@ -2,10 +2,10 @@
 
   <PropertyGroup>
 
-    <Version>2.3.0-telemetry-beta4</Version>
+    <Version>3.0.0</Version>
     <PackageReleaseNotes>Support for telemetry (including stateful services telemetry) added.</PackageReleaseNotes>
 
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <IsPackable>True</IsPackable>
 
     <PackageId>Eshopworld.Telemetry</PackageId>
@@ -20,7 +20,7 @@
     <IncludeSource>True</IncludeSource>
 
     <DebugType>Full</DebugType>
-    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
 
   </PropertyGroup>
 

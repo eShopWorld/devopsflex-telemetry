@@ -1,8 +1,5 @@
 ﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Fabric.Common.Tracing;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Eshopworld.Telemetry.Configuration;
 using Eshopworld.Tests.Core;

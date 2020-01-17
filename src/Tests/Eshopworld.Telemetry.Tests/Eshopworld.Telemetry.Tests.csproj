@@ -2,12 +2,12 @@
 
   <PropertyGroup>
 
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <IsPackable>false</IsPackable>
     <SonarQubeTestProject>true</SonarQubeTestProject>
 
     <DebugType>Full</DebugType>
-    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
 
   </PropertyGroup>
 

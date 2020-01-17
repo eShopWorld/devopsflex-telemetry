@@ -8,13 +8,13 @@ namespace Eshopworld.Telemetry.Configuration
     /// </summary>
     class BigBrotherEventsPublisherInitializer : IBigBrotherInitializer
     {
-        private readonly IPublishEvents _publishEvents;
+        private readonly IPublishEvents? _publishEvents;
 
         /// <summary>
         /// Creates and instance of <see cref="BigBrotherEventsPublisherInitializer"/>.
         /// </summary>
         /// <param name="publishEvents">The domain event's publisher.</param>
-        public BigBrotherEventsPublisherInitializer(IPublishEvents publishEvents = null)
+        public BigBrotherEventsPublisherInitializer(IPublishEvents? publishEvents = null)
         {
             _publishEvents = publishEvents;
         }

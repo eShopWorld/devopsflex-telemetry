@@ -18,7 +18,7 @@
         /// <param name="subscription">The subscription that we want to add to the <see cref="ConcurrentDictionary{Type, IDisposable}"/>.</param>
         public static void AddSubscription(this ConcurrentDictionary<Type, IDisposable> dictionary, Type type, IDisposable subscription)
         {
-            if (dictionary.TryGetValue(type, out IDisposable oldSub))
+            if (dictionary.TryGetValue(type, out IDisposable? oldSub))
             {
                 oldSub.Dispose();
                 if (!dictionary.TryUpdate(type, subscription, oldSub))
