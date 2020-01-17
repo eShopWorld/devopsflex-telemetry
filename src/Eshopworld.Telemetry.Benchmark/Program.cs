@@ -5,12 +5,13 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using Eshopworld.Core;
 using System.Diagnostics;
+using BenchmarkDotNet.Jobs;
 
 namespace Eshopworld.Telemetry.Benchmark
 {
     public class Program
     {
-        [CoreJob]
+        [SimpleJob(RuntimeMoniker.NetCoreApp31)]
         [Config(typeof(Config))]
         public class KustoBenchmark
         {

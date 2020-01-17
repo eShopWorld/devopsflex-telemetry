@@ -19,19 +19,15 @@ using System.Threading.Tasks;
 using Eshopworld.Core;
 using Eshopworld.Telemetry.InternalEvents;
 using Eshopworld.Telemetry.Kusto;
-using JetBrains.Annotations;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights.Metrics;
 using Microsoft.Azure.Services.AppAuthentication;
-using Microsoft.Rest;
 using Newtonsoft.Json;
 
 namespace Eshopworld.Telemetry
 {
-    
-
     /// <summary>
     /// Deals with everything that's public in telemetry.
     /// This is the main entry point in the <see cref="N:Eshopworld.Telemetry"/> API.
@@ -104,7 +100,7 @@ namespace Eshopworld.Telemetry
         /// </summary>
         internal IDisposable? GlobalExceptionAiSubscription;
 
-        internal IObservable<TelemetryEvent> FilteredObservable;
+        internal IObservable<TelemetryEvent>? FilteredObservable;
 
         /// <summary>
         /// The external telemetry client, used to publish events through <see cref="BigBrother"/>.
@@ -124,13 +120,13 @@ namespace Eshopworld.Telemetry
         /// <summary>
         /// The <see cref="IKustoQueuedIngestClient"/> used for Kusto data ingestion.
         /// </summary>
-        internal IKustoQueuedIngestClient? KustoIngestClient;
+        internal IKustoQueuedIngestClient? KustoQueuedIngestClient;
 
-        internal IKustoIngestClient KustoDirectIngestClient;
+        internal IKustoIngestClient? KustoDirectIngestClient;
 
-        internal Metric KustoIngestionTimeMetric;
+        internal Metric? KustoIngestionTimeMetric;
 
-        private KustoOptionsBuilder _kustoOptionsBuilder;
+        private KustoOptionsBuilder? _kustoOptionsBuilder;
         private long _messagesSent = 0;
 
         /// <summary>
@@ -542,23 +538,22 @@ namespace Eshopworld.Telemetry
                 {
                     var ingestProps = GetQueuedModelProperties(typeEvents.Key);
 
-                    using (var stream = new MemoryStream())
-                    using (var writer = new StreamWriter(stream))
-                    {
-                        foreach (var @event in typeEvents)
-                            writer.WriteLine(JsonConvert.SerializeObject(@event));
+                    using var stream = new MemoryStream();
+                    using var writer = new StreamWriter(stream);
+                    
+                    foreach (var @event in typeEvents)
+                        writer.WriteLine(JsonConvert.SerializeObject(@event));
 
-                        writer.Flush();
-                        stream.Seek(0, SeekOrigin.Begin);
+                    writer.Flush();
+                    stream.Seek(0, SeekOrigin.Begin);
 
-                        var startTime = DateTime.UtcNow;
+                    var startTime = DateTime.UtcNow;
 
-                        await KustoQueuedIngestClient.IngestFromStreamAsync(stream, ingestProps, true);
+                    await KustoQueuedIngestClient.IngestFromStreamAsync(stream, ingestProps, true);
 
-                        KustoIngestionTimeMetric.TrackValue(DateTime.UtcNow.Subtract(startTime).TotalMilliseconds);
+                    KustoIngestionTimeMetric.TrackValue(DateTime.UtcNow.Subtract(startTime).TotalMilliseconds);
 
-                        _kustoOptionsBuilder.OnMessagesSent(Interlocked.Add(ref _messagesSent, typeEvents.Count()));
-                    }
+                    _kustoOptionsBuilder.OnMessagesSent(Interlocked.Add(ref _messagesSent, typeEvents.Count()));
                 }
             }
             catch (Exception e)
@@ -579,21 +574,20 @@ namespace Eshopworld.Telemetry
             {
                 var ingestProps = GetDirectModelProperties(eventType);
 
-                using (var stream = new MemoryStream())
-                using (var writer = new StreamWriter(stream))
-                {
-                    writer.WriteLine(JsonConvert.SerializeObject(@event));
-                    writer.Flush();
-                    stream.Seek(0, SeekOrigin.Begin);
+                using var stream = new MemoryStream();
+                using var writer = new StreamWriter(stream);
 
-                    var startTime = DateTime.UtcNow;
+                writer.WriteLine(JsonConvert.SerializeObject(@event));
+                writer.Flush();
+                stream.Seek(0, SeekOrigin.Begin);
 
-                    await KustoDirectIngestClient.IngestFromStreamAsync(stream, ingestProps, true);
+                var startTime = DateTime.UtcNow;
 
-                    KustoIngestionTimeMetric.TrackValue(DateTime.UtcNow.Subtract(startTime).TotalMilliseconds);
+                await KustoDirectIngestClient.IngestFromStreamAsync(stream, ingestProps, true);
 
-                    _kustoOptionsBuilder.OnMessagesSent(Interlocked.Increment(ref _messagesSent));
-                }
+                KustoIngestionTimeMetric.TrackValue(DateTime.UtcNow.Subtract(startTime).TotalMilliseconds);
+
+                _kustoOptionsBuilder.OnMessagesSent(Interlocked.Increment(ref _messagesSent));
             }
             catch (Exception e)
             {

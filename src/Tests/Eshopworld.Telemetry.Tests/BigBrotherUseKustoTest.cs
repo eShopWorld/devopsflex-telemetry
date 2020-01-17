@@ -18,13 +18,13 @@ namespace Eshopworld.Telemetry.Tests
     public class BigBrotherUseKustoTest
     {
         private readonly ITestOutputHelper _output;
-        private readonly string _kustoName;
-        private readonly string _kustoLocation;
-        private readonly string _kustoDatabase;
-        private readonly string _kustoTenantId;
+        private readonly string? _kustoName;
+        private readonly string? _kustoLocation;
+        private readonly string? _kustoDatabase;
+        private readonly string? _kustoTenantId;
 
-        private readonly ICslQueryProvider _kustoQueryClient;
-        private readonly ICslAdminProvider _kustoAdminClient;
+        private readonly ICslQueryProvider? _kustoQueryClient;
+        private readonly ICslAdminProvider? _kustoAdminClient;
 
         public BigBrotherUseKustoTest(ITestOutputHelper output)
         {

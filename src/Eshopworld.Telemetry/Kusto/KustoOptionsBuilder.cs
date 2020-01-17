@@ -8,14 +8,14 @@
 
     public class KustoOptionsBuilder : IKustoClusterBuilder, IKustoOptionsBuilder, IKustoOptionsTypeBuilder, IKustoBufferedOptionsBuilder
     {
-        private readonly Action<KustoOptionsBuilder> _onBuild;
+        private readonly Action<KustoOptionsBuilder>? _onBuild;
 
-        private Action<long> _onMessageSent;
+        private Action<long>? _onMessageSent;
         private bool _optionsSet = false;
 
-        internal KustoDbDetails DbDetails { get; private set; }
+        internal KustoDbDetails? DbDetails { get; private set; }
 
-        internal BufferedClientOptions BufferOptions { get; private set; }
+        internal BufferedClientOptions? BufferOptions { get; private set; }
 
         internal List<Type> RegisteredTypes { get; } = new List<Type>();
 
@@ -23,7 +23,7 @@
 
         internal List<Type> RegisteredQueuedTypes { get; } = new List<Type>();
 
-        internal KustoOptionsBuilder(Action<KustoOptionsBuilder> onBuild = null)
+        internal KustoOptionsBuilder(Action<KustoOptionsBuilder>? onBuild = null)
         {
             _onBuild = onBuild;
             BufferOptions = new BufferedClientOptions();
@@ -84,7 +84,7 @@
         }
 
         /// <inheritdoc />
-        public void Build(Action<long> onMessageSent = null)
+        public void Build(Action<long>? onMessageSent = null)
         {
             _onMessageSent = onMessageSent;
             _onBuild(this);

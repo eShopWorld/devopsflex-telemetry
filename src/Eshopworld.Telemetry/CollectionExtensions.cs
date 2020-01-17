@@ -35,6 +35,7 @@ namespace Eshopworld.Telemetry
         }
 
         public static V GetOrAdd<K, V>(this IDictionary<K, V> dictionary, K key, Func<V> valueFactory)
+            where K: notnull
         {
             if (!dictionary.ContainsKey(key))
                 dictionary.Add(key, valueFactory());
