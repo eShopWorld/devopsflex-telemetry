@@ -23,7 +23,7 @@
         /// This exists to make the class testable and to allow control over the "Now" during a test.
         /// </summary>
         [NotNull]
-        internal Func<DateTimeOffset> Now = () => DateTime.UtcNow;
+        internal Func<DateTimeOffset> Now = () => DateTimeOffset.UtcNow;
 
         /// <summary>
         /// Initializes a new instance of <see cref="ConvertEvent{TFrom,TTo}"/>.

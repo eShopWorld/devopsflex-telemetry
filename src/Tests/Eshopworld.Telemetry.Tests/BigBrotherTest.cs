@@ -153,7 +153,7 @@ public class BigBrotherTest
             var tasks = new List<Task>();
             for (var x = 0; x < 10; x++)
             {
-                tasks.Add(Task.Run(() => new BigBrother("blah", "blah")));
+                tasks.Add(Task.Run(()=> new BigBrother("blah", "blah")));
             }
 
             //this will blow up in V2
@@ -248,11 +248,12 @@ public class BigBrotherTest
 
                                         session.EnableProvider(ErrorEventSource.EventSourceName);
 
-                                        Task.Factory.StartNew(() =>
-                                        {
-                                            Task.Delay(TimeSpan.FromSeconds(3));
-                                            BigBrother.Write(new ExceptionEvent(new Exception(exceptionMessage)));
-                                        });
+                                            Task.Factory.StartNew(() =>
+                                            {
+                                                var brother = new BigBrother("blah", "blah"); // to initialize internal Rx subscriptions
+                                                Task.Delay(TimeSpan.FromSeconds(3));
+                                                BigBrother.Write(new ExceptionEvent(new Exception(exceptionMessage)));
+                                            });
 
                                         session.Source.Process();
                                     })
@@ -279,7 +280,7 @@ public class BigBrotherTest
             bb.Publish(telemetry.ToExceptionEvent());
             bb.Flush();
 
-            await Task.Delay(TimeSpan.FromSeconds(1));
+            await Task.Delay(TimeSpan.FromSeconds(2));
             channel.Verify();
         }
     }

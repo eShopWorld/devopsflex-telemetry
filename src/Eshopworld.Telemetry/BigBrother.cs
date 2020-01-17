@@ -1,26 +1,36 @@
-﻿namespace Eshopworld.Telemetry
+﻿using Kusto.Data;
+using Kusto.Data.Common;
+using Kusto.Data.Net.Client;
+using Kusto.Ingest;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Tracing;
+using System.IO;
+using System.Linq;
+using System.Reactive;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
+using Eshopworld.Core;
+using Eshopworld.Telemetry.InternalEvents;
+using Eshopworld.Telemetry.Kusto;
+using JetBrains.Annotations;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.ApplicationInsights.Metrics;
+using Microsoft.Azure.Services.AppAuthentication;
+using Microsoft.Rest;
+using Newtonsoft.Json;
+
+namespace Eshopworld.Telemetry
 {
-    using System;
-    using System.Collections.Concurrent;
-    using System.Diagnostics;
-    using System.Diagnostics.CodeAnalysis;
-    using System.Diagnostics.Tracing;
-    using System.IO;
-    using System.Reactive;
-    using System.Reactive.Linq;
-    using System.Reactive.Subjects;
-    using System.Runtime.CompilerServices;
-    using Core;
-    using InternalEvents;
-    using Kusto.Data;
-    using Kusto.Data.Common;
-    using Kusto.Data.Net.Client;
-    using Kusto.Ingest;
-    using Microsoft.ApplicationInsights;
-    using Microsoft.ApplicationInsights.DataContracts;
-    using Microsoft.ApplicationInsights.Extensibility;
-    using Microsoft.Azure.Services.AppAuthentication;
-    using Newtonsoft.Json;
+    
 
     /// <summary>
     /// Deals with everything that's public in telemetry.
@@ -28,6 +38,8 @@
     /// </summary>
     public class BigBrother : IBigBrother, IDisposable
     {
+        private readonly object _gate = new object();
+
         /// <summary>
         /// The internal telemetry stream, used by packages to report errors and usage to an internal AI account.
         /// </summary>
@@ -69,7 +81,8 @@
         /// </summary>
         internal readonly ConcurrentDictionary<Type, IDisposable> TelemetrySubscriptions = new ConcurrentDictionary<Type, IDisposable>();
 
-        internal readonly ConcurrentDictionary<Type, KustoQueuedIngestionProperties> KustoMappings = new ConcurrentDictionary<Type, KustoQueuedIngestionProperties>();
+        internal readonly Dictionary<Type, KustoQueuedIngestionProperties> KustoQueuedMappings = new Dictionary<Type, KustoQueuedIngestionProperties>();
+        internal readonly Dictionary<Type, KustoIngestionProperties> KustoDirectMappings = new Dictionary<Type, KustoIngestionProperties>();
 
         /// <summary>
         /// Contains the <see cref="IPublishEvents"/> instance used to publish to topics.
@@ -91,6 +104,8 @@
         /// </summary>
         internal IDisposable? GlobalExceptionAiSubscription;
 
+        internal IObservable<TelemetryEvent> FilteredObservable;
+
         /// <summary>
         /// The external telemetry client, used to publish events through <see cref="BigBrother"/>.
         /// </summary>
@@ -110,6 +125,13 @@
         /// The <see cref="IKustoQueuedIngestClient"/> used for Kusto data ingestion.
         /// </summary>
         internal IKustoQueuedIngestClient? KustoIngestClient;
+
+        internal IKustoIngestClient KustoDirectIngestClient;
+
+        internal Metric KustoIngestionTimeMetric;
+
+        private KustoOptionsBuilder _kustoOptionsBuilder;
+        private long _messagesSent = 0;
 
         /// <summary>
         /// Static initialization of static resources in <see cref="BigBrother"/> instances.
@@ -251,33 +273,107 @@
             InternalClient.Flush();
         }
 
-        /// <inheritdoc />
-        public IBigBrother UseKusto(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId)
+        /// <summary>
+        /// Ingest telemetry events into Kusto Data Explorer. Use fluent configuration API to configure client and ingestion strategies, and call .Build() at the end! 
+        /// </summary>
+        public IKustoClusterBuilder UseKusto()
         {
-            KustoDbName = kustoDb;
-            var kustoUri = $"https://{kustoEngineName}.{kustoEngineLocation}.kusto.windows.net";
-            var kustoIngestUri = $"https://ingest-{kustoEngineName}.{kustoEngineLocation}.kusto.windows.net";
-            var token = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, string.Empty).Result;
+            return new KustoOptionsBuilder(builder =>
+            {
+                _kustoOptionsBuilder = builder;
+                UseKustoInternal(builder.DbDetails.Engine, builder.DbDetails.Region, builder.DbDetails.DbName, builder.DbDetails.ClientId);
 
-            KustoAdminClient = KustoClientFactory.CreateCslAdminProvider(
-                new KustoConnectionStringBuilder(kustoUri)
+                foreach (var type in _kustoOptionsBuilder.RegisteredDirectTypes)
                 {
-                    FederatedSecurity = true,
-                    InitialCatalog = KustoDbName,
-                    AuthorityId = tenantId,
-                    ApplicationToken = token
-                });
+                    if (KustoDirectMappings.ContainsKey(type)) 
+                        continue;
 
-            KustoIngestClient = KustoIngestFactory.CreateQueuedIngestClient(
-                new KustoConnectionStringBuilder(kustoIngestUri)
+                    var tableName = KustoAdminClient.GenerateTableFromType(type).Result;
+                    var ingestProps = new KustoIngestionProperties(KustoDbName, tableName)
+                    {
+                        TableName = tableName,
+                        JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(type).Result,
+                        IgnoreSizeLimit = true,
+                        ValidationPolicy = null,
+                        Format = DataSourceFormat.json
+                    };
+
+                    KustoDirectMappings.Add(type, ingestProps);
+                }
+
+                foreach (var type in _kustoOptionsBuilder.RegisteredQueuedTypes)
                 {
-                    FederatedSecurity = true,
-                    InitialCatalog = KustoDbName,
-                    AuthorityId = tenantId,
-                    ApplicationToken = token
-                });
+                    if (KustoQueuedMappings.ContainsKey(type)) 
+                        continue;
 
-            SetupKustoSubscription();
+                    var tableName = KustoAdminClient.GenerateTableFromType(type).Result;
+                    var ingestProps = new KustoQueuedIngestionProperties(KustoDbName, tableName)
+                    {
+                        TableName = tableName,
+                        JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(type).Result,
+                        ReportLevel = IngestionReportLevel.FailuresOnly,
+                        ReportMethod = IngestionReportMethod.Queue,
+                        FlushImmediately = _kustoOptionsBuilder?.BufferOptions.FlushImmediately ?? true,
+                        IgnoreSizeLimit = true,
+                        ValidationPolicy = null,
+                        Format = DataSourceFormat.json
+                    };
+
+                    KustoQueuedMappings.Add(type, ingestProps);
+                }
+            });
+        }
+
+        /// <remarks>
+        /// Ingest telemetry events into Kusto. Uses queued/buffered client, call different overload of this method to configure different ingestion strategy.
+        /// </remarks>
+        internal IBigBrother UseKustoInternal(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId)
+        {
+            try
+            {
+                KustoDbName = kustoDb;
+                var kustoUri = $"https://{kustoEngineName}.{kustoEngineLocation}.kusto.windows.net";
+                var token = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, string.Empty).Result;
+
+                KustoAdminClient = KustoClientFactory.CreateCslAdminProvider(
+                    new KustoConnectionStringBuilder(kustoUri)
+                    {
+                        FederatedSecurity = true,
+                        InitialCatalog = KustoDbName,
+                        Authority = tenantId,
+                        ApplicationToken = token
+                    });
+
+                var kustoQueuedIngestUri = $"https://ingest-{kustoEngineName}.{kustoEngineLocation}.kusto.windows.net";
+                var kustoIngestUri = $"https://{kustoEngineName}.{kustoEngineLocation}.kusto.windows.net";
+
+                KustoQueuedIngestClient = KustoIngestFactory.CreateQueuedIngestClient(
+                    new KustoConnectionStringBuilder(kustoQueuedIngestUri)
+                    {
+                        FederatedSecurity = true,
+                        InitialCatalog = KustoDbName,
+                        Authority = tenantId,
+                        ApplicationToken = token
+                    });
+
+                KustoDirectIngestClient = KustoIngestFactory.CreateDirectIngestClient(
+                    new KustoConnectionStringBuilder(kustoIngestUri)
+                    {
+                        FederatedSecurity = true,
+                        InitialCatalog = KustoDbName,
+                        Authority = tenantId,
+                        ApplicationToken = token
+                    });
+
+                SetupKustoSubscription();
+
+                KustoIngestionTimeMetric = InternalClient.GetMetric(new MetricIdentifier("", "KustoIngestionTime"));
+            }
+            catch (Exception e)
+            {
+                InternalStream.OnNext(e.ToExceptionEvent());
+            }
+
             return this;
         }
 
@@ -295,17 +391,32 @@
 
         internal void SetupKustoSubscription()
         {
-            TelemetrySubscriptions.AddSubscription(
-                typeof(KustoExtensions),
-                TelemetryStream.OfType<TelemetryEvent>()
-                               .Where(e => !(e is ExceptionEvent) &&
-                                           !(e is MetricTelemetryEvent) &&
-                                           !(e is TimedTelemetryEvent))
-                               .Subscribe(HandleKustoEvent));
+            FilteredObservable = TelemetryStream
+                .OfType<TelemetryEvent>()
+                .Where(e => !(e is ExceptionEvent) &&
+                            !(e is MetricTelemetryEvent) &&
+                            !(e is TimedTelemetryEvent));
+
+            var directSubscription = FilteredObservable.Where(e => _kustoOptionsBuilder.RegisteredDirectTypes.Contains(e.GetType()))
+                .Select(e => Observable.FromAsync(async () => await HandleKustoEvent(e)))
+                .Merge()
+                .Subscribe();
+
+            var bufferedSubscription = FilteredObservable.Where(e => _kustoOptionsBuilder.RegisteredQueuedTypes.Contains(e.GetType()))
+                .Buffer(
+                    _kustoOptionsBuilder?.BufferOptions.IngestionInterval ?? TimeSpan.Zero,
+                    _kustoOptionsBuilder?.BufferOptions.BufferSizeItems ?? 1)
+                .Where(e => e != null && e.Any())
+                .Select(e => Observable.FromAsync(async () => await HandleKustoEvents(e)))
+                .Merge()
+                .Subscribe();
+
+            TelemetrySubscriptions.AddSubscription(typeof(KustoExtensions), directSubscription);
+            TelemetrySubscriptions.AddSubscription(typeof(KustoDbDetails), bufferedSubscription);
         }
 
         /// <summary>
-        /// Handles <see cref="ExceptionEvent"/> that is going to be sinked to an <see cref="EventSource"/>.
+        /// Handles <see cref="ExceptionEvent"/> that is going to be sunk to an <see cref="EventSource"/>.
         /// </summary>
         /// <param name="event">The event we want to sink to the <see cref="EventSource"/>.</param>
         internal static void SinkToEventSource(ExceptionEvent @event)
@@ -314,7 +425,7 @@
         }
 
         /// <summary>
-        /// Handles <see cref="ExceptionEvent"/> that is going to be sinked to a <see cref="Trace"/>.
+        /// Handles <see cref="ExceptionEvent"/> that is going to be sunk to a <see cref="Trace"/>.
         /// </summary>
         /// <param name="event">The event we want to sink to the <see cref="Trace"/>.</param>
         internal static void SinkToTrace(ExceptionEvent @event)
@@ -420,39 +531,131 @@
             }
         }
 
+        internal virtual async Task HandleKustoEvents(IList<TelemetryEvent> events)
+        {
+            try
+            {
+                // when sending to Kusto, we can't mix different event types into one payload.
+                var typeGroup = events.GroupBy(x => x.GetType());
+
+                foreach (var typeEvents in typeGroup)
+                {
+                    var ingestProps = GetQueuedModelProperties(typeEvents.Key);
+
+                    using (var stream = new MemoryStream())
+                    using (var writer = new StreamWriter(stream))
+                    {
+                        foreach (var @event in typeEvents)
+                            writer.WriteLine(JsonConvert.SerializeObject(@event));
+
+                        writer.Flush();
+                        stream.Seek(0, SeekOrigin.Begin);
+
+                        var startTime = DateTime.UtcNow;
+
+                        await KustoQueuedIngestClient.IngestFromStreamAsync(stream, ingestProps, true);
+
+                        KustoIngestionTimeMetric.TrackValue(DateTime.UtcNow.Subtract(startTime).TotalMilliseconds);
+
+                        _kustoOptionsBuilder.OnMessagesSent(Interlocked.Add(ref _messagesSent, typeEvents.Count()));
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                InternalStream.OnNext(e.ToExceptionEvent());
+            }
+        }
+
         /// <summary>
         /// Handles a <see cref="TelemetryEvent"/> that is being streamed to Kusto.
         /// </summary>
         /// <param name="event">The event being handled.</param>
-        internal virtual void HandleKustoEvent(TelemetryEvent @event)
+        internal virtual async Task HandleKustoEvent(TelemetryEvent @event)
         {
             var eventType = @event.GetType();
 
-            KustoQueuedIngestionProperties ingestProps;
-            if (!KustoMappings.ContainsKey(eventType) && KustoMappings.TryAdd(eventType, new KustoQueuedIngestionProperties(KustoDbName, "Unknown")))
+            try
             {
-                ingestProps = KustoMappings[eventType];
+                var ingestProps = GetDirectModelProperties(eventType);
 
-                ingestProps.TableName = KustoAdminClient.GenerateTableFromType(eventType);
-                ingestProps.JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(eventType);
-                ingestProps.ReportLevel = IngestionReportLevel.FailuresOnly;
-                ingestProps.ReportMethod = IngestionReportMethod.Queue;
-                ingestProps.FlushImmediately = true;
-                ingestProps.Format = DataSourceFormat.json;
+                using (var stream = new MemoryStream())
+                using (var writer = new StreamWriter(stream))
+                {
+                    writer.WriteLine(JsonConvert.SerializeObject(@event));
+                    writer.Flush();
+                    stream.Seek(0, SeekOrigin.Begin);
+
+                    var startTime = DateTime.UtcNow;
+
+                    await KustoDirectIngestClient.IngestFromStreamAsync(stream, ingestProps, true);
+
+                    KustoIngestionTimeMetric.TrackValue(DateTime.UtcNow.Subtract(startTime).TotalMilliseconds);
+
+                    _kustoOptionsBuilder.OnMessagesSent(Interlocked.Increment(ref _messagesSent));
+                }
             }
-            else
+            catch (Exception e)
             {
-                ingestProps = KustoMappings[eventType];
+                InternalStream.OnNext(e.ToExceptionEvent());
             }
+        }
 
-            using var stream = new MemoryStream();
-            using var writer = new StreamWriter(stream);
-            
-            writer.WriteLine(JsonConvert.SerializeObject(@event));
-            writer.Flush();
-            stream.Seek(0, SeekOrigin.Begin);
+        private KustoQueuedIngestionProperties GetQueuedModelProperties(Type eventType)
+        {
+            lock (_gate)
+            {
+                KustoQueuedIngestionProperties ingestProps;
+                if (!KustoQueuedMappings.ContainsKey(eventType))
+                {
+                    ingestProps = new KustoQueuedIngestionProperties(KustoDbName, "Unknown")
+                    {
+                        TableName = KustoAdminClient.GenerateTableFromType(eventType).Result,
+                        JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(eventType).Result,
+                        ReportLevel = IngestionReportLevel.FailuresOnly,
+                        ReportMethod = IngestionReportMethod.Queue,
+                        FlushImmediately = _kustoOptionsBuilder?.BufferOptions.FlushImmediately ?? true,
+                        IgnoreSizeLimit = true,
+                        ValidationPolicy = null,
+                        Format = DataSourceFormat.json
+                    };
 
-            KustoIngestClient.IngestFromStream(stream, ingestProps, leaveOpen: true);
+                    KustoQueuedMappings.Add(eventType, ingestProps);
+                }
+                else
+                {
+                    ingestProps = KustoQueuedMappings[eventType];
+                }
+
+                return ingestProps;
+            }
+        }
+
+        private KustoIngestionProperties GetDirectModelProperties(Type eventType)
+        {
+            lock (_gate)
+            {
+                KustoIngestionProperties ingestProps;
+                if (!KustoDirectMappings.ContainsKey(eventType))
+                {
+                    ingestProps = new KustoIngestionProperties(KustoDbName, "Unknown")
+                    {
+                        TableName = KustoAdminClient.GenerateTableFromType(eventType).Result,
+                        JSONMappingReference = KustoAdminClient.GenerateTableJsonMappingFromType(eventType).Result,
+                        IgnoreSizeLimit = true,
+                        ValidationPolicy = null,
+                        Format = DataSourceFormat.json
+                    };
+
+                    KustoDirectMappings.Add(eventType, ingestProps);
+                }
+                else
+                {
+                    ingestProps = KustoDirectMappings[eventType];
+                }
+
+                return ingestProps;
+            }
         }
 
         /// <summary>
