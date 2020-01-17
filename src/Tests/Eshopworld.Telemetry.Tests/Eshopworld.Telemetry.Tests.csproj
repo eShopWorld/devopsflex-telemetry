@@ -8,6 +8,7 @@
 
     <DebugType>Full</DebugType>
     <Nullable>enable</Nullable>
+    <Platforms>x64</Platforms>
 
   </PropertyGroup>
 
