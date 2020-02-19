@@ -27,10 +27,10 @@ namespace Eshopworld.Telemetry.Benchmark
 
             public KustoBenchmark()
             {
-                var kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Machine);
-                var kustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.Machine);
-                var kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
-                var kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);
+                var kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.User);
+                var kustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.User);
+                var kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.User);
+                var kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.User);
 
                 _bbForHandle = new BigBrother("", "");
                 _bbForHandle.UseKusto()
@@ -78,10 +78,10 @@ namespace Eshopworld.Telemetry.Benchmark
             [Arguments(500)]
             public Task Queued_buffer_1s(int count)
             {
-                var kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Machine);
-                var kustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.Machine);
-                var kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
-                var kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);
+                var kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.User);
+                var kustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.User);
+                var kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.User);
+                var kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.User);
 
                 var source = new TaskCompletionSource<bool>();
 
