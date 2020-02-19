@@ -18,7 +18,7 @@ using Xunit;
 //ReSharper disable once CheckNamespace
 public class BigBrotherTest
 {
-    internal static readonly string DevKey = Environment.GetEnvironmentVariable("devai", EnvironmentVariableTarget.User);
+    internal static readonly string DevKey = Environment.GetEnvironmentVariable("devai");
 
     public class Dev
     {

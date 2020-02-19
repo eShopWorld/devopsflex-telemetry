@@ -27,10 +27,10 @@ namespace Eshopworld.Telemetry.Benchmark
 
             public KustoBenchmark()
             {
-                var kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.User);
-                var kustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.User);
-                var kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.User);
-                var kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.User);
+                var kustoName = Environment.GetEnvironmentVariable("kusto_name");
+                var kustoLocation = Environment.GetEnvironmentVariable("kusto_location");
+                var kustoDatabase = Environment.GetEnvironmentVariable("kusto_database");
+                var kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id");
 
                 _bbForHandle = new BigBrother("", "");
                 _bbForHandle.UseKusto()
@@ -78,10 +78,10 @@ namespace Eshopworld.Telemetry.Benchmark
             [Arguments(500)]
             public Task Queued_buffer_1s(int count)
             {
-                var kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.User);
-                var kustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.User);
-                var kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.User);
-                var kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.User);
+                var kustoName = Environment.GetEnvironmentVariable("kusto_name");
+                var kustoLocation = Environment.GetEnvironmentVariable("kusto_location");
+                var kustoDatabase = Environment.GetEnvironmentVariable("kusto_database");
+                var kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id");
 
                 var source = new TaskCompletionSource<bool>();
 
