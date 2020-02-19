@@ -26,7 +26,7 @@ namespace Eshopworld.Telemetry.Tests.Configuration
         {
             public IComponentRegistry ComponentRegistry => throw new System.NotImplementedException();
 
-            public object ResolveComponent(IComponentRegistration registration, IEnumerable<Parameter> parameters) => throw new System.NotImplementedException();
+            public object ResolveComponent(ResolveRequest request) => throw new System.NotImplementedException();
         }
     }
 }

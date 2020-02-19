@@ -68,9 +68,14 @@ namespace Eshopworld.Telemetry
         internal static readonly ConcurrentDictionary<Type, IDisposable> ExceptionSubscriptions = new ConcurrentDictionary<Type, IDisposable>();
 
         /// <summary>
+        /// The unique internal telemetry configuration
+        /// </summary>
+        internal static TelemetryConfiguration internalTelemetryConfiguration = TelemetryConfiguration.CreateDefault();
+
+        /// <summary>
         /// The unique internal <see cref="Microsoft.ApplicationInsights.TelemetryClient"/> used to stream events to the AI account.
         /// </summary>
-        internal static readonly TelemetryClient InternalClient = new TelemetryClient();
+        internal static readonly TelemetryClient InternalClient = new TelemetryClient(internalTelemetryConfiguration);
 
         /// <summary>
         /// Contains a typed dictionary of all the subscriptions to different types of telemetry.
@@ -252,10 +257,10 @@ namespace Eshopworld.Telemetry
         /// <inheritdoc />
         public IBigBrother DeveloperMode()
         {
-#if DEBUG
-            if (TelemetryConfiguration.Active?.TelemetryChannel != null)
+#if DEBUG            
+            if (internalTelemetryConfiguration.TelemetryChannel != null)
             {
-                TelemetryConfiguration.Active.TelemetryChannel.DeveloperMode = true;
+                internalTelemetryConfiguration.TelemetryChannel.DeveloperMode = true;
             }
 #endif
             return this;

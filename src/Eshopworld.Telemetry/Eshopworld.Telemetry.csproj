@@ -2,16 +2,16 @@
 
   <PropertyGroup>
 
-    <Version>3.0.0-beta1</Version>
-    <PackageReleaseNotes>DotNet Core 3.1, stateful actor telemetry and Kusto support.</PackageReleaseNotes>
+    <Version>3.0.0-preview1</Version>
+    <PackageReleaseNotes>netstandard2.1, stateful actor telemetry and Kusto support.</PackageReleaseNotes>
 
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <IsPackable>True</IsPackable>
 
     <PackageId>Eshopworld.Telemetry</PackageId>
     <Title>Eshopworld.Telemetry</Title>
     <Authors>David Rodrigues, Oisin Haken, David Guerin, Artur Zgodzinski</Authors>
-    <Copyright>Copyright eShopWorld 2019</Copyright>
+    <Copyright>Copyright eShopWorld 2020</Copyright>
     <Description>eShopWorld common telemetry application insights</Description>
     <PackageLicenseUrl>https://github.com/eShopWorld/telemetry/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/eShopWorld/telemetry</PackageProjectUrl>
@@ -26,17 +26,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="4.9.4" />
-    <PackageReference Include="Autofac.ServiceFabric" Version="2.2.0" />
-    <PackageReference Include="Eshopworld.Core" Version="3.0.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.12.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights.DependencyCollector" Version="2.12.0" />
+    <PackageReference Include="Autofac" Version="5.1.2" />
+    <PackageReference Include="Autofac.ServiceFabric" Version="3.0.0" />
+    <PackageReference Include="Eshopworld.Core" Version="4.0.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.12.1" />
+    <PackageReference Include="Microsoft.ApplicationInsights.DependencyCollector" Version="2.12.1" />
     <PackageReference Include="Microsoft.ApplicationInsights.ServiceFabric.Native" Version="2.3.1" />
     <PackageReference Include="Microsoft.Azure.Kusto.Ingest.NETStandard" Version="6.1.8" />
-    <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.3.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="3.1.1" />
-    <PackageReference Include="Microsoft.ServiceFabric.Actors" Version="4.0.457" />
-    <PackageReference Include="Microsoft.ServiceFabric.Services.Remoting" Version="4.0.457" />
+    <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="3.1.2" />
+    <PackageReference Include="Microsoft.ServiceFabric.Actors" Version="4.0.466" />
+    <PackageReference Include="Microsoft.ServiceFabric.Services.Remoting" Version="4.0.466" />
     <PackageReference Include="System.Reactive" Version="4.3.2" />
   </ItemGroup>
 

@@ -29,7 +29,7 @@ namespace Eshopworld.Telemetry.Tests
         public BigBrotherUseKustoTest(ITestOutputHelper output)
         {
             _output = output;
-            _kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Process);
+            _kustoName = Environment.GetEnvironmentVariable("kusto_name", EnvironmentVariableTarget.Machine);
             _kustoLocation = Environment.GetEnvironmentVariable("kusto_location", EnvironmentVariableTarget.Machine);
             _kustoDatabase = Environment.GetEnvironmentVariable("kusto_database", EnvironmentVariableTarget.Machine);
             _kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id", EnvironmentVariableTarget.Machine);
