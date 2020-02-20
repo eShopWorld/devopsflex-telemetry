@@ -201,7 +201,7 @@ Ingestion strategies:
  **When to use:** lots of messages per second (100s or more), higher delivery reliability required, many services sending messages in parallel to one database  
  **Local app buffer defaults:** flush every 1 second or 100 messages, whatever comes first
 - *Direct* - sends telemetry event directly to Kusto Engine. Less reliable but lower latency  
- **When to use:** message per second count not to high (up to ~50)
+ **When to use:** message per second count not too high (up to ~50)
 
 BibBrother first checks if there's a registered type per strategy, and then falls back to default strategy. 
 
