@@ -13,7 +13,7 @@
         private Action<long>? _onMessageSent;
         private bool _optionsSet = false;
 
-        internal KustoDbProperties? DbDetails { get; private set; }
+        internal KustoDbProperties? DbProperties { get; private set; }
 
         internal BufferedClientOptions? BufferOptions { get; private set; }
 
@@ -32,7 +32,7 @@
         /// <inheritdoc />
         public IKustoBufferedOptionsBuilder WithCluster(string engine, string region, string database, string tenantId)
         {
-            DbDetails = new KustoDbProperties { ClientId = tenantId, DbName = database, Engine = engine, Region = region };
+            DbProperties = new KustoDbProperties { ClientId = tenantId, DbName = database, Engine = engine, Region = region };
             return this;
         }
 

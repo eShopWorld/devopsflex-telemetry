@@ -282,7 +282,7 @@ namespace Eshopworld.Telemetry
             return new KustoOptionsBuilder(builder =>
             {
                 _kustoOptionsBuilder = builder;
-                UseKustoInternal(builder.DbDetails.Engine, builder.DbDetails.Region, builder.DbDetails.DbName, builder.DbDetails.ClientId);
+                UseKustoInternal(builder.DbProperties.Engine, builder.DbProperties.Region, builder.DbProperties.DbName, builder.DbProperties.ClientId);
 
                 foreach (var type in _kustoOptionsBuilder.RegisteredDirectTypes)
                 {

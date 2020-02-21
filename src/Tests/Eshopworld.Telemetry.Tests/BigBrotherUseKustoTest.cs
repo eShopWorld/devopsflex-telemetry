@@ -37,7 +37,8 @@ namespace Eshopworld.Telemetry.Tests
             if (_kustoName != null && _kustoLocation != null && _kustoDatabase != null && _kustoTenantId != null)
             {
                 var kustoUri = $"https://{_kustoName}.{_kustoLocation}.kusto.windows.net";
-                var token = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, string.Empty).Result;
+
+                var token = new AzureServiceTokenProvider().GetAccessTokenAsync(kustoUri, _kustoTenantId).Result;
                 var kustoConnectionString =
                     new KustoConnectionStringBuilder(kustoUri)
                     {
