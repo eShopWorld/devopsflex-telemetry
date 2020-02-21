@@ -413,7 +413,7 @@ namespace Eshopworld.Telemetry
                 .Subscribe();
 
             TelemetrySubscriptions.AddSubscription(typeof(KustoExtensions), directSubscription);
-            TelemetrySubscriptions.AddSubscription(typeof(KustoDbDetails), bufferedSubscription);
+            TelemetrySubscriptions.AddSubscription(typeof(KustoDbProperties), bufferedSubscription);
         }
 
         /// <summary>

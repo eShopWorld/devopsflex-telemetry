@@ -1,9 +1,9 @@
 ﻿namespace Eshopworld.Telemetry.Kusto
 {
     /// <summary>
-    /// Kusto database connection details
+    /// Kusto database connection properties
     /// </summary>
-    public class KustoDbDetails
+    public class KustoDbProperties
     {
         public string DbName;
         public string Engine;
