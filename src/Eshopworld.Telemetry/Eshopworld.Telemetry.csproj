@@ -27,7 +27,6 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac" Version="5.1.2" />
-    <PackageReference Include="Autofac.ServiceFabric" Version="3.0.0" />
     <PackageReference Include="Eshopworld.Core" Version="4.0.0" />
     <PackageReference Include="Microsoft.ApplicationInsights" Version="2.13.1" />
     <PackageReference Include="Microsoft.ApplicationInsights.DependencyCollector" Version="2.13.1" />
@@ -35,8 +34,6 @@
     <PackageReference Include="Microsoft.Azure.Kusto.Ingest.NETStandard" Version="6.1.8" />
     <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.4.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="3.1.2" />
-    <PackageReference Include="Microsoft.ServiceFabric.Actors" Version="4.0.466" />
-    <PackageReference Include="Microsoft.ServiceFabric.Services.Remoting" Version="4.0.466" />
     <PackageReference Include="System.Reactive" Version="4.3.2" />
   </ItemGroup>
 
