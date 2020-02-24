@@ -2,7 +2,7 @@
 
   <PropertyGroup>
 
-    <Version>2.1.5</Version>
+    <Version>2.2.0</Version>
     <PackageReleaseNotes>core version bump -&gt; brings in change in exception event handling of custom exception properties and tracking them as custom dimensions</PackageReleaseNotes>
 
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -29,6 +29,7 @@
     <PackageReference Include="Microsoft.ApplicationInsights" Version="2.8.1" />
     <PackageReference Include="Microsoft.Azure.Kusto.Ingest.NETStandard" Version="4.0.3" />
     <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="3.1.2" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
     <PackageReference Include="System.Reactive" Version="4.1.2" />
   </ItemGroup>

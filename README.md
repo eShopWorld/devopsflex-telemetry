@@ -146,6 +146,21 @@ builder.Use((next) => new RoleNameSetter(next));
 builder.Build();
 ```
 
+### Telemetry initializers in the package
+
+#### Environment Details
+Adds additional environment values(tenant/region/etc) to telemetry for tracing purposes.
+Very useful when trying to diagnose issues in AI logs
+
+```c#
+ using Microsoft.ApplicationInsights.Extensibility;
+ 
+public void ConfigureServices(IServiceCollection services)
+{
+	services.AddSingleton<ITelemetryInitializer, Eshopworld.Telemetry.Initializers.EnvironmentDetailsTelemetryInitializer>();
+}
+```
+
 ### What can I also do with it?
 
 You can force a Flush of the AI client, which will send all events right away:
