@@ -2,7 +2,7 @@
 
   <PropertyGroup>
 
-    <Version>3.1.0-preview1</Version>
+    <Version>3.1.0-preview2</Version>
     <PackageReleaseNotes>netstandard2.1, stateful actor telemetry and Kusto support.</PackageReleaseNotes>
 
     <TargetFramework>netstandard2.1</TargetFramework>
@@ -29,8 +29,8 @@
     <PackageReference Include="Autofac" Version="5.1.2" />
     <PackageReference Include="Autofac.ServiceFabric" Version="3.0.0" />
     <PackageReference Include="Eshopworld.Core" Version="4.0.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.13.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights.DependencyCollector" Version="2.13.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.13.1" />
+    <PackageReference Include="Microsoft.ApplicationInsights.DependencyCollector" Version="2.13.1" />
     <PackageReference Include="Microsoft.ApplicationInsights.ServiceFabric.Native" Version="2.3.1" />
     <PackageReference Include="Microsoft.Azure.Kusto.Ingest.NETStandard" Version="6.1.8" />
     <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.4.0" />
