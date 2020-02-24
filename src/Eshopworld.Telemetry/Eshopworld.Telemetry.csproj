@@ -2,7 +2,7 @@
 
   <PropertyGroup>
 
-    <Version>2.1.5</Version>
+    <Version>2.2.0</Version>
     <PackageReleaseNotes>core version bump -&gt; brings in change in exception event handling of custom exception properties and tracking them as custom dimensions</PackageReleaseNotes>
 
     <TargetFramework>netstandard2.0</TargetFramework>
