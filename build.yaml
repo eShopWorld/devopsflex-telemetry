@@ -8,7 +8,7 @@ pool:
   - java
 
 variables:
-  BuildPlatform: 'x64'
+  BuildPlatform: 'any cpu'
   solution: 'src/Eshopworld.Telemetry.sln'
   package_project: 'src/Eshopworld.Telemetry/Eshopworld.Telemetry.csproj'
 
