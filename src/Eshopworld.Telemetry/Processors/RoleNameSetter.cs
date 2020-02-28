@@ -1,7 +1,6 @@
 ﻿namespace Eshopworld.Telemetry.Processors
 {
     using System;
-    using JetBrains.Annotations;
     using Microsoft.ApplicationInsights.Channel;
     using Microsoft.ApplicationInsights.Extensibility;
 
@@ -33,7 +32,7 @@
         /// <summary>
         /// Override the default value of RoleName, which is determined from the entry assembly name
         /// </summary>
-        public static string RoleName { get; set; }
+        public static string? RoleName { get; set; }
 
         private ITelemetryProcessor Next { get; }
 
@@ -42,7 +41,7 @@
             RoleName = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name; // this will not resolve for an ASP.NET application
         }
 
-        public RoleNameSetter([NotNull] ITelemetryProcessor next)
+        public RoleNameSetter(ITelemetryProcessor next)
         {
             Next = next ?? throw new ArgumentNullException(nameof(next));
         }

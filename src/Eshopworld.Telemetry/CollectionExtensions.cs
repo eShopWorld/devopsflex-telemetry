@@ -1,4 +1,6 @@
-﻿namespace Eshopworld.Telemetry
+﻿using System.Collections.Generic;
+
+namespace Eshopworld.Telemetry
 {
     using System;
     using System.Collections.Concurrent;
@@ -18,7 +20,7 @@
         /// <param name="subscription">The subscription that we want to add to the <see cref="ConcurrentDictionary{Type, IDisposable}"/>.</param>
         public static void AddSubscription(this ConcurrentDictionary<Type, IDisposable> dictionary, Type type, IDisposable subscription)
         {
-            if (dictionary.TryGetValue(type, out IDisposable oldSub))
+            if (dictionary.TryGetValue(type, out IDisposable? oldSub))
             {
                 oldSub.Dispose();
                 if (!dictionary.TryUpdate(type, subscription, oldSub))
@@ -30,6 +32,15 @@
             {
                 dictionary.TryAdd(type, subscription);
             }
+        }
+
+        public static V GetOrAdd<K, V>(this IDictionary<K, V> dictionary, K key, Func<V> valueFactory)
+            where K: notnull
+        {
+            if (!dictionary.ContainsKey(key))
+                dictionary.Add(key, valueFactory());
+            
+            return dictionary[key];
         }
     }
 }

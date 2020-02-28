@@ -14,7 +14,7 @@
         /// <remarks>
         /// It's not available in all .Net runtimes.
         /// </remarks>
-        private static readonly Type StackTraceHiddenAttributeType = typeof(Attribute).Assembly.GetType("System.Diagnostics.StackTraceHiddenAttribute");
+        private static readonly Type? StackTraceHiddenAttributeType = typeof(Attribute).Assembly.GetType("System.Diagnostics.StackTraceHiddenAttribute");
 
         public static bool IsStackSimplificationAvailable => StackTraceHiddenAttributeType != null;
 
@@ -70,10 +70,10 @@
         private class FilteredStackFrame : StackFrame
         {
             private readonly int lineNo;
-            private readonly string fileName;
+            private readonly string? fileName;
             private readonly MethodBase method;
 
-            public FilteredStackFrame(string fileName, int lineNo, MethodBase method)
+            public FilteredStackFrame(string? fileName, int lineNo, MethodBase method)
             {
                 this.lineNo = lineNo;
                 this.fileName = fileName;
@@ -85,7 +85,7 @@
                 return lineNo;
             }
 
-            public override string GetFileName()
+            public override string? GetFileName()
             {
                 return fileName;
             }

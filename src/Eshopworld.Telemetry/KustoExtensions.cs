@@ -1,9 +1,11 @@
-﻿namespace Eshopworld.Telemetry
+﻿using Kusto.Data.Common;
+
+namespace Eshopworld.Telemetry
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
-    using Kusto.Data.Common;
-    using Kusto.Data.Exceptions;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Contains extensions to clients in the Kusto SDK.
@@ -16,53 +18,53 @@
         /// <param name="client">The <see cref="ICslAdminProvider"/> that we are extending.</param>
         /// <param name="type">The <see cref="Type"/> that we are generating a table for.</param>
         /// <returns>The name of the table created.</returns>
-        public static string GenerateTableFromType(this ICslAdminProvider client, Type type)
+        public static async Task<string> GenerateTableFromType(this ICslAdminProvider client, Type type)
         {
             var tableName = type.Name;
-            var command = CslCommandGenerator.GenerateTableShowCommand(tableName);
+            var tables = new List<string>();
+            var command = CslCommandGenerator.GenerateTablesShowCommand();
 
-            try
+            var reader = await client.ExecuteControlCommandAsync(client.DefaultDatabaseName, command);
+
+            while (reader.Read())
             {
-                client.ExecuteControlCommand(command);
-                return tableName;
-            }
-            catch (KustoBadRequestException ex) when (ex.ErrorMessage.Contains("'Table' was not found"))
-            {
-                // soak
+                tables.Add(reader.GetString(0));
             }
 
-            var columns = type.GetProperties().Select(property => new Tuple<string, string>(property.Name, property.PropertyType.FullName)).ToList();
+            if (tables.Contains(tableName)) return tableName;
+
+            var columns = type.GetProperties().Select(property => Tuple.Create(property.Name, property.PropertyType.FullName)).ToList();
             command = CslCommandGenerator.GenerateTableCreateCommand(tableName, columns);
-            client.ExecuteControlCommand(command);
+            await client.ExecuteControlCommandAsync(client.DefaultDatabaseName, command);
 
             return tableName;
         }
-
+       
         /// <summary>
         /// Generates a Kusto table mapping for a specific <see cref="Type"/>, by mapping it's properties to column mappings.
         /// </summary>
         /// <param name="client">The <see cref="ICslAdminProvider"/> client that we are extending.</param>
         /// <param name="type">The <see cref="Type"/> that we are generating the JSON mapping for.</param>
         /// <returns>The name of the mapping created.</returns>
-        public static string GenerateTableJsonMappingFromType(this ICslAdminProvider client, Type type)
+        public static async Task<string> GenerateTableJsonMappingFromType(this ICslAdminProvider client, Type type)
         {
             var tableName = type.Name;
             var mappingName = $"{tableName}_mapping";
-            var command = CslCommandGenerator.GenerateTableJsonMappingShowCommand(tableName, mappingName);
+            var tableMappings = new List<string>();
+            var command = CslCommandGenerator.GenerateTableJsonMappingsShowCommand(tableName);
 
-            try
+            var reader = await client.ExecuteControlCommandAsync(client.DefaultDatabaseName, command);
+
+            while (reader.Read())
             {
-                client.ExecuteControlCommand(command);
-                return mappingName;
+                tableMappings.Add(reader.GetString(0));
             }
-            catch (KustoBadRequestException ex) when (ex.ErrorMessage.Contains("'JsonMappingPersistent' was not found"))
-            {
-                // soak
-            }
+
+            if (tableMappings.Contains(mappingName)) return mappingName;
 
             var mappings = type.GetProperties().Select(property => new JsonColumnMapping { ColumnName = property.Name, JsonPath = $"$.{property.Name}" }).ToList();
             command = CslCommandGenerator.GenerateTableJsonMappingCreateCommand(tableName, mappingName, mappings);
-            client.ExecuteControlCommand(command);
+            await client.ExecuteControlCommandAsync(client.DefaultDatabaseName, command);
 
             return mappingName;
         }
