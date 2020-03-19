@@ -13,7 +13,7 @@
   <ItemGroup>
     <PackageReference Include="Eshopworld.Tests.Core" Version="2.0.1" />
     <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.4.0" />
-    <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="2.0.49" />
+    <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="2.0.51" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="3.1.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
     <PackageReference Include="polly" Version="7.2.0" />
