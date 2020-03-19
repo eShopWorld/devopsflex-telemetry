@@ -20,9 +20,9 @@ steps:
     workingDirectory: src
 
 - task: NuGetToolInstaller@1
-  displayName: 'use nuget 4.X'
+  displayName: 'use nuget 5.X'
   inputs:
-    versionSpec: 4.X
+    versionSpec: 5.X
     checkLatest: true
 
 - task: NuGetCommand@2
