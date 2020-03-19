@@ -11,7 +11,7 @@ public class MessagingConfigurationExtensionsTest
     [Fact, IsUnit]
     public void Test_Publish_UsesTopics_WhenSetup()
     {
-        var bb = new BigBrother("", "");
+        var bb = BigBrother.CreateDefault("", "");
         bb.TelemetrySubscriptions.Clear(); // disable normal telemetry
         var dEvent = new TestDomainEvent();
 
@@ -27,7 +27,7 @@ public class MessagingConfigurationExtensionsTest
     [Fact, IsUnit]
     public void Test_Publish_NoTopics_WhenNotSetup()
     {
-        var bb = new BigBrother("", "");
+        var bb = BigBrother.CreateDefault("", "");
         bb.TelemetrySubscriptions.Clear(); // disable normal telemetry
         var dEvent = new TestDomainEvent();
 
@@ -41,7 +41,7 @@ public class MessagingConfigurationExtensionsTest
     [Fact, IsUnit]
     public void Test_Publish_WontSendNonDomainEvents_ToTopics()
     {
-        var bb = new BigBrother("", "");
+        var bb = BigBrother.CreateDefault("", "");
         bb.TelemetrySubscriptions.Clear(); // disable normal telemetry
         var dEvent = new TestTimedEvent();
 

@@ -47,7 +47,6 @@ public class PaymentAttemptEvent : BbTimedEvent
 
 Now that you have some events, publishing them is just:
 ```c#
-IBigBrother bb = new BigBrother("[Application Insights Key]", "[Application Insights Key - For inner telemetry]");
 
 bb.Publish(new PaymentEvent
 {
@@ -59,7 +58,6 @@ bb.Publish(new PaymentEvent
 
 Optionally, and especially useful during prototyping phases, you can publish anonymous classes:
 ```c#
-IBigBrother bb = new BigBrother("[Application Insights Key]", "[Application Insights Key - For inner telemetry]");
 
 bb.Publish(
     new 
@@ -78,7 +76,6 @@ Timed events, besides tracking the normal event custom dimensions will also meas
 to ApplicationInsights. The time window starts when the event is instantiated and finishes when the event is Published.
 
 ```c#
-IBigBrother bb = new BigBrother("[Application Insights Key]", "[Application Insights Key - For inner telemetry]");
 
 // Time starts being tracked here
 var event = new PaymentAttemptEvent
@@ -111,11 +108,31 @@ public BigBrother([NotNull]TelemetryClient client, [NotNull]string internalKey)
 }
 ```
 
+With latest .NET Core, it is now recommended to follow the pattern outlined in https://github.com/microsoft/ApplicationInsights-dotnet/issues/1152.
+Telemetry package offers _TelemetryModule_, which resolves _TelemetryClient_ from DI as well as _Eshopworld.Telemetry.Configuration.TelemetrySettings_ and exposes _IBigBrother_ singleton instance. 
+Outer and internal instrumentation keys are retrieved from the settings instance.
+
+Sample instrumentation
+
+```c#
+    builder.RegisterInstance(_telemetrySettings).SingleInstance();
+    builder.RegisterModule<TelemetryModule>();
+```
+
+It may be necessary to construct BigBrother outside of DI e.g. when you need to track container related exceptions during start up time.
+In these cases, the full initializer set is not necessary/relevant. We provide default BigBrother instance with relevant initializers
+  - OperationCorrelationTelemetryInitializer
+  - EnvironmentDetailsTelemetryInitializer
+
+```c#   
+   BigBrother.CreateDefault(_telemetrySettings.InstrumentationKey, _telemetrySettings.InternalKey);
+```
+
 ### EventSource and Trace sinks
 
 The package now supports trace and ETW sinks to all `BbExceptionEvents`. To set it up just use the fluent API:
 ```c#
-var bb = new BigBrother("KEY", "INTERNAL KEY");
+
 bb.UseEventSourceSink().ForExceptions();
 bb.UseTraceSink().ForExceptions();
 ```

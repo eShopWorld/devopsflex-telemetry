@@ -25,7 +25,7 @@ public class BigBrotherTest
         [Fact, IsDev]
         public void EntryPoint_PushEvent()
         {
-            IBigBrother bb = new BigBrother(DevKey, DevKey).DeveloperMode();
+            IBigBrother bb = BigBrother.CreateDefault(DevKey, DevKey).DeveloperMode();
 
             bb.Publish(new TestTelemetryEvent());
             bb.Flush();
@@ -35,7 +35,7 @@ public class BigBrotherTest
         public void EntryPoint_PushException()
         {
             const string message = "KABOOM!!!";
-            IBigBrother bb = new BigBrother(DevKey, DevKey).DeveloperMode();
+            IBigBrother bb = BigBrother.CreateDefault(DevKey, DevKey).DeveloperMode();
 
             try
             {
@@ -51,7 +51,7 @@ public class BigBrotherTest
         [Fact, IsDev]
         public void EntryPoint_PushTimed()
         {
-            IBigBrother bb = new BigBrother(DevKey, DevKey).DeveloperMode();
+            IBigBrother bb = BigBrother.CreateDefault(DevKey, DevKey).DeveloperMode();
 
             bb.Publish(new TestTimedEvent());
             bb.Flush();
@@ -60,7 +60,7 @@ public class BigBrotherTest
         [Fact, IsDev]
         public void EntryPoint_PushAnonymous()
         {
-            IBigBrother bb = new BigBrother(DevKey, DevKey).DeveloperMode();
+            IBigBrother bb = BigBrother.CreateDefault(DevKey, DevKey).DeveloperMode();
 
             bb.Publish(new
             {
@@ -153,7 +153,7 @@ public class BigBrotherTest
             var tasks = new List<Task>();
             for (var x = 0; x < 10; x++)
             {
-                tasks.Add(Task.Run(()=> new BigBrother("blah", "blah")));
+                tasks.Add(Task.Run(()=> BigBrother.CreateDefault("blah", "blah")));
             }
 
             //this will blow up in V2
@@ -250,7 +250,7 @@ public class BigBrotherTest
 
                                             Task.Factory.StartNew(() =>
                                             {
-                                                var brother = new BigBrother("blah", "blah"); // to initialize internal Rx subscriptions
+                                                var brother = BigBrother.CreateDefault("blah", "blah"); // to initialize internal Rx subscriptions
                                                 Task.Delay(TimeSpan.FromSeconds(3));
                                                 BigBrother.Write(new ExceptionEvent(new Exception(exceptionMessage)));
                                             });
