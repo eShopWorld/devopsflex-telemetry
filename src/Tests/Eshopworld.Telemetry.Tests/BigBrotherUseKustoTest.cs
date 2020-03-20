@@ -60,7 +60,7 @@ namespace Eshopworld.Telemetry.Tests
         {
             _kustoQueryClient.Should().NotBeNull();
 
-            var bb = new BigBrother("", "");
+            var bb = BigBrother.CreateDefault("", "");
 
             var builder = bb.UseKusto()
                 .WithCluster(_kustoName, _kustoLocation, _kustoDatabase, _kustoTenantId);

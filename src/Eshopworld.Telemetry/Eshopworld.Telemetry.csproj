@@ -2,8 +2,8 @@
 
   <PropertyGroup>
 
-    <Version>3.1.0</Version>
-    <PackageReleaseNotes>netstandard2.1, stateful actor telemetry and Kusto support.</PackageReleaseNotes>
+    <Version>3.1.1</Version>
+    <PackageReleaseNotes>AI correlation issue fix, changes to BB constructor, providing default configuration BB instance, changes to TelemetryModule</PackageReleaseNotes>
     <TargetFramework>netstandard2.1</TargetFramework>
     <IsPackable>True</IsPackable>
 

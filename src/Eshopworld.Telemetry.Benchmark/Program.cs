@@ -32,7 +32,7 @@ namespace Eshopworld.Telemetry.Benchmark
                 var kustoDatabase = Environment.GetEnvironmentVariable("kusto_database");
                 var kustoTenantId = Environment.GetEnvironmentVariable("kusto_tenant_id");
 
-                _bbForHandle = new BigBrother("", "");
+                _bbForHandle = BigBrother.CreateDefault("", "");
                 _bbForHandle.UseKusto()
                             .WithCluster(kustoName, kustoLocation, kustoDatabase, kustoTenantId)
                             .RegisterType<KustoBenchmarkEvent>()

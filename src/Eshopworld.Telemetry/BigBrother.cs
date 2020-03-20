@@ -25,6 +25,7 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights.Metrics;
 using Microsoft.Azure.Services.AppAuthentication;
 using Newtonsoft.Json;
+using Eshopworld.Telemetry.Initializers;
 
 namespace Eshopworld.Telemetry
 {
@@ -134,6 +135,9 @@ namespace Eshopworld.Telemetry
         private KustoOptionsBuilder? _kustoOptionsBuilder;
         private long _messagesSent = 0;
 
+        private static BigBrother _defaultBigBrother;
+        private static object _defaultBigBrotherLock = new object();
+
         /// <summary>
         /// Static initialization of static resources in <see cref="BigBrother"/> instances.
         /// </summary>
@@ -154,14 +158,26 @@ namespace Eshopworld.Telemetry
         /// </summary>
         /// <param name="aiKey">The application's Application Insights instrumentation key.</param>
         /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
+        [Obsolete("Use constructor with TelemetryClient supplied via DI as AI SDK for ASP.NET Core maintains fully fleshed out telemetry configuration instance (available via TelemetryModule) - see https://github.com/microsoft/ApplicationInsights-dotnet/issues/1152 . This constructor uses default config which references only OperationCorrelationTelemetryInitializer")]
         public BigBrother(string aiKey, string internalKey)
         {
-            TelemetryClient = new TelemetryClient(new TelemetryConfiguration
-            {
-                InstrumentationKey = aiKey,
-            });
+            TelemetryClient = new TelemetryClient(TelemetryConfiguration.CreateDefault()){InstrumentationKey = aiKey};
             InternalClient.InstrumentationKey = internalKey;
             SetupSubscriptions();
+        }
+
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="BigBrother"/>.
+        ///     Used to leverage an existing <see cref="TelemetryClient"/> to track correlation.
+        ///     This constructor does a bit of work, so if you're mocking this, mock the <see cref="IBigBrother"/> contract instead.
+        /// </summary>
+        /// <param name="client">The application's existing <see cref="TelemetryClient"/>.</param>
+        /// <param name="aiKey">The application's Application Insights instrumentation key, overwrites any instrumentation set on telemetry client directly</param>
+        /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
+        public BigBrother(TelemetryClient client, string aiKey, string internalKey):this(client, internalKey)
+        {
+            TelemetryClient.InstrumentationKey = aiKey;
         }
 
         /// <summary>
@@ -189,6 +205,30 @@ namespace Eshopworld.Telemetry
             telemetryObservable = TelemetryStream.AsObservable();
             telemetryObserver = TelemetryStream.AsObserver();
             internalObservable = InternalStream.AsObservable();
+        }
+
+        /// <summary>
+        /// ReSharper disable once CommentTypo
+        /// creates default <see cref="BigBrother"/> instance with <see cref="OperationCorrelationTelemetryInitializer"/> and <see cref="EnvironmentDetailsTelemetryInitializer"/> initializers
+        ///
+        /// the expected usage is exception happening prior to DI container established
+        /// </summary>
+        /// <param name="aiKey">The application's Application Insights instrumentation key</param>
+        /// <param name="internalKey">The devops internal telemetry Application Insights instrumentation key.</param>
+        /// <returns><see cref="BigBrother"/> default instance</returns>
+        public static BigBrother CreateDefault(string aiKey, string internalKey)
+        {
+            if (_defaultBigBrother != null) return _defaultBigBrother;
+
+            lock (_defaultBigBrotherLock)
+            {
+                var telConfig = TelemetryConfiguration.CreateDefault();
+                telConfig.TelemetryInitializers.Add(new EnvironmentDetailsTelemetryInitializer());
+                var telClient = new TelemetryClient(telConfig) {InstrumentationKey = aiKey};
+                _defaultBigBrother = new BigBrother(telClient, aiKey, internalKey);
+
+                return _defaultBigBrother;
+            }
         }
 
         /// <summary>
