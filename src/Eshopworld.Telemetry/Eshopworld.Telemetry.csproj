@@ -2,14 +2,15 @@
 
   <PropertyGroup>
 
-    <Version>3.1.1</Version>
-    <PackageReleaseNotes>AI correlation issue fix, changes to BB constructor, providing default configuration BB instance, changes to TelemetryModule</PackageReleaseNotes>
+    <Version>3.1.2</Version>
+    <PackageReleaseNotes>Add ProbeTelemetryProcessor to filter out health probes</PackageReleaseNotes>
     <TargetFramework>netstandard2.1</TargetFramework>
     <IsPackable>True</IsPackable>
 
     <PackageId>Eshopworld.Telemetry</PackageId>
+    <PackageIcon>icon.png</PackageIcon>
     <Title>Eshopworld.Telemetry</Title>
-    <Authors>David Rodrigues, Oisin Haken, David Guerin, Artur Zgodzinski</Authors>
+    <Authors>David Rodrigues, Oisin Haken, David Guerin, Artur Zgodzinski, Antonino Parisi</Authors>
     <Copyright>Copyright eShopWorld 2020</Copyright>
     <Description>eShopWorld common telemetry application insights</Description>
     <PackageLicenseUrl>https://github.com/eShopWorld/telemetry/blob/master/LICENSE</PackageLicenseUrl>
@@ -24,6 +25,10 @@
 
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Include="icon.png" Pack="true" PackagePath=""/>
+  </ItemGroup>
+  
   <ItemGroup>
     <PackageReference Include="Autofac" Version="5.1.2" />
     <PackageReference Include="Eshopworld.Core" Version="4.0.0" />
