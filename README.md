@@ -163,6 +163,37 @@ builder.Use((next) => new RoleNameSetter(next));
 builder.Build();
 ```
 
+#### TelemetryFilterProcessor
+Filters out health probe requests.
+Example:
+```c#
+public class Startup
+{
+    public IServiceProvider ConfigureServices (IServiceCollection services)
+    {
+        // ...
+        services.AddApplicationInsightsTelemetryProcessor<TelemetryFilterProcessor>();
+        // ...
+    }
+}
+
+public class Bootstrap: Module
+{
+    protected override void Load (ContainerBuilder builder)
+    {
+        // ...
+        builder.RegisterType<SuccessfulProbeFilterCriteria>()
+            .As<ITelemetryFilterCriteria>();
+
+        // only add this if you don't have an instance of FilterCriteria registered
+        builder.RegisterType<DefaultTelemetryFilterCriteria>()
+                .As<ITelemetryFilterCriteria>()
+                .IfNotRegistered(typeof(ITelemetryFilterCriteria));
+        // ...
+    }
+}
+```
+
 ### Telemetry initializers in the package
 
 #### Environment Details
