@@ -17,8 +17,11 @@ namespace Eshopworld.Telemetry.Processors
 
             if (request == null) return false;
 
-            return request.ResponseCode == "200" &&
-                   request.Name.StartsWith("GET Probe/", StringComparison.OrdinalIgnoreCase);
+            return
+                request.ResponseCode == "200" && (
+                    request.Name.StartsWith("GET Probe/", StringComparison.OrdinalIgnoreCase) ||
+                    request.Name.StartsWith("HEAD Probe/", StringComparison.OrdinalIgnoreCase)
+                );
         }
     }
 }

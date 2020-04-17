@@ -32,6 +32,13 @@ namespace Eshopworld.Telemetry.Tests
         [InlineData("200", "PUT Probe/Probe", false)]
         [InlineData("200", "GET Entity/Probe", false)]
         [InlineData("200", "GET ProbeTest/Probe", false)]
+        [InlineData("200", "HEAD Probe/Probe", true)]
+        [InlineData("200", "head Probe/Probe", true)]
+        [InlineData("200", "HEAD probe/Probe", true)]
+        [InlineData("200", "HEAD Probe/ProbeUserContext", true)]
+        [InlineData("400", "HEAD Probe/Probe", false)]
+        [InlineData("200", "HEAD Entity/Probe", false)]
+        [InlineData("200", "HEAD ProbeTest/Probe", false)]
         public void Test(string responseCode, string actionName, bool shouldFilter)
         {
             // Arrange
