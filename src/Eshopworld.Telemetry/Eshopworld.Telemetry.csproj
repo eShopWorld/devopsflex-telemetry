@@ -2,15 +2,15 @@
 
   <PropertyGroup>
 
-    <Version>3.1.3</Version>
-    <PackageReleaseNotes>Add ProbeTelemetryProcessor to filter out health probes received through HEAD &amp; GET requests.</PackageReleaseNotes>
+    <Version>3.1.4</Version>
+    <PackageReleaseNotes>Extended `SuccessfulProbeFilterCriteria` to support health check telemetry filtering</PackageReleaseNotes>
     <TargetFramework>netstandard2.1</TargetFramework>
     <IsPackable>True</IsPackable>
 
     <PackageId>Eshopworld.Telemetry</PackageId>
     <PackageIcon>icon.png</PackageIcon>
     <Title>Eshopworld.Telemetry</Title>
-    <Authors>David Rodrigues, Oisin Haken, David Guerin, Artur Zgodzinski, Antonino Parisi</Authors>
+    <Authors>David Rodrigues, Oisin Haken, David Guerin, Artur Zgodzinski, Antonino Parisi, Mayank Goyel</Authors>
     <Copyright>Copyright eShopWorld 2020</Copyright>
     <Description>eShopWorld common telemetry application insights</Description>
     <PackageLicenseUrl>https://github.com/eShopWorld/telemetry/blob/master/LICENSE</PackageLicenseUrl>
