@@ -181,9 +181,15 @@ public class Bootstrap: Module
 {
     protected override void Load (ContainerBuilder builder)
     {
-        // ...
+        // Add this if you don't have configure health checks middleware
         builder.RegisterType<SuccessfulProbeFilterCriteria>()
             .As<ITelemetryFilterCriteria>();
+
+        // Add this if you have configure health checks middleware and 
+        // pass the health check path as parameter ex: '/probe' in this sample
+        builder.RegisterType<SuccessfulProbeFilterCriteria1>()
+                .As<ITelemetryFilterCriteria>()
+                .WithParameter(new TypedParameter(typeof(string), "/probe"));
 
         // only add this if you don't have an instance of FilterCriteria registered
         builder.RegisterType<DefaultTelemetryFilterCriteria>()
