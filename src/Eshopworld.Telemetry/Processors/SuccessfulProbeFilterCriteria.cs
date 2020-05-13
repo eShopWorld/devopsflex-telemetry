@@ -15,7 +15,7 @@ namespace Eshopworld.Telemetry.Processors
     {
         private readonly string[] _methodNames = new[] {"GET", "HEAD"};
 
-        private const string DefaultHealthCheckPath = "probe/";
+        private const string DefaultProbePath = "probe/";
 
         private readonly List<string> _requestNamesToMatch;
 
@@ -30,7 +30,7 @@ namespace Eshopworld.Telemetry.Processors
 
             _requestNamesToMatch = new List<string>();
 
-            _requestNamesToMatch.AddRange(BuildMatches(DefaultHealthCheckPath));
+            _requestNamesToMatch.AddRange(BuildMatches(DefaultProbePath));
 
             if (!string.IsNullOrWhiteSpace(healthChecksPath))
             {
