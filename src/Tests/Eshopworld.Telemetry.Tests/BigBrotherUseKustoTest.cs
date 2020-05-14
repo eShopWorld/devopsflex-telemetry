@@ -53,7 +53,7 @@ namespace Eshopworld.Telemetry.Tests
             }
         }
 
-        [Theory, IsLayer1]
+        [Theory(Skip = "Kusto currently unsupported"), IsLayer1]
         [InlineData(true)]
         [InlineData(false)]
         public async Task Test_KustoTestEvent_StreamsToKusto(bool useDirect)
@@ -97,7 +97,7 @@ namespace Eshopworld.Telemetry.Tests
                 });
         }
 
-        [Fact, IsUnit]
+        [Fact(Skip = "Kusto currently unsupported"), IsUnit]
         public void Test_ExceptionTelemetry_DoesntStream_ToKusto()
         {
             var bb = new Mock<BigBrother>();
@@ -111,7 +111,7 @@ namespace Eshopworld.Telemetry.Tests
             bb.Verify(x => x.HandleKustoEvents(It.IsAny<IList<TelemetryEvent>>()), Times.Never);
         }
 
-        [Fact, IsUnit]
+        [Fact(Skip = "Kusto currently unsupported"), IsUnit]
         public void Test_TimedTelemetry_DoesntStream_ToKusto()
         {
             var bb = new Mock<BigBrother>();
@@ -125,7 +125,7 @@ namespace Eshopworld.Telemetry.Tests
             bb.Verify(x => x.HandleKustoEvents(It.IsAny<IList<TelemetryEvent>>()), Times.Never);
         }
 
-        [Fact, IsUnit]
+        [Fact(Skip = "Kusto currently unsupported"), IsUnit]
         public void Test_MetricTelemetry_DoesntStream_ToKusto()
         {
             var bb = new Mock<BigBrother>();
