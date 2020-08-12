@@ -2,8 +2,8 @@
 
   <PropertyGroup>
 
-    <Version>3.1.4</Version>
-    <PackageReleaseNotes>Extended `SuccessfulProbeFilterCriteria` to support health check telemetry filtering</PackageReleaseNotes>
+    <Version>3.1.5</Version>
+    <PackageReleaseNotes>Upgrade of dependency packages.</PackageReleaseNotes>
     <TargetFramework>netstandard2.1</TargetFramework>
     <IsPackable>True</IsPackable>
 
@@ -30,15 +30,15 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="5.1.2" />
-    <PackageReference Include="Eshopworld.Core" Version="4.0.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.13.1" />
-    <PackageReference Include="Microsoft.ApplicationInsights.DependencyCollector" Version="2.13.1" />
+    <PackageReference Include="Autofac" Version="5.2.0" />
+    <PackageReference Include="Eshopworld.Core" Version="4.1.6" />
+    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.14.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights.DependencyCollector" Version="2.14.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.ServiceFabric.Native" Version="2.3.1" />
     <PackageReference Include="Microsoft.Azure.Kusto.Ingest.NETStandard" Version="6.1.8" />
-    <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.4.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="3.1.2" />
-    <PackageReference Include="System.Reactive" Version="4.3.2" />
+    <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.5.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="3.1.7" />
+    <PackageReference Include="System.Reactive" Version="4.4.1" />
   </ItemGroup>
 
 </Project>
