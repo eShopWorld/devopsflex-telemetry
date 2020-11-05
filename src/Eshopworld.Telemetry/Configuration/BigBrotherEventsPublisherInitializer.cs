@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Eshopworld.Core;
+using Eshopworld.Telemetry.Configuration.Extensions;
 
 namespace Eshopworld.Telemetry.Configuration
 {

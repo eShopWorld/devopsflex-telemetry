@@ -7,7 +7,7 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Moq;
 using Xunit;
 
-namespace Eshopworld.Telemetry.Tests
+namespace Eshopworld.Telemetry.Tests.Processors
 {
     public class TelemetryFilterProcessorTests
     {
