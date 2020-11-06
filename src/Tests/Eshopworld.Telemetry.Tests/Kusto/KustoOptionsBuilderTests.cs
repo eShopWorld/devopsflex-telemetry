@@ -4,7 +4,7 @@ using Eshopworld.Tests.Core;
 using FluentAssertions;
 using Xunit;
 
-namespace Eshopworld.Telemetry.Tests
+namespace Eshopworld.Telemetry.Tests.Kusto
 {
     public class KustoOptionsBuilderTests
     {

@@ -1,60 +1,61 @@
 ﻿using System.Threading.Tasks;
 using Eshopworld.Core;
-using Eshopworld.Telemetry;
 using Eshopworld.Telemetry.Configuration.Extensions;
 using Eshopworld.Tests.Core;
 using Moq;
 using Xunit;
 
-// ReSharper disable once CheckNamespace
-public class MessagingConfigurationExtensionsTest
+namespace Eshopworld.Telemetry.Tests.Configuration.Extensions
 {
-    [Fact, IsUnit]
-    public void Test_Publish_UsesTopics_WhenSetup()
+    public class MessagingConfigurationExtensionsTest
     {
-        var bb = BigBrother.CreateDefault("", "");
-        bb.TelemetrySubscriptions.Clear(); // disable normal telemetry
-        var dEvent = new TestDomainEvent();
+        [Fact, IsUnit]
+        public void Test_Publish_UsesTopics_WhenSetup()
+        {
+            var bb = BigBrother.CreateDefault("", "");
+            bb.TelemetrySubscriptions.Clear(); // disable normal telemetry
+            var dEvent = new TestDomainEvent();
 
-        var mPublisher = new Mock<IPublishEvents>();
-        mPublisher.Setup(x => x.Publish(It.IsAny<TelemetryEvent>())).Returns(Task.CompletedTask);
-        bb.PublishEventsToTopics(mPublisher.Object);
+            var mPublisher = new Mock<IPublishEvents>();
+            mPublisher.Setup(x => x.Publish(It.IsAny<TelemetryEvent>())).Returns(Task.CompletedTask);
+            bb.PublishEventsToTopics(mPublisher.Object);
 
-        bb.Publish(dEvent);
+            bb.Publish(dEvent);
 
-        mPublisher.VerifyAll();
+            mPublisher.VerifyAll();
+        }
+
+        [Fact, IsUnit]
+        public void Test_Publish_NoTopics_WhenNotSetup()
+        {
+            var bb = BigBrother.CreateDefault("", "");
+            bb.TelemetrySubscriptions.Clear(); // disable normal telemetry
+            var dEvent = new TestDomainEvent();
+
+            var mPublisher = new Mock<IPublishEvents>();
+
+            bb.Publish(dEvent);
+
+            mPublisher.Verify(x => x.Publish(It.IsAny<TelemetryEvent>()), Times.Never);
+        }
+
+        [Fact, IsUnit]
+        public void Test_Publish_WontSendNonDomainEvents_ToTopics()
+        {
+            var bb = BigBrother.CreateDefault("", "");
+            bb.TelemetrySubscriptions.Clear(); // disable normal telemetry
+            var dEvent = new TestTimedEvent();
+
+            var mPublisher = new Mock<IPublishEvents>();
+            bb.PublishEventsToTopics(mPublisher.Object);
+
+            bb.Publish(dEvent);
+
+            mPublisher.Verify(x => x.Publish(It.IsAny<TelemetryEvent>()), Times.Never);
+        }
     }
 
-    [Fact, IsUnit]
-    public void Test_Publish_NoTopics_WhenNotSetup()
+    public class TestDomainEvent : DomainEvent
     {
-        var bb = BigBrother.CreateDefault("", "");
-        bb.TelemetrySubscriptions.Clear(); // disable normal telemetry
-        var dEvent = new TestDomainEvent();
-
-        var mPublisher = new Mock<IPublishEvents>();
-
-        bb.Publish(dEvent);
-
-        mPublisher.Verify(x => x.Publish(It.IsAny<TelemetryEvent>()), Times.Never);
     }
-
-    [Fact, IsUnit]
-    public void Test_Publish_WontSendNonDomainEvents_ToTopics()
-    {
-        var bb = BigBrother.CreateDefault("", "");
-        bb.TelemetrySubscriptions.Clear(); // disable normal telemetry
-        var dEvent = new TestTimedEvent();
-
-        var mPublisher = new Mock<IPublishEvents>();
-        bb.PublishEventsToTopics(mPublisher.Object);
-
-        bb.Publish(dEvent);
-
-        mPublisher.Verify(x => x.Publish(It.IsAny<TelemetryEvent>()), Times.Never);
-    }
-}
-
-public class TestDomainEvent : DomainEvent
-{
 }

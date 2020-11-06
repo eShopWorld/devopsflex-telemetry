@@ -3,7 +3,7 @@ using Eshopworld.Tests.Core;
 using Microsoft.ApplicationInsights.DataContracts;
 using Xunit;
 
-namespace Eshopworld.Telemetry.Tests
+namespace Eshopworld.Telemetry.Tests.Processors
 {
     public class DefaultTelemetryFilterCriteriaTests
     {
