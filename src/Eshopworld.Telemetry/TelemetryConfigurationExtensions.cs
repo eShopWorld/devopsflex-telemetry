@@ -55,7 +55,7 @@
 
                     bb.TraceSinkSubscription?.Dispose();
                     bb.TraceSinkSubscription = bb.TelemetryStream.OfType<ExceptionEvent>().Subscribe(BigBrother.SinkToTrace);
-
+                    
                     break;
 
                 case null:
