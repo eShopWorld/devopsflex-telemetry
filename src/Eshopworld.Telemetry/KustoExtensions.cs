@@ -12,7 +12,7 @@ namespace Eshopworld.Telemetry
     /// Contains extensions to clients in the Kusto SDK.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    [Obsolete]
+    [Obsolete("Kusto is no longer supported")]
     public static class KustoExtensions
     {
         /// <summary>
