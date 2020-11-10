@@ -317,6 +317,8 @@ namespace Eshopworld.Telemetry
         /// <summary>
         /// Ingest telemetry events into Kusto Data Explorer. Use fluent configuration API to configure client and ingestion strategies, and call .Build() at the end! 
         /// </summary>
+        [ExcludeFromCodeCoverage]
+        [Obsolete]
         public IKustoClusterBuilder UseKusto()
         {
             return new KustoOptionsBuilder(builder =>
@@ -368,6 +370,8 @@ namespace Eshopworld.Telemetry
         /// <remarks>
         /// Ingest telemetry events into Kusto. Uses queued/buffered client, call different overload of this method to configure different ingestion strategy.
         /// </remarks>
+        [ExcludeFromCodeCoverage]
+        [Obsolete]
         internal IBigBrother UseKustoInternal(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId)
         {
             try
@@ -430,6 +434,8 @@ namespace Eshopworld.Telemetry
             GlobalExceptionAiSubscription = ExceptionStream.Subscribe(HandleAiEvent);
         }
 
+        [ExcludeFromCodeCoverage]
+        [Obsolete]
         internal void SetupKustoSubscription()
         {
             FilteredObservable = TelemetryStream
@@ -572,6 +578,8 @@ namespace Eshopworld.Telemetry
             }
         }
 
+        [ExcludeFromCodeCoverage]
+        [Obsolete]
         internal virtual async Task HandleKustoEvents(IList<TelemetryEvent> events)
         {
             try
@@ -611,6 +619,8 @@ namespace Eshopworld.Telemetry
         /// Handles a <see cref="TelemetryEvent"/> that is being streamed to Kusto.
         /// </summary>
         /// <param name="event">The event being handled.</param>
+        [ExcludeFromCodeCoverage]
+        [Obsolete]
         internal virtual async Task HandleKustoEvent(TelemetryEvent @event)
         {
             var eventType = @event.GetType();
@@ -640,6 +650,8 @@ namespace Eshopworld.Telemetry
             }
         }
 
+        [ExcludeFromCodeCoverage]
+        [Obsolete]
         private KustoQueuedIngestionProperties GetQueuedModelProperties(Type eventType)
         {
             lock (_gate)
@@ -670,6 +682,8 @@ namespace Eshopworld.Telemetry
             }
         }
 
+        [ExcludeFromCodeCoverage]
+        [Obsolete]
         private KustoIngestionProperties GetDirectModelProperties(Type eventType)
         {
             lock (_gate)
