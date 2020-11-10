@@ -1,11 +1,15 @@
-﻿namespace Eshopworld.Telemetry.Kusto
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Eshopworld.Telemetry.Kusto
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
-    using Eshopworld.Core;
+    using Core;
 
+    [ExcludeFromCodeCoverage]
+    [Obsolete]
     public class KustoOptionsBuilder : IKustoClusterBuilder, IKustoOptionsBuilder, IKustoOptionsTypeBuilder, IKustoBufferedOptionsBuilder
     {
         private readonly Action<KustoOptionsBuilder>? _onBuild;

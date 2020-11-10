@@ -5,10 +5,12 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using Eshopworld.Core;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using BenchmarkDotNet.Jobs;
 
 namespace Eshopworld.Telemetry.Benchmark
 {
+    [ExcludeFromCodeCoverage]
     public class Program
     {
         [SimpleJob(RuntimeMoniker.NetCoreApp31)]
@@ -90,7 +92,7 @@ namespace Eshopworld.Telemetry.Benchmark
                 brother
                     .UseKusto()
                     .WithCluster(kustoName, kustoLocation, kustoDatabase, kustoTenantId)
-                    .WithBufferOptions(new BufferedClientOptions { BufferSizeItems = 50, IngestionInterval = TimeSpan.FromSeconds(1), FlushImmediately = true})
+                    .WithBufferOptions(new BufferedClientOptions { BufferSizeItems = 50, IngestionInterval = TimeSpan.FromSeconds(1), FlushImmediately = true })
                     .RegisterType<KustoBenchmarkEvent>()
                     .WithQueuedClient()
                     .Build(n =>
