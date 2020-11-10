@@ -9,7 +9,7 @@ namespace Eshopworld.Telemetry.Kusto
     using Core;
 
     [ExcludeFromCodeCoverage]
-    [Obsolete]
+    [Obsolete("Kusto is no longer supported")]
     public class KustoOptionsBuilder : IKustoClusterBuilder, IKustoOptionsBuilder, IKustoOptionsTypeBuilder, IKustoBufferedOptionsBuilder
     {
         private readonly Action<KustoOptionsBuilder>? _onBuild;

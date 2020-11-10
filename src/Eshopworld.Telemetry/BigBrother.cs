@@ -318,7 +318,7 @@ namespace Eshopworld.Telemetry
         /// Ingest telemetry events into Kusto Data Explorer. Use fluent configuration API to configure client and ingestion strategies, and call .Build() at the end! 
         /// </summary>
         [ExcludeFromCodeCoverage]
-        [Obsolete]
+        [Obsolete("Kusto is no longer supported")]
         public IKustoClusterBuilder UseKusto()
         {
             return new KustoOptionsBuilder(builder =>
@@ -651,7 +651,7 @@ namespace Eshopworld.Telemetry
         }
 
         [ExcludeFromCodeCoverage]
-        [Obsolete]
+        [Obsolete("Kusto is no longer supported")]
         private KustoQueuedIngestionProperties GetQueuedModelProperties(Type eventType)
         {
             lock (_gate)
@@ -683,7 +683,7 @@ namespace Eshopworld.Telemetry
         }
 
         [ExcludeFromCodeCoverage]
-        [Obsolete]
+        [Obsolete("Kusto is no longer supported")]
         private KustoIngestionProperties GetDirectModelProperties(Type eventType)
         {
             lock (_gate)
