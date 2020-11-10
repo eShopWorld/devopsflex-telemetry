@@ -1,4 +1,5 @@
-﻿using Kusto.Data.Common;
+﻿using System.Diagnostics.CodeAnalysis;
+using Kusto.Data.Common;
 
 namespace Eshopworld.Telemetry
 {
@@ -10,6 +11,8 @@ namespace Eshopworld.Telemetry
     /// <summary>
     /// Contains extensions to clients in the Kusto SDK.
     /// </summary>
+    [ExcludeFromCodeCoverage]
+    [Obsolete]
     public static class KustoExtensions
     {
         /// <summary>
