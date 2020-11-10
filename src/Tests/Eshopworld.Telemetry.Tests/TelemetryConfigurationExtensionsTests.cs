@@ -34,7 +34,7 @@ namespace Eshopworld.Telemetry.Tests
         }
 
         [Fact, IsUnit]
-        public void UseTraceSink_OnCastingError_ReturnsTraceSink()
+        public void UseTraceSink_OnCastingError_ThrowsException()
         {
             Action action = () => TelemetryConfigurationExtensions.UseTraceSink(Mock.Of<IBigBrother>());
             action.Should().Throw<InvalidOperationException>()
