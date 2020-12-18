@@ -41,6 +41,35 @@ namespace Eshopworld.Telemetry.Tests
 
         public static IEnumerable<object[]> TelemetryRequestTestData => new List<object[]>
         {
+            
+            new object[]
+            {
+                "200",
+                "HEAD /Probe",
+                null,
+                true
+            },
+            new object[]
+            {
+                "200",
+                "GET /Probe",
+                null,
+                true
+            },
+            new object[]
+            {
+                "200",
+                "HEAD /probe/ProbeContext",
+                null,
+                true
+            },
+            new object[]
+            {
+                "200",
+                "GET /Probe/ProbeContext",
+                null,
+                true
+            },
             new object[]
             {
                 "200",
