@@ -26,11 +26,11 @@ namespace Eshopworld.Telemetry.Tests
 
         [Theory, IsUnit]
         [MemberData(nameof(TelemetryRequestTestData))]
-        public void Test(string responseCode, string actionName, string healthCheckPath, bool shouldFilter)
+        public void Test(string responseCode, string actionName, bool shouldFilter, params string[] healthCheckPaths)
         {
             // Arrange
             var telemetryItem = new RequestTelemetry {Name = actionName, ResponseCode = responseCode};
-            var criteria = new SuccessfulProbeFilterCriteria(healthCheckPath);
+            var criteria = new SuccessfulProbeFilterCriteria(healthCheckPaths);
 
             // Act
             var result = criteria.ShouldFilter(telemetryItem);
@@ -41,179 +41,229 @@ namespace Eshopworld.Telemetry.Tests
 
         public static IEnumerable<object[]> TelemetryRequestTestData => new List<object[]>
         {
+            
+            new object[]
+            {
+                "200",
+                "HEAD /Probe",
+                true,
+                null
+            },
+            new object[]
+            {
+                "200",
+                "GET /Probe",
+                true,
+                null
+            },
+            new object[]
+            {
+                "200",
+                "HEAD /probe/ProbeContext",
+                true,
+                null
+            },
+            new object[]
+            {
+                "200",
+                "GET /Probe/ProbeContext",
+                true,
+                null
+            },
+            new object[]
+            {
+                "200",
+                "GET /Probe",
+                true,
+                "/hc","/hhc"
+            },
+            new object[]
+            {
+                "200",
+                "HEAD /HHC",
+                true,
+                "/hc","/hhc"
+            },
+            new object[]
+            {
+                "200",
+                "HEAD /HHC",
+                false,
+                "/foo","/bar","probe/","/probe"
+            },
             new object[]
             {
                 "200",
                 "GET Probe/Probe",
-                null,
-                true
+                true,
+                null
             },
             new object[]
             {
                 "200",
                 "get Probe/Probe",
-                null,
-                true
+                true,
+                null
             },
             new object[]
             {
                 "200",
                 "GET probe/Probe",
-                null,
-                true
+                true,
+                null
             },
             new object[]
             {
                 "200",
                 "GET Probe/ProbeUserContext",
-                null,
-                true
+                true,
+                null
             },
             new object[]
             {
                 "400",
                 "GET Probe/ProbeUserContext",
-                null,
-                false
+                false,
+                null
             },
             new object[]
             {
                 "200",
                 "PUT Probe/ProbeUserContext",
-                null,
-                false
+                false,
+                null
             },
             new object[]
             {
                 "400",
                 "GET Entity/Probe",
-                null,
-                false
+                false,
+                null
             },
             new object[]
             {
                 "400",
                 "GET ProbeTest/Probe",
-                null,
-                false
+                false,
+                null
             },
             new object[]
             {
                 "200",
                 "HEAD Probe/Probe",
-                null,
-                true
+                true,
+                null
             },
             new object[]
             {
                 "200",
                 "head Probe/Probe",
-                null,
-                true
+                true,
+                null
             },
             new object[]
             {
                 "200",
                 "HEAD probe/Probe",
-                null,
-                true
+                true,
+                null
             },
             new object[]
             {
                 "200",
                 "HEAD Probe/ProbeUserContext",
-                null,
-                true
+                true,
+                null
             },
             new object[]
             {
                 "400",
                 "HEAD Probe/ProbeUserContext",
-                null,
-                false
+                false,
+                null
             },
             new object[]
             {
                 "400",
                 "HEAD Entity/Probe",
-                null,
-                false
+                false,
+                null
             },
             new object[]
             {
                 "400",
                 "HEAD ProbeTest/Probe",
-                null,
-                false
+                false,
+                null
             },
             new object[]
             {
                 "200",
                 "GET Probe/Probe",
-                "",
-                true
+                true,
+                ""
             },
             new object[]
             {
                 "200",
                 "GET Probe/Probe",
-                "/hc",
-                true
+                true,
+                "/hc"
             },
             new object[]
             {
                 "200",
                 "GET /HC",
-                "/hc",
-                true
+                true,
+                "/hc"
             },
             new object[]
             {
                 "200",
                 "GET /hc",
-                "/hc",
-                true
+                true,
+                "/hc"
             },
             new object[]
             {
                 "400",
                 "GET Probe/Probe",
-                "/hc",
-                false
+                false,
+                "/hc"
             },
             new object[]
             {
                 "400",
                 "GET /HC",
-                "/hc",
-                false
+                false,
+                "/hc"
             },
             new object[]
             {
                 "400",
                 "GET /hc",
-                "/hc",
-                false
+                false,
+                "/hc"
             },new object[]
             {
                 "200",
                 "PUT /HC",
-                "/hc",
-                false
+                false,
+                "/hc"
             },
             new object[]
             {
                 "200",
                 "PUT /hc",
-                "/hc",
-                false
+                false,
+                "/hc"
             },
             new object[]
             {
                 "400",
                 "PUT Probe/Probe",
-                "/hc",
-                false
+                false,
+                "/hc"
             }
         };
     }

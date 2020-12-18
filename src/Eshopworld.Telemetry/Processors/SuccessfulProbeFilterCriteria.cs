@@ -13,28 +13,29 @@ namespace Eshopworld.Telemetry.Processors
     /// </summary>
     public class SuccessfulProbeFilterCriteria : ITelemetryFilterCriteria
     {
-        private readonly string[] _methodNames = new[] {"GET", "HEAD"};
+        private readonly string[] _methodNames =  {"GET", "HEAD"};
 
-        private const string DefaultProbePath = "probe/";
+        private readonly string[] _defaultProbePaths = { "probe/", "/probe" };
 
         private readonly List<string> _requestNamesToMatch;
 
         /// <summary>
         /// Creates an instance of <see cref="SuccessfulProbeFilterCriteria"/>
         /// </summary>
-        /// <param name="healthChecksPath"></param>
-        public SuccessfulProbeFilterCriteria(string healthChecksPath = null)
+        /// <param name="healthChecksPaths"></param>
+        public SuccessfulProbeFilterCriteria(params string[] healthChecksPaths)
         {
-            IEnumerable<string> BuildMatches(string path) =>
-                _methodNames.Select(name => $"{name} {path}");
+            IEnumerable<string> BuildMatches(string[] paths) => _methodNames
+                .SelectMany(name => paths.Select(path => (name, path)))
+                .Select(t => $"{t.name} {t.path}");
 
             _requestNamesToMatch = new List<string>();
 
-            _requestNamesToMatch.AddRange(BuildMatches(DefaultProbePath));
+            _requestNamesToMatch.AddRange(BuildMatches(_defaultProbePaths));
 
-            if (!string.IsNullOrWhiteSpace(healthChecksPath))
+            if (healthChecksPaths!=null && healthChecksPaths.Any())
             {
-                _requestNamesToMatch.AddRange(BuildMatches(healthChecksPath));
+                _requestNamesToMatch.AddRange(BuildMatches(healthChecksPaths));
             }
         }
 
