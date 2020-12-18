@@ -22,8 +22,8 @@ namespace Eshopworld.Telemetry.Processors
         /// <summary>
         /// Creates an instance of <see cref="SuccessfulProbeFilterCriteria"/>
         /// </summary>
-        /// <param name="healthChecksPath"></param>
-        public SuccessfulProbeFilterCriteria(string healthChecksPath = null)
+        /// <param name="healthChecksPaths"></param>
+        public SuccessfulProbeFilterCriteria(params string[] healthChecksPaths)
         {
             IEnumerable<string> BuildMatches(string[] paths) => _methodNames
                 .SelectMany(name => paths.Select(path => (name, path)))
@@ -33,9 +33,9 @@ namespace Eshopworld.Telemetry.Processors
 
             _requestNamesToMatch.AddRange(BuildMatches(_defaultProbePaths));
 
-            if (!string.IsNullOrWhiteSpace(healthChecksPath))
+            if (healthChecksPaths!=null && healthChecksPaths.Any())
             {
-                _requestNamesToMatch.AddRange(BuildMatches(new []{healthChecksPath}));
+                _requestNamesToMatch.AddRange(BuildMatches(healthChecksPaths));
             }
         }
 
