@@ -2,8 +2,8 @@
 
   <PropertyGroup>
 
-    <Version>3.1.8</Version>
-    <PackageReleaseNotes>SuccessfulProbeFilterCriteria: Fixed the issue of broken registration by the last version change </PackageReleaseNotes>
+    <Version>3.1.9</Version>
+    <PackageReleaseNotes>Reverted the last change in SuccessfulProbeFilterCriteria </PackageReleaseNotes>
     <TargetFramework>netstandard2.1</TargetFramework>
     <IsPackable>True</IsPackable>
 
