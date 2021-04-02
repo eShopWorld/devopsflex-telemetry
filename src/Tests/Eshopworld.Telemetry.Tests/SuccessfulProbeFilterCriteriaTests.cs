@@ -23,10 +23,28 @@ namespace Eshopworld.Telemetry.Tests
             Assert.False(result);
         }
 
+        [Fact, IsUnit]
+        public void Test_With_Single_Matching_CheckPath()
+        {
+            // Arrange
+            var path = "/testPath";
+            var action = $"GET {path}";
+
+            var telemetryItem = new RequestTelemetry{Name = action, ResponseCode = "200"};
+
+            var criteria = new SuccessfulProbeFilterCriteria(path);
+
+            // Act
+            var result = criteria.ShouldFilter(telemetryItem);
+
+            // Assert
+            Assert.True(result);
+        }
+
 
         [Theory, IsUnit]
         [MemberData(nameof(TelemetryRequestTestData))]
-        public void Test(string responseCode, string actionName, bool shouldFilter, params string[] healthCheckPaths)
+        public void Test_With_Multiple_CheckPaths(string responseCode, string actionName, bool shouldFilter, params string[] healthCheckPaths)
         {
             // Arrange
             var telemetryItem = new RequestTelemetry {Name = actionName, ResponseCode = responseCode};
