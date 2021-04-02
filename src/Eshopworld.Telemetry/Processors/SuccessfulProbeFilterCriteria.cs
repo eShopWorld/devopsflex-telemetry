@@ -13,19 +13,11 @@ namespace Eshopworld.Telemetry.Processors
     /// </summary>
     public class SuccessfulProbeFilterCriteria : ITelemetryFilterCriteria
     {
-        private readonly string[] _methodNames = {"GET", "HEAD"};
+        private readonly string[] _methodNames =  {"GET", "HEAD"};
 
-        private readonly string[] _defaultProbePaths = {"probe/", "/probe"};
+        private readonly string[] _defaultProbePaths = { "probe/", "/probe" };
 
         private readonly List<string> _requestNamesToMatch;
-
-        /// <summary>
-        /// Creates an instance of <see cref="SuccessfulProbeFilterCriteria"/>
-        /// </summary>
-        /// <param name="healthCheckPath"></param>
-        public SuccessfulProbeFilterCriteria(string healthCheckPath) : this(new[] {healthCheckPath})
-        {
-        }
 
         /// <summary>
         /// Creates an instance of <see cref="SuccessfulProbeFilterCriteria"/>
@@ -41,7 +33,7 @@ namespace Eshopworld.Telemetry.Processors
 
             _requestNamesToMatch.AddRange(BuildMatches(_defaultProbePaths));
 
-            if (healthChecksPaths != null && healthChecksPaths.Any())
+            if (healthChecksPaths!=null && healthChecksPaths.Any())
             {
                 _requestNamesToMatch.AddRange(BuildMatches(healthChecksPaths));
             }
